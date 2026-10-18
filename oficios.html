@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de Oficios — Tasksmith</title>
+  <meta name="description" content="Explora los oficios verificados en Tasksmith: plomería, electricidad, pintura, carpintería, aseo y electrodomésticos." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="header">
+    <div class="container">
+      <nav class="navbar">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          </div>
+          <span class="logo-text">Task<span>smith</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Inicio</a></li>
+          <li><a href="como-funciona.html" class="nav-link">Cómo funciona</a></li>
+          <li><a href="oficios.html" class="nav-link active">Oficios</a></li>
+          <li><a href="confianza.html" class="nav-link">Confianza</a></li>
+          <li><a href="certificacion.html" class="nav-link">Certificación</a></li>
+        </ul>
+
+        <div class="nav-actions" id="navActionsContainer">
+          <button class="btn btn-ghost btn-sm" onclick="openLoginModal()" id="btnNavLogin">Ingresar</button>
+          <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" id="btnNavRegister">Registro</button>
+          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <div class="mobile-nav">
+    <a href="index.html" class="nav-link">Inicio</a>
+    <a href="como-funciona.html" class="nav-link">Cómo funciona</a>
+    <a href="oficios.html" class="nav-link active">Oficios</a>
+    <a href="confianza.html" class="nav-link">Confianza</a>
+    <a href="certificacion.html" class="nav-link">Certificación</a>
+    <div style="display: flex; gap: 10px; margin-top: 14px;" id="mobileAuthSlot">
+      <button class="btn btn-ghost" onclick="openLoginModal()" style="flex: 1;">Ingresar</button>
+      <button class="btn btn-primary" onclick="openRegisterModal()" style="flex: 1;">Registro</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="section" style="padding-bottom: 30px;">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Especialidades Manuales</span>
+          <h1 class="section-title">Nuestros Oficios Principales</h1>
+          <p class="section-sub">Cada especialista cuenta con validación de antecedentes, prueba técnica y registro de fotos en obra.</p>
+        </div>
+
+        <div class="grid-3">
+          <!-- 1. Plomeria -->
+          <div class="trade-card">
+            <div class="trade-card-body">
+              <div class="trade-header">
+                <span class="trade-badge">Redes & Presión</span>
+                <span class="trade-price">Desde $65.000</span>
+              </div>
+              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🔧 Plomería Residencial</h3>
+              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">
+                Detección de fugas no visibles, cambio de sifones, griferías monomando, sanitarios con pérdida continua y termofusión PPR para agua caliente.
+              </p>
+              <ul style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; list-style: square; padding-left: 18px;">
+                <li>Prueba hidrostática de presión sin fugas</li>
+                <li>Repuestos con factura transparente</li>
+                <li>Garantía de estanqueidad por 30 días</li>
+              </ul>
+              <div class="trade-footer">
+                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 42 técnicos activos</span>
+                <button class="btn btn-primary btn-sm" data-open-booking data-trade-preset="Plomería">Solicitar Smith</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Electricidad -->
+          <div class="trade-card">
+            <div class="trade-card-body">
+              <div class="trade-header">
+                <span class="trade-badge">Norma RETIE</span>
+                <span class="trade-price">Desde $70.000</span>
+              </div>
+              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">⚡ Electricidad Segura</h3>
+              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">
+                Instalación de tableros de breakers, balanceo de fases, corrección de cortos, iluminación LED, tomas GFCI para baños y cocina, y polo a tierra.
+              </p>
+              <ul style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; list-style: square; padding-left: 18px;">
+                <li>Cumplimiento estricto NTC 2050 / RETIE</li>
+                <li>Calibres AWG certificados sin sobrecargas</li>
+                <li>Herramientas aisladas a 1000V certificadas</li>
+              </ul>
+              <div class="trade-footer">
+                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 38 técnicos activos</span>
+                <button class="btn btn-primary btn-sm" data-open-booking data-trade-preset="Electricidad">Solicitar Smith</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Pintura -->
+          <div class="trade-card">
+            <div class="trade-card-body">
+              <div class="trade-header">
+                <span class="trade-badge">Acabados Limpios</span>
+                <span class="trade-price">Desde $55.000 / m²</span>
+              </div>
+              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🎨 Pintura & Drywall</h3>
+              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">
+                Sellado de humedades por capilaridad, estuco plástico, resane de grietas, pintura vinílica lavable y montaje de muros y cielorrasos en yeso.
+              </p>
+              <ul style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; list-style: square; padding-left: 18px;">
+                <li>Protección total de pisos y muebles con plástico</li>
+                <li>Lijado limpio y emparejado de luz</li>
+                <li>Muestras de color en pared antes de pintar</li>
+              </ul>
+              <div class="trade-footer">
+                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 51 técnicos activos</span>
+                <button class="btn btn-primary btn-sm" data-open-booking data-trade-preset="Pintura">Solicitar Smith</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Carpinteria -->
+          <div class="trade-card">
+            <div class="trade-card-body">
+              <div class="trade-header">
+                <span class="trade-badge">Madera & Melamina</span>
+                <span class="trade-price">Desde $80.000</span>
+              </div>
+              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🪵 Carpintería & Mobiliario</h3>
+              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">
+                Ajuste y cepillado de puertas atascadas, cambio de bisagras de cierre suave, reparación de cajoneras, closets a medida y acabados en laca o poliuretano.
+              </p>
+              <ul style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; list-style: square; padding-left: 18px;">
+                <li>Cálculo de tolerancia por humedad ambiental</li>
+                <li>Herrajes de alta durabilidad</li>
+                <li>Maderas tratadas inmunizadas</li>
+              </ul>
+              <div class="trade-footer">
+                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 29 técnicos activos</span>
+                <button class="btn btn-primary btn-sm" data-open-booking data-trade-preset="Carpintería">Solicitar Smith</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Electrodomesticos -->
+          <div class="trade-card">
+            <div class="trade-card-body">
+              <div class="trade-header">
+                <span class="trade-badge">Línea Blanca</span>
+                <span class="trade-price">Desde $75.000</span>
+              </div>
+              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🧊 Electrodomésticos</h3>
+              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">
+                Neveras no congelan, cambio de termostato, mantenimiento de lavadoras que no centrifugan, secadoras a gas y hornos empotrados.
+              </p>
+              <ul style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; list-style: square; padding-left: 18px;">
+                <li>Diagnóstico certero sin inventar daños</li>
+                <li>Repuestos originales con empaque sellado</li>
+                <li>Prueba de ciclos en presencia del cliente</li>
+              </ul>
+              <div class="trade-footer">
+                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 34 técnicos activos</span>
+                <button class="btn btn-primary btn-sm" data-open-booking data-trade-preset="Electrodomésticos">Solicitar Smith</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. Aseo Profundo -->
+          <div class="trade-card">
+            <div class="trade-card-body">
+              <div class="trade-header">
+                <span class="trade-badge">Cuidado del Hogar</span>
+                <span class="trade-price">Desde $60.000 / día</span>
+              </div>
+              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🧹 Aseo & Limpieza Integral</h3>
+              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">
+                Limpieza profunda para mudanzas, desinfección de cocinas, lavado de vidrios altos, desmanchado de juntas y servicio doméstico por días.
+              </p>
+              <ul style="font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 20px; list-style: square; padding-left: 18px;">
+                <li>Checklist de 38 puntos revisados</li>
+                <li>Personal de máxima confianza con referencias</li>
+                <li>Productos biodegradables no abrasivos</li>
+              </ul>
+              <div class="trade-footer">
+                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 45 técnicas activas</span>
+                <button class="btn btn-primary btn-sm" data-open-booking data-trade-preset="Aseo">Solicitar Smith</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="logo" style="margin-bottom: 14px;">
+            <div class="logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg></div>
+            <span class="logo-text">Task<span>smith</span></span>
+          </div>
+          <p style="font-size: 0.9rem; color: var(--ink-muted);">Dignificamos el oficio manual independiente y protegemos la tranquilidad de los hogares.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Plataforma</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="como-funciona.html">Cómo funciona</a></li>
+            <li><a href="confianza.html">Verificación</a></li>
+            <li><a href="precios.html">Precios justos</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Para Técnicos</h4>
+          <ul class="footer-links">
+            <li><a href="portal-smiths.html">Portal de Smiths</a></li>
+            <li><a href="portal-smiths.html#seccion-examen">Examen de Habilidades</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Seguridad</h4>
+          <ul class="footer-links">
+            <li><a href="confianza.html#habeas-data">Habeas Data</a></li>
+            <li><a href="confianza.html#garantias">Garantía 30 días</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Tasksmith. Hecho con orgullo artesanal.</span>
+        <span>HCI · Interacción Humano-Computador</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODAL: INICIAR SESIÓN ================= -->
+  <div class="modal-backdrop" id="loginModal">
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+
+      <h3 style="font-size: 1.5rem; margin-bottom: 6px;">Iniciar Sesión</h3>
+      <p style="font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 22px;">Ingresa con tu correo y contraseña.</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmailInput">Correo electrónico</label>
+          <input type="email" id="loginEmailInput" class="form-input" placeholder="ejemplo@correo.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPasswordInput">Contraseña</label>
+          <input type="password" id="loginPasswordInput" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 10px;">
+          Entrar a mi Cuenta
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 18px; font-size: 0.88rem; color: var(--ink-muted);">
+        ¿No tienes cuenta? <a href="#" onclick="openRegisterModal()" style="color: var(--blue-primary); font-weight: 700;">Regístrate aquí</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: REGISTRO ================= -->
+  <div class="modal-backdrop" id="registerModal">
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+
+      <div class="tabs-nav">
+        <button class="tab-btn active" id="tabRegHogar" onclick="setRegisterRole('hogar')">Para mi Hogar</button>
+        <button class="tab-btn" id="tabRegSmith" onclick="setRegisterRole('smith')">Soy Maestro de Oficio</button>
+      </div>
+
+      <h3 style="font-size: 1.4rem; margin-bottom: 6px;">Crear Cuenta en Tasksmith</h3>
+      <p style="font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 20px;">Únete gratis en menos de un minuto.</p>
+
+      <form id="registerForm">
+        <input type="hidden" id="regRoleInput" value="hogar">
+
+        <div class="form-group">
+          <label class="form-label" for="regNameInput">Nombre completo</label>
+          <input type="text" id="regNameInput" class="form-input" placeholder="Ej: Carlos Mendoza" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regEmailInput">Correo electrónico</label>
+          <input type="email" id="regEmailInput" class="form-input" placeholder="carlos@correo.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regPhoneInput">Teléfono o WhatsApp</label>
+          <input type="tel" id="regPhoneInput" class="form-input" placeholder="312 456 7890" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regPasswordInput">Contraseña</label>
+          <input type="password" id="regPasswordInput" class="form-input" placeholder="Mínimo 6 caracteres" required>
+        </div>
+
+        <div id="regSmithFields" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="regTradeSelect">Tu oficio principal</label>
+            <select id="regTradeSelect" class="form-select">
+              <option value="Plomería">🔧 Plomería Residencial</option>
+              <option value="Electricidad">⚡ Electricidad (RETIE)</option>
+              <option value="Pintura">🎨 Pintura & Drywall</option>
+              <option value="Carpintería">🪵 Carpintería & Mobiliario</option>
+              <option value="Electrodomésticos">🧊 Electrodomésticos</option>
+              <option value="Aseo">🧹 Aseo y Cuidado del Hogar</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 10px;" id="btnRegSubmit">
+          Crear Cuenta de Hogar
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 18px; font-size: 0.88rem; color: var(--ink-muted);">
+        ¿Ya tienes cuenta? <a href="#" onclick="openLoginModal()" style="color: var(--blue-primary); font-weight: 700;">Inicia sesión aquí</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PERFIL DE HOGAR ================= -->
+  <div class="modal-backdrop" id="profileModalHogar">
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+
+      <div class="profile-header-card">
+        <div class="profile-avatar-circle">👤</div>
+        <div>
+          <h3 id="hogarProfileName" style="font-size: 1.3rem;">Usuario</h3>
+          <p id="hogarProfileEmail" style="font-size: 0.85rem; color: var(--ink-muted);">correo@ejemplo.com</p>
+          <span class="live-badge" style="margin-top: 4px;">Cuenta Hogar Activa</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 10px;">Mis Solicitudes de Arreglo</h4>
+        <div style="background: var(--bg-card-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+            <span>🔧 Revisión de Grifería</span>
+            <span style="color: var(--blue-primary);">En curso</span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--ink-muted);">Asignado a: Luis Rodríguez · Garantía activa</p>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary btn-sm" style="flex: 1;" data-open-booking>Pedir Nuevo Arreglo</button>
+        <button class="btn btn-ghost btn-sm" onclick="logoutUser()">Cerrar Sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PERFIL DE MAESTRO (SMITH) ================= -->
+  <div class="modal-backdrop" id="profileModalSmith">
+    <div class="modal-box modal-lg" role="dialog" aria-modal="true">
+      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+
+      <div class="profile-header-card">
+        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);">🔨</div>
+        <div style="flex: 1;">
+          <h3 id="smithProfileName" style="font-size: 1.35rem;">Luis Rodríguez</h3>
+          <p id="smithProfileTrade" style="font-size: 0.88rem; color: var(--wood-primary); font-weight: 600;">Especialista en Plomería</p>
+          <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
+            <span id="smithProfileCertBadge" class="live-badge">✓ Verificado en Competencias</span>
+            <span style="font-size: 0.82rem; color: var(--ink-muted);">⭐ 4.9 (24 reseñas)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestañas internas de Maestro -->
+      <div class="profile-subtabs">
+        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">📸 Portafolio</button>
+        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">⚙️ Configuración</button>
+        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">📜 Certificación</button>
+      </div>
+
+      <!-- Tab 1: Portafolio -->
+      <div class="smith-subtab-pane" id="tabPane_portafolio">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 0.88rem; font-weight: 700;">Evidencias de trabajos realizados:</span>
+          <button class="btn btn-primary btn-sm" onclick="simularSubirFotoPortafolio()">+ Subir Foto</button>
+        </div>
+        <div class="profile-portfolio-grid" id="smithPortfolioGrid">
+          <div class="portfolio-item">
+            <img src="https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=400&q=75" alt="Tubería">
+            <span class="portfolio-item-label">Cambio de codo sifón</span>
+          </div>
+          <div class="portfolio-item">
+            <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=400&q=75" alt="Tablero">
+            <span class="portfolio-item-label">Tablero breakers RETIE</span>
+          </div>
+          <div class="portfolio-item">
+            <img src="https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=400&q=75" alt="Pintura">
+            <span class="portfolio-item-label">Resane y pintura sala</span>
+          </div>
+          <div class="portfolio-item">
+            <img src="https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=400&q=75" alt="Madera">
+            <span class="portfolio-item-label">Ajuste de puerta maciza</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Configuración -->
+      <div class="smith-subtab-pane" id="tabPane_config" style="display: none;">
+        <form id="smithConfigForm">
+          <div class="form-group">
+            <label class="form-label">Teléfono o WhatsApp de contacto</label>
+            <input type="tel" id="smithCfgPhone" class="form-input" value="312 456 7890">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tarifa base sugerida por servicio (COP)</label>
+            <input type="number" id="smithCfgRate" class="form-input" value="70000" step="5000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Barrios o zonas de cobertura</label>
+            <input type="text" id="smithCfgZone" class="form-input" value="Chapinero, Cedritos, Usaquén, Chicó">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar Cambios</button>
+        </form>
+      </div>
+
+      <!-- Tab 3: Certificación -->
+      <div class="smith-subtab-pane" id="tabPane_cert" style="display: none; text-align: center; padding: 14px 0;">
+        <div style="font-size: 2.5rem; margin-bottom: 8px;">📜</div>
+        <h4 style="margin-bottom: 6px;">Validación de Habilidades en Obra</h4>
+        <p style="font-size: 0.88rem; color: var(--ink-secondary); margin-bottom: 18px;">
+          Presenta o renueva tu examen técnico para recibir solicitudes de clientes prioritarios con sello oficial.
+        </p>
+        <a href="portal-smiths.html#seccion-examen" class="btn btn-primary btn-sm">Ir al Examen de Habilidades →</a>
+      </div>
+
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end;">
+        <button class="btn btn-ghost btn-sm" onclick="logoutUser()">Cerrar Sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SOLICITUD DE ARREGLO ================= -->
+  <div class="modal-backdrop" id="bookingModal">
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+
+      <h3 style="font-size: 1.4rem; margin-bottom: 6px;">Pedir un Especialista</h3>
+      <p style="font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 20px;">Te asignamos técnicos verificados cercanos.</p>
+
+      <form id="bookingForm">
+        <div class="form-group">
+          <label class="form-label" for="bookingTradeSelect">¿Qué tipo de arreglo necesitas?</label>
+          <select id="bookingTradeSelect" class="form-select" required>
+            <option value="Plomería">🔧 Plomería (fugas, grifos, tuberías)</option>
+            <option value="Electricidad">⚡ Electricidad (cortos, breakers, tomas)</option>
+            <option value="Pintura">🎨 Pintura & Drywall (humedades, retoques)</option>
+            <option value="Carpintería">🪵 Carpintería (puertas, closets, muebles)</option>
+            <option value="Electrodomésticos">🧊 Electrodomésticos (neveras, lavadoras)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="bookingDescInput">Describe brevemente el problema</label>
+          <textarea id="bookingDescInput" class="form-textarea" rows="3" placeholder="Ej: Goteo constante debajo del lavaplatos y el tubo parece rajado..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="bookingLocInput">Tu barrio o sector</label>
+          <input type="text" id="bookingLocInput" class="form-input" placeholder="Ej: Chapinero, Cedritos, Laureles..." required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 10px;">
+          Publicar Solicitud con Garantía
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+</html>
