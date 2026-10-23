@@ -97,8 +97,21 @@
             </div>
           </div>
 
-          <!-- Espacio en blanco reservado a solicitud del usuario -->
-          <div class="hero-empty-space" aria-hidden="true"></div>
+          <!-- Casa 3D interactiva con los oficios de Tasksmith (hero3d.js) -->
+          <div class="house-3d" data-house3d>
+            <div class="h3d-stage">
+              <div class="h3d-tip" role="status" aria-live="polite">
+                <div class="h3d-tip-inner">
+                  <span class="h3d-tip-dot"></span>
+                  <span class="h3d-tip-text"><strong></strong><small></small></span>
+                </div>
+              </div>
+              <div class="h3d-hint" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+                <span>Arrastra para girar</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -434,6 +447,7 @@
             <option value="Pintura">Pintura & Drywall (humedades, retoques)</option>
             <option value="Carpintería">Carpintería (puertas, closets, muebles)</option>
             <option value="Electrodomésticos">Electrodomésticos (neveras, lavadoras)</option>
+            <option value="Aseo">Aseo (limpieza integral del hogar)</option>
           </select>
         </div>
 
@@ -457,5 +471,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="hero3d.js"></script>
 </body>
 </html>
