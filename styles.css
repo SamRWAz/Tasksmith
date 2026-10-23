@@ -2413,3 +2413,286 @@ img {
   }
 }
 
+/* ================= COMPONENTES MÓVILES, SENSORES, TIEMPO Y DOBLE CALIFICACIÓN ================= */
+
+/* Barra de Detección de Hardware Móvil (Cámara y Micrófono) */
+.mobile-hardware-status-card {
+  background: linear-gradient(135deg, rgba(27, 85, 226, 0.05) 0%, rgba(16, 185, 129, 0.06) 100%);
+  border: 1.5px solid rgba(27, 85, 226, 0.18);
+  border-radius: var(--radius-lg);
+  padding: 16px 22px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.hardware-device-badge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.device-icon-pulse {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--blue-soft);
+  color: var(--blue-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(27, 85, 226, 0.15);
+}
+
+.hardware-sensors-tags {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sensor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff;
+  border: 1px solid var(--border-medium);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.sensor-chip.sensor-camera {
+  border-color: rgba(27, 85, 226, 0.3);
+  color: var(--blue-primary);
+}
+
+.sensor-chip.sensor-mic {
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--green-verified);
+}
+
+.sensor-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-verified);
+  animation: pulse-sensor-dot 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse-sensor-dot {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* Botón de Captura Directa de Cámara en Celular */
+.btn-mobile-camera-direct {
+  width: 100%;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--blue-primary) 0%, #1545b5 100%);
+  color: #fff;
+  font-weight: 700;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(27, 85, 226, 0.25);
+  font-size: 0.92rem;
+}
+
+.btn-mobile-camera-direct:hover {
+  background: linear-gradient(135deg, var(--blue-hover) 0%, var(--blue-primary) 100%);
+  transform: translateY(-1px);
+}
+
+/* Medidor Dinámico de Voz en Vivo (Audio Level Meter) */
+.audio-live-voice-meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 38px;
+  margin: 12px 0 8px;
+  padding: 0 16px;
+}
+
+.audio-live-bar {
+  width: 4px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--blue-primary);
+  transition: height 0.08s ease, background-color 0.1s ease;
+}
+
+/* Tarjeta de Confirmación de Examen Teórico (Sin revelar nota) */
+.exam-confirmed-box {
+  background: #fff;
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 38px 28px;
+  text-align: center;
+  margin-top: 24px;
+  box-shadow: var(--shadow-card);
+  animation: fadeIn 0.35s ease;
+}
+
+.confirmed-check-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green-verified);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+
+/* Métrica de Tiempo Total de Evaluación */
+.evaluation-time-metric-box {
+  background: linear-gradient(135deg, #F8FAFC 0%, #EDF2F7 100%);
+  border: 1.5px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: 20px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.time-metric-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+/* Grid de Doble Calificación Revelada al Final */
+.eval-dual-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.eval-score-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition);
+}
+
+.eval-score-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-medium);
+}
+
+.eval-score-card.highlighted {
+  box-shadow: 0 6px 18px rgba(27, 85, 226, 0.12);
+}
+
+/* Showcase de Evidencias Entregadas en Fase 4 */
+.audited-evidence-showcase-box {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.audited-evidence-item {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-card-subtle);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.audited-photo-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: #111;
+  overflow: hidden;
+}
+
+.audited-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ai-stamp-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(16, 185, 129, 0.94);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.audited-audio-details {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Responsive móvil */
+@media (max-width: 680px) {
+  .mobile-hardware-status-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hardware-sensors-tags {
+    width: 100%;
+  }
+  .sensor-chip {
+    flex: 1;
+    justify-content: center;
+  }
+  .evaluation-time-metric-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cert-recipient-name {
+    font-size: 1.8rem;
+  }
+  .cert-main-title {
+    font-size: 1.6rem;
+  }
+}
+
+

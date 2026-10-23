@@ -183,7 +183,7 @@
                       La IA está preparando el formulario de evaluación...
                     </h4>
                     <p style="font-size: 0.88rem; color: var(--ink-muted); margin: 0;">
-                      Consultando normas técnicas aplicables, protocolos de seguridad y calibrando 4 casos de diagnóstico pericial.
+                      Consultando normas técnicas aplicables, protocolos de seguridad y calibrando 8 casos de diagnóstico pericial.
                     </p>
                   </div>
                 </div>
@@ -193,18 +193,18 @@
             </div>
           </div>
 
-          <!-- ================= FASE 2: PRUEBA TÉCNICA (CONOCIMIENTOS) ================= -->
+          <!-- ================= FASE 2: PRUEBA TÉCNICA (8 PREGUNTAS FORMULADAS POR IA) ================= -->
           <div class="cert-step-pane" id="certPane_2">
             <div class="card" style="padding: 36px; box-shadow: var(--shadow-card);">
               
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                 <div>
-                  <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); margin-bottom: 6px;">Paso 2 de 4</span>
+                  <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); margin-bottom: 6px;">Paso 2 de 4 • 8 Casos Técnicos</span>
                   <h2 style="font-size: 1.55rem; color: var(--ink-primary);" id="examTradeTitle">
                     Prueba de Diagnóstico Formulada por IA
                   </h2>
                   <p style="font-size: 0.88rem; color: var(--ink-muted);" id="examTradeSubtitle">
-                    Responde los siguientes casos reales formulados por la IA para evaluar tu competencia técnica.
+                    Responde los siguientes 8 casos reales formulados por la IA para evaluar tu competencia técnica.
                   </p>
                 </div>
                 <button type="button" class="btn btn-ghost btn-sm" onclick="goToStep(1)">
@@ -212,29 +212,30 @@
                 </button>
               </div>
 
-              <!-- Contenedor dinámico de preguntas -->
+              <!-- Contenedor dinámico de 8 preguntas -->
               <div id="certExamQuestionsContainer">
-                <!-- Se inyectan las preguntas mediante JS según el oficio seleccionado -->
+                <!-- Se inyectan las 8 preguntas mediante JS según el oficio seleccionado -->
               </div>
 
-              <!-- Bloque de Calificación / Resultados -->
-              <div id="certExamFeedbackBlock" style="display: none;">
-                <div class="exam-feedback-card">
-                  <span class="live-badge" id="examFeedbackBadge" style="background: var(--green-soft); color: var(--green-verified); font-size: 0.88rem;">
-                    Evaluación Teórica Completada
+              <!-- Bloque de Confirmación (Nota Teórica en Reserva hasta la Fase Final) -->
+              <div id="certExamConfirmedCard" style="display: none;">
+                <div class="exam-confirmed-box">
+                  <div class="confirmed-check-icon">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <span class="live-badge" style="background: var(--green-soft); color: var(--green-verified); font-size: 0.88rem; margin-bottom: 10px;">
+                    Respuestas Guardadas con Éxito
                   </span>
-                  <div class="exam-score-big" id="examScoreNumber">85/100</div>
-                  <h3 style="font-size: 1.25rem; margin-bottom: 8px;" id="examVerdictTitle">
-                    Conocimientos Teóricos Registrados
+                  <h3 style="font-size: 1.35rem; margin-bottom: 8px; color: var(--ink-primary);">
+                    8 Casos Técnicos Registrados en tu Expediente
                   </h3>
-                  <p style="max-width: 620px; margin: 0 auto 20px; font-size: 0.92rem; color: var(--ink-secondary);" id="examVerdictDescription">
-                    Tu calificación ha quedado registrada. Recuerda que en Tasksmith la certificación oficial exige <strong>resultado aprobatorio tanto en esta prueba teórica como en las evidencias prácticas</strong>. Ahora pasarás a capturar las fotos con tu cámara y grabar la explicación técnica con tu voz para que la IA complete tu dictamen.
+                  <p style="max-width: 620px; margin: 0 auto 24px; font-size: 0.94rem; color: var(--ink-secondary); line-height: 1.55;">
+                    Tus 8 respuestas han quedado asentadas en el sistema de auditoría pericial. <strong>Por estándar de evaluación de Tasksmith, la nota de esta prueba teórica no se revela en este momento</strong>; se dará a conocer al final junto con la entrega de tus evidencias prácticas (fotos de cámara y notas de voz) para emitir el dictamen integral de idoneidad y tu diploma oficial.
                   </p>
                   
                   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-outline" onclick="renderCertificationQuestions(currentTradeExam.questions)">
-                      Reintentar Examen Teórico
-                    </button>
                     <button type="button" class="btn btn-primary btn-lg" onclick="goToStep3_Evidencias()">
                       Avanzar a Evidencias Prácticas (Cámara + Audio) →
                     </button>
@@ -242,10 +243,13 @@
                 </div>
               </div>
 
-              <!-- Botón para Calificar el Examen -->
-              <div id="certExamSubmitRow" style="display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-soft);">
+              <!-- Botón para Registrar las 8 Respuestas -->
+              <div id="certExamSubmitRow" style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; gap: 12px;">
+                <span id="answeredQuestionsCounter" style="font-size: 0.88rem; color: var(--ink-muted); font-weight: 600;">
+                  0 de 8 casos respondidos
+                </span>
                 <button type="button" class="btn btn-primary btn-lg" id="btnSubmitCertExam" onclick="evaluateTheoreticalExam()">
-                  Calificar Examen Teórico y Continuar →
+                  Registrar 8 Respuestas y Continuar →
                 </button>
               </div>
 
@@ -277,6 +281,31 @@
                 <input type="text" id="certJobTitle" class="form-input" placeholder="Ej: Reparación y cambio de piezas con diagnóstico preventivo" value="Reparación integral con diagnóstico y cambio de piezas desgastadas">
               </div>
 
+              <!-- Barra de Detección de Sensores y Dispositivo Móvil (Cámara y Micrófono) -->
+              <div class="mobile-hardware-status-card" id="mobileHardwareStatusCard">
+                <div class="hardware-device-badge">
+                  <span class="device-icon-pulse" id="detectedDeviceIcon">📱</span>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.98rem; color: var(--ink-primary);" id="detectedDeviceTitle">
+                      Dispositivo Móvil Identificado
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--ink-muted);" id="detectedDeviceDesc">
+                      Cámara de obra y micrófono del celular calibrados para peritaje en terreno
+                    </div>
+                  </div>
+                </div>
+                <div class="hardware-sensors-tags">
+                  <span class="sensor-chip sensor-camera" id="chipCameraSensor">
+                    <span class="sensor-dot"></span>
+                    <span id="labelCameraSensor">📷 Cámara: Trasera de Obra Activa</span>
+                  </span>
+                  <span class="sensor-chip sensor-mic" id="chipMicSensor">
+                    <span class="sensor-dot"></span>
+                    <span id="labelMicSensor">🎙️ Micrófono: Supresión de Ruido Lista</span>
+                  </span>
+                </div>
+              </div>
+
               <!-- CONTENEDOR DINÁMICO DE PARES (FOTO + AUDIO) -->
               <div id="evidenceListContainer">
                 
@@ -289,7 +318,7 @@
 
                   <div class="work-evidence-grid">
                     
-                    <!-- FOTO / CÁMARA -->
+                    <!-- FOTO / CÁMARA (OPTIMIZADA PARA CELULARES Y CÁMARA TRASERA) -->
                     <div class="evidence-panel">
                       <div class="evidence-panel-header">
                         <div class="evidence-panel-title">
@@ -301,8 +330,17 @@
                       <input type="file" id="workPhotoInput_1" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoInputChange(1, this)">
 
                       <div class="upload-dropzone" id="photoDropzone_1">
+                        <!-- Botón Directo Celular con Sensor de Cámara Nativa -->
+                        <button type="button" class="btn btn-primary btn-mobile-camera-direct" onclick="triggerMobileCamera(1)" title="Toma la foto directamente con la cámara del celular">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                          </svg>
+                          Tomar Foto con Cámara Celular
+                        </button>
+
                         <button type="button" class="btn-open-camera" onclick="openCameraModal(1)">
-                          Abrir Cámara
+                          Abrir Visor de Cámara
                         </button>
                         <span style="font-size: 0.82rem; color: var(--ink-muted); margin: 4px 0;">o selecciona una imagen</span>
                         <button type="button" class="btn btn-outline btn-sm" onclick="triggerFileInput(1)">
@@ -326,7 +364,7 @@
                       </div>
                     </div>
 
-                    <!-- AUDIO EXPLICATIVO GENERAL -->
+                    <!-- AUDIO EXPLICATIVO GENERAL CON RECONOCIMIENTO ROBUSTO Y COMPARACIÓN -->
                     <div class="evidence-panel">
                       <div class="evidence-panel-header">
                         <div class="evidence-panel-title">
@@ -346,16 +384,31 @@
                         </button>
 
                         <div class="record-timer" id="recordTimer_1">00:00</div>
+                        
+                        <!-- Medidor de Volumen de Voz en Vivo -->
+                        <div class="audio-live-voice-meter" id="audioLiveVoiceMeter_1" style="display: none;">
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                          <span class="audio-live-bar"></span>
+                        </div>
+
                         <p id="recordInstructionText_1" style="font-size: 0.85rem; color: var(--ink-muted); margin: 6px 0 0;">
                           Toca el micrófono para comenzar a hablar
                         </p>
 
                         <div class="audio-guide-list">
-                          <strong>Puntos clave a mencionar en tu audio:</strong>
+                          <strong>Criterios que la IA confrontará con conocimiento real:</strong>
                           <ul style="padding-left: 18px; margin-top: 4px;">
-                            <li>1. ¿Cuál era el problema o necesidad inicial del cliente?</li>
-                            <li>2. ¿Qué materiales, herramientas y procedimiento aplicaste para solucionarlo?</li>
-                            <li>3. ¿Qué pruebas realizaste para garantizar que quedó seguro y con garantía?</li>
+                            <li>1. Diagnóstico: Causa raíz de la falla técnica</li>
+                            <li>2. Herramientas calibradas y materiales homologados según norma</li>
+                            <li>3. Procedimiento ejecutado y pruebas de estanqueidad, voltaje o calidad</li>
                           </ul>
                         </div>
                       </div>
@@ -390,15 +443,15 @@
                         </div>
                       </div>
 
-                      <!-- Campo de Transcripción Real Editable por el Maestro -->
+                      <!-- Campo de Transcripción Técnica Robusta por IA -->
                       <div class="audio-transcript-box-input" style="margin-top: 14px; text-align: left;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                           <label for="audioTranscriptInput_1" style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin: 0;">
-                            Transcripción técnica de lo que dijiste:
+                            Transcripción técnica confrontada por IA:
                           </label>
                           <span id="speechLiveTag_1" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
                         </div>
-                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al hablar por el micrófono, tus palabras se transcribirán aquí automáticamente. También puedes escribir o ajustar los detalles técnicos de tu labor si tu micrófono no está disponible..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
+                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al hablar por el micrófono, tus palabras se transcribirán aquí automáticamente. La IA confrontará lo que digas con normas y conocimientos reales del oficio. Puedes ajustar cualquier detalle técnico..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
                       </div>
 
                       <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -477,7 +530,94 @@
             <!-- RESULTADO DEL DICTAMEN DE LA IA (SE MUESTRA TRAS EL ESCANEO) -->
             <div id="aiVerdictContainer" style="display: none;">
               
-              <!-- Tarjeta de Análisis Pericial de la IA -->
+              <!-- Criterio Pericial: Métrica de Tiempo Total de Evaluación -->
+              <div class="evaluation-time-metric-box" style="margin-bottom: 22px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <div class="time-metric-icon-wrap">⏱️</div>
+                  <div>
+                    <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); font-weight: 700;">
+                      Criterio Pericial de Evaluación • Tiempo Total del Proceso
+                    </div>
+                    <div style="font-size: 1.85rem; font-weight: 800; color: var(--ink-primary); line-height: 1.2; margin: 4px 0;" id="evaluationFinalDuration">
+                      -- min -- seg
+                    </div>
+                    <div style="font-size: 0.86rem; color: var(--ink-secondary);" id="evaluationSpeedAssessment">
+                      Ritmo de resolución en terreno: <strong>Ágil y certero</strong> (dentro del estándar pericial de 5 a 25 min).
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); font-weight: 700; font-size: 0.85rem;" id="evaluationTimeStandardBadge">
+                    ⏱️ Tiempo Registrado
+                  </span>
+                </div>
+              </div>
+
+              <!-- Grid de Calificaciones Integrales Reveladas al Final -->
+              <div class="eval-dual-score-grid">
+                <!-- 1. Calificación Teórica (Revelada al Final) -->
+                <div class="eval-score-card">
+                  <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">
+                    1. Prueba Teórica (8 Casos IA)
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
+                    <span style="font-size: 2.2rem; font-weight: 800; color: var(--blue-primary);" id="revealedTheoScore">--/100</span>
+                    <span class="live-badge" id="revealedTheoBadge" style="background: var(--green-soft); color: var(--green-verified);">-- aciertos</span>
+                  </div>
+                  <p style="font-size: 0.83rem; color: var(--ink-secondary); margin: 0;" id="revealedTheoDesc">
+                    Nota revelada al completar fotos y audios (mínimo 75/100 requerido).
+                  </p>
+                </div>
+
+                <!-- 2. Calificación Práctica Audiovisual -->
+                <div class="eval-score-card">
+                  <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">
+                    2. Prueba Práctica Audiovisual
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
+                    <span style="font-size: 2.2rem; font-weight: 800; color: var(--green-verified);" id="revealedPractScore">--/100</span>
+                    <span class="live-badge" id="revealedPractBadge" style="background: var(--green-soft); color: var(--green-verified);">Idoneidad IA</span>
+                  </div>
+                  <p style="font-size: 0.83rem; color: var(--ink-secondary); margin: 0;">
+                    Confrontación de audio y fotos con conocimiento real y normativa.
+                  </p>
+                </div>
+
+                <!-- 3. Calificación Global Tasksmith -->
+                <div class="eval-score-card highlighted" style="background: linear-gradient(135deg, rgba(27,85,226,0.06) 0%, rgba(16,185,129,0.08) 100%); border-color: var(--blue-primary);">
+                  <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--blue-primary); font-weight: 700;">
+                    Calificación Global Oficial
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
+                    <span style="font-size: 2.2rem; font-weight: 800; color: var(--ink-primary);" id="revealedOverallScore">--/100</span>
+                    <span class="live-badge" id="revealedOverallBadge" style="background: var(--green-soft); color: var(--green-verified);">Verificación Integral</span>
+                  </div>
+                  <p style="font-size: 0.83rem; color: var(--ink-secondary); margin: 0;">
+                    Promedio ponderado con cumplimiento de doble condición aprobatoria.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Muestra de Evidencias Prácticas Entregadas (Fotos y Audios Auditados) -->
+              <div class="audited-evidence-showcase-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); margin-bottom: 4px;">Entrega Formal de Evidencias</span>
+                    <h4 style="font-size: 1.15rem; color: var(--ink-primary); margin: 0;" id="evidenceShowcaseJobTitle">
+                      Labor: Reparación y mantenimiento técnico certificado
+                    </h4>
+                  </div>
+                  <span style="font-size: 0.82rem; color: var(--ink-muted); font-weight: 600;" id="evidenceCountSubmittedText">
+                    Fotos de obra y notas de voz auditadas
+                  </span>
+                </div>
+
+                <div id="auditedEvidenceGallery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                  <!-- Se inyectan las fotos y audios mediante JS -->
+                </div>
+              </div>
+
+              <!-- Tarjeta de Análisis Pericial de la IA y Confrontación con Conocimiento Real -->
               <div class="ai-verdict-card">
                 <div class="ai-verdict-header">
                   <div>
@@ -485,7 +625,7 @@
                       Evaluación Pericial Completada
                     </span>
                     <h3 style="font-size: 1.45rem; margin-top: 6px; color: var(--ink-primary);">
-                      Dictamen Pericial de Habilidad Técnica
+                      Dictamen Pericial y Confrontación con Conocimiento Real
                     </h3>
                   </div>
                   <div style="text-align: right;">
@@ -494,21 +634,37 @@
                   </div>
                 </div>
 
+                <!-- Lo que el candidato dijo en el audio -->
                 <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink-secondary);">
-                  Transcripción Técnica Extraída del Audio del Maestro:
+                  1. Transcripción Técnica Extraída del Audio del Maestro:
                 </div>
                 <div class="ai-transcript-box" id="aiAudioTranscriptText">
-                  <!-- Se inyecta exactamente lo que el usuario habló o escribió -->
+                  <!-- Se inyecta exactamente lo que el usuario habló -->
                 </div>
 
-                <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink-secondary); margin-top: 14px;">
-                  Conceptos Normativos y Técnicas Validadas por la IA:
+                <!-- Confrontación con Conocimiento Real y Normas del Oficio -->
+                <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink-secondary); margin-top: 16px;">
+                  2. Conocimiento Real & Conceptos Normativos Validados por la IA:
                 </div>
                 <div class="ai-concepts-cloud" id="aiConceptsCloud">
                   <!-- Inyectado por JS -->
                 </div>
 
+                <!-- Correspondencia Práctica: Lo que Dijo vs Lo que Hizo -->
+                <div style="margin-top: 18px; padding: 14px 18px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border-left: 3px solid var(--blue-primary);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <strong style="font-size: 0.88rem; color: var(--ink-primary);">3. Correspondencia Práctica: Lo que dijiste vs Lo que hiciste en obra</strong>
+                    <span id="practicalCoherenceBadge" class="live-badge" style="background: var(--green-soft); color: var(--green-verified);">96% Coherencia</span>
+                  </div>
+                  <p id="practicalCoherenceDescription" style="font-size: 0.86rem; color: var(--ink-secondary); margin: 0; line-height: 1.45;">
+                    La explicación oral se correlaciona con precisión técnica con las fotografías capturadas por la cámara y el diagnóstico de la labor ejecutada.
+                  </p>
+                </div>
+
                 <!-- 4 Criterios de Evaluación -->
+                <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink-secondary); margin-top: 18px;">
+                  4. Auditoría Pericial de los 4 Pilares Técnicos (25 pts cada uno):
+                </div>
                 <div class="ai-criteria-grid">
                   <div class="ai-criterion-box">
                     <div style="font-size: 0.8rem; color: var(--ink-muted);">1. Diagnóstico Inicial</div>
@@ -532,7 +688,7 @@
                   </div>
                 </div>
 
-                <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-top: 12px; line-height: 1.5;" id="aiVerdictParagraph">
+                <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-top: 14px; line-height: 1.5;" id="aiVerdictParagraph">
                   <strong>Conclusión del Peritaje:</strong> El especialista demuestra competencia técnica idónea para resolver emergencias y labores de envergadura en el oficio, aplicando criterios de seguridad y garantizando la satisfacción del cliente.
                 </p>
               </div>
@@ -566,7 +722,7 @@
                       <span id="failedTheoreticalBadge" class="live-badge">Insuficiente</span>
                     </div>
                     <p style="font-size: 0.84rem; color: var(--ink-secondary); margin-top: 6px;" id="failedTheoreticalMsg">
-                      Se requiere un mínimo de 75 puntos (al menos 3 de 4 casos correctos).
+                      Se requiere un mínimo de 75 puntos (al menos 6 de 8 casos correctos).
                     </p>
                     <button type="button" class="btn btn-outline btn-sm" onclick="goToStep(2)" style="margin-top: 8px; width: 100%;">
                       Repetir Prueba Teórica
@@ -664,7 +820,7 @@
                   </div>
 
                   <div style="margin-top: 18px; font-size: 0.75rem; color: var(--ink-muted);">
-                    Fecha de emisión: <span id="certIssueDate">16 de Octubre de 2026</span> • Válido a nivel nacional en la plataforma Tasksmith
+                    Fecha de emisión: <span id="certIssueDate">16 de Octubre de 2026</span> • Tiempo de evaluación: <strong id="certTimeDisplay" style="color: var(--blue-primary);">-- min -- seg</strong> • Válido a nivel nacional en la plataforma Tasksmith
                   </div>
                 </div>
 
@@ -714,6 +870,9 @@
       <div style="display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap;">
         <button type="button" class="btn btn-primary" onclick="capturePhotoFromCamera()" style="font-size: 1rem; padding: 12px 24px;">
           Tomar Foto Ahora
+        </button>
+        <button type="button" class="btn btn-outline" id="btnSwitchCameraModal" onclick="switchCameraFacingMode()" style="display: inline-flex; align-items: center; gap: 6px;">
+          🔄 Voltear Cámara
         </button>
         <button type="button" class="btn btn-ghost" onclick="closeCameraModal()">
           Cancelar
