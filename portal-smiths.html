@@ -35,7 +35,7 @@
         <div class="nav-actions" id="navActionsContainer">
           <button class="btn btn-ghost btn-sm" onclick="openLoginModal()" id="btnNavLogin">Ingresar</button>
           <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" id="btnNavRegister">Registro</button>
-          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+          <button class="mobile-toggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </nav>
     </div>
@@ -67,7 +67,7 @@
 
         <div class="grid-3" style="margin-bottom: 50px;">
           <div class="card">
-            <div style="font-size: 2rem; margin-bottom: 12px;">💰</div>
+            <div style="margin-bottom: 12px; color: var(--gold-verified);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v10M9 9h6a2 2 0 0 1 0 4H9"></path></svg></div>
             <h3 class="card-title">Gana lo que es justo</h3>
             <p class="card-desc">
               Tú fijas tus tarifas. Recibes hasta el 90% del valor del trabajo y pagos semanales puntuales sin enredos ni comisiones abusivas.
@@ -75,7 +75,7 @@
           </div>
 
           <div class="card">
-            <div style="font-size: 2rem; margin-bottom: 12px;">📍</div>
+            <div style="margin-bottom: 12px; color: var(--blue-primary);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
             <h3 class="card-title">Cerca de tu hogar</h3>
             <p class="card-desc">
               Elige los barrios donde te queda fácil movilizarte. Menos tiempo en trancones y más tiempo productivo para tu vida.
@@ -83,7 +83,7 @@
           </div>
 
           <div class="card">
-            <div style="font-size: 2rem; margin-bottom: 12px;">⭐</div>
+            <div style="margin-bottom: 12px; color: var(--gold-verified);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
             <h3 class="card-title">Tu propia reputación</h3>
             <p class="card-desc">
               Cada cliente satisfecho construye tu portafolio público con tu nombre. Tus buenas obras te aseguran clientes para siempre.
@@ -99,7 +99,7 @@
         
         <!-- PANTALLA DE ACCESO RESTRINGIDO (SI NO HA INICIADO COMO SMITH) -->
         <div id="smithGatekeeperBlock" class="smith-gatekeeper-card">
-          <div style="font-size: 3.2rem; margin-bottom: 14px;">🔒</div>
+          <div style="margin-bottom: 14px; color: var(--blue-primary);"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
           <span class="section-tag" style="margin-bottom: 12px;">Acceso Exclusivo</span>
           <h2 style="font-size: 1.8rem; margin-bottom: 12px;">Prueba de Verificación para Maestros de Oficio</h2>
           <p style="font-size: 1rem; color: var(--ink-secondary); max-width: 540px; margin: 0 auto 24px; line-height: 1.6;">
@@ -113,12 +113,15 @@
             <button class="btn btn-outline" onclick="openRegisterModal('smith')">
               Registrarme como Maestro
             </button>
+            <a href="certificacion.html" class="btn btn-ghost" style="color: var(--blue-primary); font-weight: 700;">
+              Obtener Certificación Oficial con IA →
+            </a>
           </div>
 
           <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-soft); font-size: 0.88rem; color: var(--ink-muted);">
             ¿Quieres probar la prueba ahora mismo?
             <button class="btn btn-ghost btn-sm" onclick="loginAsDemoSmith()" style="margin-left: 8px; font-weight: 700; color: var(--blue-primary);">
-              ⚡ Entrar como Don Luis (Maestro Demo)
+              Entrar como Don Luis (Maestro Demo)
             </button>
           </div>
         </div>
@@ -140,13 +143,15 @@
             <!-- Saludo de Maestro Autenticado -->
             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-accent-soft); padding: 14px 20px; border-radius: var(--radius-md); border-left: 4px solid var(--blue-primary); margin-bottom: 24px; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.4rem;">🔨</span>
                 <div>
                   <div style="font-weight: 700; color: var(--ink-primary);" id="examSmithName">Luis Rodríguez</div>
                   <div style="font-size: 0.82rem; color: var(--ink-muted);" id="examSmithTrade">Especialista en Plomería</div>
                 </div>
               </div>
-              <span class="live-badge" style="background: var(--blue-primary); color: #fff; border: none;">Cuenta de Maestro Activa</span>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="live-badge" style="background: var(--blue-primary); color: #fff; border: none;">Cuenta de Maestro Activa</span>
+                <a href="certificacion.html" class="btn btn-primary btn-sm">Obtener Certificado Oficial Smith con IA →</a>
+              </div>
             </div>
 
             <!-- Datos Generales del Trabajo -->
@@ -155,13 +160,13 @@
                 <div>
                   <label class="form-label" for="verificationTradeSelect">1. Especialidad del trabajo</label>
                   <select id="verificationTradeSelect" class="form-select" style="font-weight: 600;">
-                    <option value="Plomería">🔧 Plomería & Redes Hidráulicas</option>
-                    <option value="Electricidad">⚡ Electricidad Residencial</option>
-                    <option value="Pintura">🎨 Pintura & Acabados</option>
-                    <option value="Carpintería">🪵 Carpintería & Muebles</option>
-                    <option value="Electrodomésticos">🧊 Electrodomésticos</option>
-                    <option value="Cerrajería">🔑 Cerrajería de Seguridad</option>
-                    <option value="Albañilería">🧱 Albañilería & Enchapes</option>
+                    <option value="Plomería">Plomería & Redes Hidráulicas</option>
+                    <option value="Electricidad">Electricidad Residencial</option>
+                    <option value="Pintura">Pintura & Acabados</option>
+                    <option value="Carpintería">Carpintería & Muebles</option>
+                    <option value="Electrodomésticos">Electrodomésticos</option>
+                    <option value="Cerrajería">Cerrajería de Seguridad</option>
+                    <option value="Albañilería">Albañilería & Enchapes</option>
                   </select>
                 </div>
                 <div>
@@ -188,7 +193,7 @@
                   <div class="evidence-panel">
                     <div class="evidence-panel-header">
                       <div class="evidence-panel-title">
-                        <span class="evidence-panel-icon">📷</span>
+                        <span class="evidence-panel-icon"></span>
                         <span>Foto del Trabajo</span>
                       </div>
                       <span class="live-badge" id="badgePhotoStatus_1">Pendiente</span>
@@ -199,13 +204,13 @@
 
                     <!-- Zona de Carga / Botón Abrir Cámara -->
                     <div class="upload-dropzone" id="photoDropzone_1">
-                      <div class="upload-dropzone-icon">📸</div>
+                      <div class="upload-dropzone-icon"></div>
                       <button type="button" class="btn-open-camera" onclick="openCameraModal(1)">
-                        📸 Abrir Cámara
+                        Abrir Cámara
                       </button>
                       <span style="font-size: 0.82rem; color: var(--ink-muted); margin: 4px 0;">o selecciona una imagen</span>
                       <button type="button" class="btn btn-outline btn-sm" onclick="triggerFileInput(1)">
-                        📁 Elegir Archivo
+                        Elegir Archivo
                       </button>
                     </div>
 
@@ -213,7 +218,7 @@
                     <div class="photo-preview-container" id="photoPreviewContainer_1">
                       <img src="" alt="Evidencia capturada" id="photoPreviewImg_1" class="photo-preview-img">
                       <div class="photo-preview-actions">
-                        <span style="font-weight: 600;">✓ Foto de evidencia lista</span>
+                        <span style="font-weight: 600;"> Foto de evidencia lista</span>
                         <button type="button" class="btn btn-ghost btn-sm" style="color: #fff; padding: 2px 8px;" onclick="resetPhotoUpload(1)">Cambiar foto</button>
                       </div>
                     </div>
@@ -222,7 +227,7 @@
                     <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                       <span style="font-size: 0.78rem; color: var(--ink-muted);">Para probar rápido:</span>
                       <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSamplePhoto(1)">
-                        ✨ Foto de ejemplo
+                        Foto de ejemplo
                       </button>
                     </div>
                   </div>
@@ -231,7 +236,7 @@
                   <div class="evidence-panel">
                     <div class="evidence-panel-header">
                       <div class="evidence-panel-title">
-                        <span class="evidence-panel-icon">🎙️</span>
+                        <span class="evidence-panel-icon">️</span>
                         <span>Audio Explicativo</span>
                       </div>
                       <span class="live-badge" id="badgeAudioStatus_1">Pendiente</span>
@@ -240,7 +245,7 @@
                     <!-- Grabador de Audio Interactivo -->
                     <div class="audio-recorder-box" id="audioRecorderBox_1">
                       <button type="button" class="btn-mic-record" id="btnToggleRecord_1" onclick="toggleAudioRecording(1)" title="Toca para grabar audio">
-                        🎤
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
                       </button>
 
                       <div class="record-timer" id="recordTimer_1">00:00</div>
@@ -262,7 +267,7 @@
                     <!-- Reproductor de Audio una vez grabado -->
                     <div class="audio-playback-container" id="audioPlaybackContainer_1">
                       <div style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin-bottom: 8px;">
-                        🎧 Tu explicación grabada:
+                        Tu explicación grabada:
                       </div>
                       <div class="audio-playback-row">
                         <button type="button" class="audio-play-trigger" id="btnPlayEvidenceAudio_1" onclick="togglePlayEvidenceAudio(1)">
@@ -285,7 +290,7 @@
                       </div>
                       <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
                         <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem;" onclick="resetAudioRecording(1)">
-                          🔄 Grabar de nuevo
+                          Grabar de nuevo
                         </button>
                       </div>
                     </div>
@@ -294,7 +299,7 @@
                     <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                       <span style="font-size: 0.78rem; color: var(--ink-muted);">¿Sin micrófono ahora?</span>
                       <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(1)">
-                        🎧 Audio de ejemplo
+                        Audio de ejemplo
                       </button>
                     </div>
                   </div>
@@ -312,8 +317,8 @@
             <!-- Barra de Estado de Verificación y Envío -->
             <div class="verification-status-bar">
               <div class="status-check-items">
-                <span class="status-tag-item" id="tagPhotoCheck">📷 Fotos: 0 listas</span>
-                <span class="status-tag-item" id="tagAudioCheck">🎙️ Audios: 0 grabados</span>
+                <span class="status-tag-item" id="tagPhotoCheck">Fotos: 0 listas</span>
+                <span class="status-tag-item" id="tagAudioCheck">Audios: 0 grabados</span>
               </div>
 
               <button type="button" class="btn btn-primary btn-lg" id="btnSubmitVerification" onclick="submitWorkVerification()">
@@ -323,13 +328,13 @@
 
             <!-- Banner de Éxito al Enviar la Evidencia -->
             <div class="verification-success-banner" id="verificationSuccessBanner">
-              <div style="font-size: 3rem; margin-bottom: 8px;">🏆</div>
+              <div style="margin-bottom: 8px; color: var(--gold-verified);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg></div>
               <h3 style="font-size: 1.5rem; margin-bottom: 6px; color: var(--green-verified);">¡Evidencias Prácticas Aprobadas con Distinción!</h3>
               <p style="font-size: 0.95rem; color: var(--ink-secondary); max-width: 600px; margin: 0 auto 16px;">
                 Tus fotografías y explicaciones de voz han sido validadas técnicamente. Han sido publicadas en tu portafolio para respaldar la confianza de los clientes en tus servicios.
               </p>
               <div class="certificate-stamp" style="margin-bottom: 20px;">
-                ✓ SMITH VERIFICADO EN COMPETENCIAS DE OBRA
+                 SMITH VERIFICADO EN COMPETENCIAS DE OBRA
               </div>
               <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="openUserProfileModal()">Ver en Mi Perfil de Maestro</button>
@@ -355,10 +360,10 @@
                 Especialidad a evaluar:
               </label>
               <select id="examTradeSelector" class="form-select" style="font-size: 1rem; padding: 10px 16px; font-weight: 600;">
-                <option value="plomeria">🔧 Plomería & Redes Hidráulicas</option>
-                <option value="electricidad">⚡ Electricidad Residencial (Norma RETIE)</option>
-                <option value="pintura">🎨 Pintura & Acabados Arquitectónicos</option>
-                <option value="carpinteria">🪵 Carpintería Fina & Mobiliario</option>
+                <option value="plomeria">Plomería & Redes Hidráulicas</option>
+                <option value="electricidad">Electricidad Residencial (Norma RETIE)</option>
+                <option value="pintura">Pintura & Acabados Arquitectónicos</option>
+                <option value="carpinteria">Carpintería Fina & Mobiliario</option>
               </select>
             </div>
 
@@ -493,7 +498,7 @@
   <!-- ================= MODAL: INICIAR SESIÓN ================= -->
   <div class="modal-backdrop" id="loginModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <h3 style="font-size: 1.5rem; margin-bottom: 6px;">Iniciar Sesión</h3>
       <p style="font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 22px;">Ingresa con tu correo y contraseña.</p>
@@ -523,7 +528,7 @@
   <!-- ================= MODAL: REGISTRO ================= -->
   <div class="modal-backdrop" id="registerModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="tabs-nav">
         <button class="tab-btn active" id="tabRegHogar" onclick="setRegisterRole('hogar')">Para mi Hogar</button>
@@ -560,12 +565,12 @@
           <div class="form-group">
             <label class="form-label" for="regTradeSelect">Tu oficio principal</label>
             <select id="regTradeSelect" class="form-select">
-              <option value="Plomería">🔧 Plomería Residencial</option>
-              <option value="Electricidad">⚡ Electricidad (RETIE)</option>
-              <option value="Pintura">🎨 Pintura & Drywall</option>
-              <option value="Carpintería">🪵 Carpintería & Mobiliario</option>
-              <option value="Electrodomésticos">🧊 Electrodomésticos</option>
-              <option value="Aseo">🧹 Aseo y Cuidado del Hogar</option>
+              <option value="Plomería">Plomería Residencial</option>
+              <option value="Electricidad">Electricidad (RETIE)</option>
+              <option value="Pintura">Pintura & Drywall</option>
+              <option value="Carpintería">Carpintería & Mobiliario</option>
+              <option value="Electrodomésticos">Electrodomésticos</option>
+              <option value="Aseo">Aseo y Cuidado del Hogar</option>
             </select>
           </div>
         </div>
@@ -584,10 +589,10 @@
   <!-- ================= MODAL: PERFIL DE HOGAR ================= -->
   <div class="modal-backdrop" id="profileModalHogar">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="profile-header-card">
-        <div class="profile-avatar-circle">👤</div>
+        <div class="profile-avatar-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
         <div>
           <h3 id="hogarProfileName" style="font-size: 1.3rem;">Usuario</h3>
           <p id="hogarProfileEmail" style="font-size: 0.85rem; color: var(--ink-muted);">correo@ejemplo.com</p>
@@ -599,7 +604,7 @@
         <h4 style="font-size: 0.95rem; margin-bottom: 10px;">Mis Solicitudes de Arreglo</h4>
         <div style="background: var(--bg-card-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
           <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
-            <span>🔧 Revisión de Grifería</span>
+            <span>Revisión de Grifería</span>
             <span style="color: var(--blue-primary);">En curso</span>
           </div>
           <p style="font-size: 0.82rem; color: var(--ink-muted);">Asignado a: Luis Rodríguez · Garantía activa</p>
@@ -616,25 +621,25 @@
   <!-- ================= MODAL: PERFIL DE MAESTRO (SMITH) ================= -->
   <div class="modal-backdrop" id="profileModalSmith">
     <div class="modal-box modal-lg" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="profile-header-card">
-        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);">🔨</div>
+        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);"></div>
         <div style="flex: 1;">
           <h3 id="smithProfileName" style="font-size: 1.35rem;">Luis Rodríguez</h3>
           <p id="smithProfileTrade" style="font-size: 0.88rem; color: var(--wood-primary); font-weight: 600;">Especialista en Plomería</p>
           <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
-            <span id="smithProfileCertBadge" class="live-badge">✓ Verificado en Competencias</span>
-            <span style="font-size: 0.82rem; color: var(--ink-muted);">⭐ 4.9 (24 reseñas)</span>
+            <span id="smithProfileCertBadge" class="live-badge"> Verificado en Competencias</span>
+            <span style="font-size: 0.82rem; color: var(--ink-muted);">4.9 (24 reseñas)</span>
           </div>
         </div>
       </div>
 
       <!-- Pestañas internas de Maestro -->
       <div class="profile-subtabs">
-        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">📸 Portafolio</button>
-        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">⚙️ Configuración</button>
-        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">📜 Certificación</button>
+        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">Portafolio</button>
+        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">Configuración</button>
+        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">Certificación</button>
       </div>
 
       <!-- Tab 1: Portafolio -->
@@ -684,7 +689,7 @@
 
       <!-- Tab 3: Certificación -->
       <div class="smith-subtab-pane" id="tabPane_cert" style="display: none; text-align: center; padding: 14px 0;">
-        <div style="font-size: 2.5rem; margin-bottom: 8px;">📜</div>
+        <div style="margin-bottom: 8px; color: var(--blue-primary);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg></div>
         <h4 style="margin-bottom: 6px;">Validación de Habilidades en Obra</h4>
         <p style="font-size: 0.88rem; color: var(--ink-secondary); margin-bottom: 18px;">
           Presenta o renueva tu examen técnico para recibir solicitudes de clientes prioritarios con sello oficial.
@@ -701,7 +706,7 @@
   <!-- ================= MODAL: SOLICITUD DE ARREGLO ================= -->
   <div class="modal-backdrop" id="bookingModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <h3 style="font-size: 1.4rem; margin-bottom: 6px;">Pedir un Especialista</h3>
       <p style="font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 20px;">Te asignamos técnicos verificados cercanos.</p>
@@ -710,11 +715,11 @@
         <div class="form-group">
           <label class="form-label" for="bookingTradeSelect">¿Qué tipo de arreglo necesitas?</label>
           <select id="bookingTradeSelect" class="form-select" required>
-            <option value="Plomería">🔧 Plomería (fugas, grifos, tuberías)</option>
-            <option value="Electricidad">⚡ Electricidad (cortos, breakers, tomas)</option>
-            <option value="Pintura">🎨 Pintura & Drywall (humedades, retoques)</option>
-            <option value="Carpintería">🪵 Carpintería (puertas, closets, muebles)</option>
-            <option value="Electrodomésticos">🧊 Electrodomésticos (neveras, lavadoras)</option>
+            <option value="Plomería">Plomería (fugas, grifos, tuberías)</option>
+            <option value="Electricidad">Electricidad (cortos, breakers, tomas)</option>
+            <option value="Pintura">Pintura & Drywall (humedades, retoques)</option>
+            <option value="Carpintería">Carpintería (puertas, closets, muebles)</option>
+            <option value="Electrodomésticos">Electrodomésticos (neveras, lavadoras)</option>
           </select>
         </div>
 
@@ -736,9 +741,9 @@
   <!-- ================= MODAL: CÁMARA EN VIVO ================= -->
   <div class="modal-backdrop" id="cameraModal">
     <div class="modal-box" role="dialog" aria-modal="true" style="max-width: 540px; text-align: center;">
-      <button class="modal-close-btn" onclick="closeCameraModal()" aria-label="Cerrar cámara">✕</button>
+      <button class="modal-close-btn" onclick="closeCameraModal()" aria-label="Cerrar cámara">&times;</button>
 
-      <h3 style="font-size: 1.35rem; margin-bottom: 6px;">📸 Capturar Foto de la Obra</h3>
+      <h3 style="font-size: 1.35rem; margin-bottom: 6px;">Capturar Foto de la Obra</h3>
       <p style="font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 16px;">
         Apunta al arreglo, instalación o detalle técnico y toma la foto.
       </p>
@@ -753,7 +758,7 @@
 
       <div style="display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap;">
         <button type="button" class="btn btn-primary" onclick="capturePhotoFromCamera()" style="font-size: 1rem; padding: 12px 24px;">
-          📸 Tomar Foto Ahora
+          Tomar Foto Ahora
         </button>
         <button type="button" class="btn btn-ghost" onclick="closeCameraModal()">
           Cancelar

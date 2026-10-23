@@ -1,0 +1,17 @@
+{
+  "name": "tasksmith",
+  "version": "1.0.0",
+  "description": "Tasksmith - Plataforma web para la conexión de hogares con maestros de oficios calificados",
+  "scripts": {
+    "dev": "npx serve . -l 8080",
+    "start": "npx serve . -l 8080"
+  },
+  "keywords": [
+    "threejs",
+    "craft",
+    "services",
+    "tasksmith"
+  ],
+  "author": "SamRWAz",
+  "license": "MIT"
+}

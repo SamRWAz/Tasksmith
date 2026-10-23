@@ -29,13 +29,12 @@
           <li><a href="como-funciona.html" class="nav-link">Cómo funciona</a></li>
           <li><a href="oficios.html" class="nav-link">Oficios</a></li>
           <li><a href="confianza.html" class="nav-link">Confianza</a></li>
-          <li><a href="certificacion.html" class="nav-link">Certificación</a></li>
         </ul>
 
         <div class="nav-actions" id="navActionsContainer">
           <button class="btn btn-ghost btn-sm" onclick="openLoginModal()" id="btnNavLogin">Ingresar</button>
           <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" id="btnNavRegister">Registro</button>
-          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+          <button class="mobile-toggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </nav>
     </div>
@@ -46,7 +45,6 @@
     <a href="como-funciona.html" class="nav-link">Cómo funciona</a>
     <a href="oficios.html" class="nav-link">Oficios</a>
     <a href="confianza.html" class="nav-link">Confianza</a>
-    <a href="certificacion.html" class="nav-link">Certificación</a>
     <div style="display: flex; gap: 10px; margin-top: 14px;" id="mobileAuthSlot">
       <button class="btn btn-ghost" onclick="openLoginModal()" style="flex: 1;">Ingresar</button>
       <button class="btn btn-primary" onclick="openRegisterModal()" style="flex: 1;">Registro</button>
@@ -65,7 +63,7 @@
         <div class="grid-2" style="margin-bottom: 50px;">
           <!-- Comparativa Tradicional -->
           <div class="card" style="border-top: 4px solid var(--ink-light);">
-            <div style="font-size: 1.1rem; font-weight: 700; color: var(--ink-muted); margin-bottom: 12px;">❌ Agencias Tradicionales o Técnicos Informales</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--ink-muted); margin-bottom: 12px;">Agencias Tradicionales o Técnicos Informales</div>
             <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 24px;">
               <li>• Comisiones de intermediación de hasta el 35%.</li>
               <li>• Al técnico solo le llega una fracción de lo que tú pagaste.</li>
@@ -79,7 +77,7 @@
 
           <!-- Comparativa Tasksmith -->
           <div class="card" style="border-top: 4px solid var(--blue-primary); box-shadow: var(--shadow-card);">
-            <div style="font-size: 1.1rem; font-weight: 700; color: var(--blue-primary); margin-bottom: 12px;">✓ El Modelo Tasksmith</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--blue-primary); margin-bottom: 12px;"> El Modelo Tasksmith</div>
             <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 24px;">
               <li>• Tarifa operativa mínima (10% - 12%) para asegurar garantía y soporte.</li>
               <li>• El 88% - 90% del valor va directamente al bolsillo del maestro.</li>
@@ -165,7 +163,7 @@
   <!-- ================= MODAL: INICIAR SESIÓN ================= -->
   <div class="modal-backdrop" id="loginModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <h3 style="font-size: 1.5rem; margin-bottom: 6px;">Iniciar Sesión</h3>
       <p style="font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 22px;">Ingresa con tu correo y contraseña.</p>
@@ -195,7 +193,7 @@
   <!-- ================= MODAL: REGISTRO ================= -->
   <div class="modal-backdrop" id="registerModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="tabs-nav">
         <button class="tab-btn active" id="tabRegHogar" onclick="setRegisterRole('hogar')">Para mi Hogar</button>
@@ -232,12 +230,12 @@
           <div class="form-group">
             <label class="form-label" for="regTradeSelect">Tu oficio principal</label>
             <select id="regTradeSelect" class="form-select">
-              <option value="Plomería">🔧 Plomería Residencial</option>
-              <option value="Electricidad">⚡ Electricidad (RETIE)</option>
-              <option value="Pintura">🎨 Pintura & Drywall</option>
-              <option value="Carpintería">🪵 Carpintería & Mobiliario</option>
-              <option value="Electrodomésticos">🧊 Electrodomésticos</option>
-              <option value="Aseo">🧹 Aseo y Cuidado del Hogar</option>
+              <option value="Plomería">Plomería Residencial</option>
+              <option value="Electricidad">Electricidad (RETIE)</option>
+              <option value="Pintura">Pintura & Drywall</option>
+              <option value="Carpintería">Carpintería & Mobiliario</option>
+              <option value="Electrodomésticos">Electrodomésticos</option>
+              <option value="Aseo">Aseo y Cuidado del Hogar</option>
             </select>
           </div>
         </div>
@@ -256,10 +254,10 @@
   <!-- ================= MODAL: PERFIL DE HOGAR ================= -->
   <div class="modal-backdrop" id="profileModalHogar">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="profile-header-card">
-        <div class="profile-avatar-circle">👤</div>
+        <div class="profile-avatar-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
         <div>
           <h3 id="hogarProfileName" style="font-size: 1.3rem;">Usuario</h3>
           <p id="hogarProfileEmail" style="font-size: 0.85rem; color: var(--ink-muted);">correo@ejemplo.com</p>
@@ -271,7 +269,7 @@
         <h4 style="font-size: 0.95rem; margin-bottom: 10px;">Mis Solicitudes de Arreglo</h4>
         <div style="background: var(--bg-card-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
           <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
-            <span>🔧 Revisión de Grifería</span>
+            <span>Revisión de Grifería</span>
             <span style="color: var(--blue-primary);">En curso</span>
           </div>
           <p style="font-size: 0.82rem; color: var(--ink-muted);">Asignado a: Luis Rodríguez · Garantía activa</p>
@@ -288,25 +286,25 @@
   <!-- ================= MODAL: PERFIL DE MAESTRO (SMITH) ================= -->
   <div class="modal-backdrop" id="profileModalSmith">
     <div class="modal-box modal-lg" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="profile-header-card">
-        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);">🔨</div>
+        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);"></div>
         <div style="flex: 1;">
           <h3 id="smithProfileName" style="font-size: 1.35rem;">Luis Rodríguez</h3>
           <p id="smithProfileTrade" style="font-size: 0.88rem; color: var(--wood-primary); font-weight: 600;">Especialista en Plomería</p>
           <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
-            <span id="smithProfileCertBadge" class="live-badge">✓ Verificado en Competencias</span>
-            <span style="font-size: 0.82rem; color: var(--ink-muted);">⭐ 4.9 (24 reseñas)</span>
+            <span id="smithProfileCertBadge" class="live-badge"> Verificado en Competencias</span>
+            <span style="font-size: 0.82rem; color: var(--ink-muted);">4.9 (24 reseñas)</span>
           </div>
         </div>
       </div>
 
       <!-- Pestañas internas de Maestro -->
       <div class="profile-subtabs">
-        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">📸 Portafolio</button>
-        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">⚙️ Configuración</button>
-        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">📜 Certificación</button>
+        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">Portafolio</button>
+        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">Configuración</button>
+        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">Certificación</button>
       </div>
 
       <!-- Tab 1: Portafolio -->
@@ -356,7 +354,7 @@
 
       <!-- Tab 3: Certificación -->
       <div class="smith-subtab-pane" id="tabPane_cert" style="display: none; text-align: center; padding: 14px 0;">
-        <div style="font-size: 2.5rem; margin-bottom: 8px;">📜</div>
+        <div style="margin-bottom: 8px; color: var(--blue-primary);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg></div>
         <h4 style="margin-bottom: 6px;">Validación de Habilidades en Obra</h4>
         <p style="font-size: 0.88rem; color: var(--ink-secondary); margin-bottom: 18px;">
           Presenta o renueva tu examen técnico para recibir solicitudes de clientes prioritarios con sello oficial.
@@ -373,7 +371,7 @@
   <!-- ================= MODAL: SOLICITUD DE ARREGLO ================= -->
   <div class="modal-backdrop" id="bookingModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <h3 style="font-size: 1.4rem; margin-bottom: 6px;">Pedir un Especialista</h3>
       <p style="font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 20px;">Te asignamos técnicos verificados cercanos.</p>
@@ -382,11 +380,11 @@
         <div class="form-group">
           <label class="form-label" for="bookingTradeSelect">¿Qué tipo de arreglo necesitas?</label>
           <select id="bookingTradeSelect" class="form-select" required>
-            <option value="Plomería">🔧 Plomería (fugas, grifos, tuberías)</option>
-            <option value="Electricidad">⚡ Electricidad (cortos, breakers, tomas)</option>
-            <option value="Pintura">🎨 Pintura & Drywall (humedades, retoques)</option>
-            <option value="Carpintería">🪵 Carpintería (puertas, closets, muebles)</option>
-            <option value="Electrodomésticos">🧊 Electrodomésticos (neveras, lavadoras)</option>
+            <option value="Plomería">Plomería (fugas, grifos, tuberías)</option>
+            <option value="Electricidad">Electricidad (cortos, breakers, tomas)</option>
+            <option value="Pintura">Pintura & Drywall (humedades, retoques)</option>
+            <option value="Carpintería">Carpintería (puertas, closets, muebles)</option>
+            <option value="Electrodomésticos">Electrodomésticos (neveras, lavadoras)</option>
           </select>
         </div>
 

@@ -36,7 +36,9 @@
         <div class="nav-actions" id="navActionsContainer">
           <button class="btn btn-ghost btn-sm" onclick="openLoginModal()" id="btnNavLogin">Ingresar</button>
           <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" id="btnNavRegister">Registro</button>
-          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+          <button class="mobile-toggle" aria-label="Abrir menú">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
         </div>
       </nav>
     </div>
@@ -78,13 +80,13 @@
             <!-- Paso 1 -->
             <div class="cert-step-node active" id="stepNode_1">
               <div class="cert-step-circle">1</div>
-              <span class="cert-step-label">1. Elegir Oficio</span>
+              <span class="cert-step-label">1. Tu Especialidad</span>
             </div>
 
             <!-- Paso 2 -->
             <div class="cert-step-node" id="stepNode_2">
               <div class="cert-step-circle">2</div>
-              <span class="cert-step-label">2. Examen Teórico</span>
+              <span class="cert-step-label">2. Formulario IA</span>
             </div>
 
             <!-- Paso 3 -->
@@ -102,93 +104,90 @@
 
           <!-- ================= FASE 1: PREGUNTAR EN QUÉ SE QUIERE CERTIFICAR ================= -->
           <div class="cert-step-pane active" id="certPane_1">
-            <div class="card" style="padding: 36px; box-shadow: var(--shadow-card);">
-              <div style="text-align: center; max-width: 620px; margin: 0 auto 24px;">
-                <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); margin-bottom: 8px;">Paso 1 de 4</span>
-                <h2 style="font-size: 1.6rem; color: var(--ink-primary); margin-bottom: 8px;">
-                  ¿En qué oficio te deseas certificar?
-                </h2>
-                <p style="font-size: 0.92rem; color: var(--ink-secondary);">
-                  Elige tu especialidad técnica principal. La IA calibrará el banco de diagnóstico técnico y las normas periciales según el oficio seleccionado.
-                </p>
+            <div class="card cert-intake-hero-card" style="padding: 38px; box-shadow: var(--shadow-card);">
+              
+              <!-- Saludo y Pregunta del Evaluador IA -->
+              <div class="ai-question-bubble">
+                <div class="ai-avatar-badge">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M9 12h6"></path>
+                    <path d="M12 9v6"></path>
+                  </svg>
+                </div>
+                <div style="flex: 1;">
+                  <div class="ai-role-pill">
+                    <span class="pulse-indicator"></span>
+                    <span>Evaluador Pericial Tasksmith IA • Evaluación Universal Abierta</span>
+                  </div>
+                  <h2 class="ai-question-heading">
+                    ¿En qué oficio, especialidad o habilidad técnica deseas certificarte?
+                  </h2>
+                  <p class="ai-question-subheading">
+                    Nuestra Inteligencia Artificial está preparada para evaluar, auditar y certificar idoneidad profesional en <strong>cualquier ámbito o tema</strong> (construcción, tecnología, mecánica, artes manuales, energía, gastronomía técnica, etc.). Ingresa tu especialidad a continuación y la IA preparará de inmediato tu formulario de diagnóstico pericial.
+                  </p>
+                </div>
               </div>
 
-              <!-- Grilla de Oficios Seleccionables -->
-              <div class="trade-picker-grid" id="tradePickerContainer">
+              <!-- Formulario de Entrada Libre para Cualquier Especialidad -->
+              <div class="trade-input-action-box">
+                <label class="form-label" for="customTradeInput" style="font-size: 1rem; font-weight: 700; color: var(--ink-primary); margin-bottom: 10px;">
+                  1. Escribe el oficio o especialidad a certificar:
+                </label>
                 
-                <div class="trade-picker-card selected" onclick="selectCertificationTrade('plomeria')" data-trade-id="plomeria">
-                  <div class="trade-picker-icon">🔧</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Plomería & Redes Hidráulicas</div>
-                    <div class="trade-picker-desc">Diagnóstico de fugas, presiones, sifones, termofusión PPR y redes sanitarias.</div>
+                <div class="trade-input-row">
+                  <div class="trade-input-icon-wrap">
+                    <input 
+                      type="text" 
+                      id="customTradeInput" 
+                      class="form-input trade-text-input" 
+                      placeholder="Ej: Plomería de alta presión, Instalación solar fotovoltaica, Soldadura TIG, Mecánica diésel, Ebanistería, Barismo, Reparación de drones..." 
+                      autocomplete="off"
+                      onkeydown="if(event.key === 'Enter') startCustomTradeCertification()"
+                    />
                   </div>
-                  <div class="trade-picker-check">✓</div>
+                  <button type="button" class="btn btn-primary btn-lg trade-submit-btn" id="btnPrepareCustomExam" onclick="startCustomTradeCertification()">
+                    <span>Preparar Formulario con IA</span>
+                    <span style="font-size: 1.2rem; line-height: 1;">→</span>
+                  </button>
                 </div>
 
-                <div class="trade-picker-card" onclick="selectCertificationTrade('electricidad')" data-trade-id="electricidad">
-                  <div class="trade-picker-icon">⚡</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Electricidad Residencial</div>
-                    <div class="trade-picker-desc">Norma RETIE, calibres AWG, breakers, tableros y polo a tierra.</div>
+                <!-- Sugerencias de Prueba Rápida para Experimentar -->
+                <div class="trade-suggestions-container">
+                  <span class="trade-suggestions-label">Ideas para experimentar el criterio de la IA en cualquier tema:</span>
+                  <div class="trade-suggestions-grid">
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Plomería & Redes Hidráulicas')">Plomería</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Electricidad Residencial & RETIE')">Electricidad RETIE</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Instalación de Energía Solar Fotovoltaica')">Energía Solar</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Carpintería Fina & Ebanistería')">Carpintería & Muebles</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Mecánica Automotriz & Inyección Electrónica')">Mecánica Automotriz</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Refrigeración & Aires Acondicionados HVAC')">Climatización HVAC</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Soldadura TIG / MIG de Precisión')">Soldadura TIG / MIG</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Cerrajería Digital & Alta Seguridad')">Cerrajería Digital</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Barismo Profesional & Extracción de Café')">Barismo Profesional</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Mantenimiento y Calibración de Drones')">Reparación de Drones</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Panadería Artesanal & Fermentación')">Panadería Artesanal</button>
+                    <button type="button" class="trade-chip" onclick="applyQuickTradeSuggestion('Albañilería Estructural & Enchapes')">Albañilería</button>
                   </div>
-                  <div class="trade-picker-check">✓</div>
                 </div>
 
-                <div class="trade-picker-card" onclick="selectCertificationTrade('carpinteria')" data-trade-id="carpinteria">
-                  <div class="trade-picker-icon">🪵</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Carpintería & Muebles</div>
-                    <div class="trade-picker-desc">Ensambles a inglete, humedad de madera, corte, nivelación y acabados.</div>
+                <!-- Estado de Generación de la IA (Animación en Tiempo Real) -->
+                <div id="aiGeneratingExamState" class="ai-generating-loader-box" style="display: none;">
+                  <div class="ai-generating-spinner">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32" stroke-dashoffset="12">
+                      <circle cx="12" cy="12" r="9"></circle>
+                    </svg>
                   </div>
-                  <div class="trade-picker-check">✓</div>
-                </div>
-
-                <div class="trade-picker-card" onclick="selectCertificationTrade('pintura')" data-trade-id="pintura">
-                  <div class="trade-picker-icon">🎨</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Pintura & Acabados</div>
-                    <div class="trade-picker-desc">Preparación de muros, impermeabilización, empastado y aplicaciones uniformes.</div>
+                  <div>
+                    <h4 id="aiGeneratingTradeTitle" style="font-size: 1.15rem; color: var(--ink-primary); margin-bottom: 4px;">
+                      La IA está preparando el formulario de evaluación...
+                    </h4>
+                    <p style="font-size: 0.88rem; color: var(--ink-muted); margin: 0;">
+                      Consultando normas técnicas aplicables, protocolos de seguridad y calibrando 4 casos de diagnóstico pericial.
+                    </p>
                   </div>
-                  <div class="trade-picker-check">✓</div>
                 </div>
 
-                <div class="trade-picker-card" onclick="selectCertificationTrade('electrodomesticos')" data-trade-id="electrodomesticos">
-                  <div class="trade-picker-icon">🧊</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Electrodomésticos & Neveras</div>
-                    <div class="trade-picker-desc">Refrigeración, compresores, tarjetas electrónicas, bombas y termostatos.</div>
-                  </div>
-                  <div class="trade-picker-check">✓</div>
-                </div>
-
-                <div class="trade-picker-card" onclick="selectCertificationTrade('cerrajeria')" data-trade-id="cerrajeria">
-                  <div class="trade-picker-icon">🔑</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Cerrajería de Seguridad</div>
-                    <div class="trade-picker-desc">Cilindros de seguridad, cerraduras embutidas, cerrojos y amaestramiento.</div>
-                  </div>
-                  <div class="trade-picker-check">✓</div>
-                </div>
-
-                <div class="trade-picker-card" onclick="selectCertificationTrade('albanileria')" data-trade-id="albanileria">
-                  <div class="trade-picker-icon">🧱</div>
-                  <div style="flex: 1;">
-                    <div class="trade-picker-title">Albañilería & Enchapes</div>
-                    <div class="trade-picker-desc">Nivelación, morteros de pega, plomadas, juntas y acabados en gres/cerámica.</div>
-                  </div>
-                  <div class="trade-picker-check">✓</div>
-                </div>
-
-              </div>
-
-              <!-- Botón Continuar al Examen -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; gap: 14px;">
-                <div style="font-size: 0.88rem; color: var(--ink-muted);">
-                  Oficio seleccionado: <strong id="lblSelectedTrade" style="color: var(--blue-primary);">Plomería & Redes Hidráulicas</strong>
-                </div>
-                <button type="button" class="btn btn-primary btn-lg" onclick="goToStep2_Examen()">
-                  Continuar a la Prueba Técnica →
-                </button>
               </div>
 
             </div>
@@ -202,14 +201,14 @@
                 <div>
                   <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); margin-bottom: 6px;">Paso 2 de 4</span>
                   <h2 style="font-size: 1.55rem; color: var(--ink-primary);" id="examTradeTitle">
-                    Prueba de Diagnóstico: Plomería & Redes Hidráulicas
+                    Prueba de Diagnóstico Formulada por IA
                   </h2>
-                  <p style="font-size: 0.88rem; color: var(--ink-muted);">
-                    Responde los siguientes casos reales. Al finalizar, conocerás tu calificación y avanzarás a la prueba práctica.
+                  <p style="font-size: 0.88rem; color: var(--ink-muted);" id="examTradeSubtitle">
+                    Responde los siguientes casos reales formulados por la IA para evaluar tu competencia técnica.
                   </p>
                 </div>
                 <button type="button" class="btn btn-ghost btn-sm" onclick="goToStep(1)">
-                  ← Cambiar de Oficio
+                  ← Cambiar de Especialidad
                 </button>
               </div>
 
@@ -222,19 +221,24 @@
               <div id="certExamFeedbackBlock" style="display: none;">
                 <div class="exam-feedback-card">
                   <span class="live-badge" id="examFeedbackBadge" style="background: var(--green-soft); color: var(--green-verified); font-size: 0.88rem;">
-                    ✓ Evaluación Teórica Completada
+                    Evaluación Teórica Completada
                   </span>
                   <div class="exam-score-big" id="examScoreNumber">85/100</div>
                   <h3 style="font-size: 1.25rem; margin-bottom: 8px;" id="examVerdictTitle">
-                    ¡Conocimientos Teóricos Registrados!
+                    Conocimientos Teóricos Registrados
                   </h3>
                   <p style="max-width: 620px; margin: 0 auto 20px; font-size: 0.92rem; color: var(--ink-secondary);" id="examVerdictDescription">
-                    Tu calificación ha quedado registrada. Recuerda que en Tasksmith valoramos principalmente tu <strong>habilidad práctica en el terreno</strong>. Ahora pasarás a capturar las fotos con tu cámara y grabar la explicación con tu voz para que la IA evalúe tu pericia.
+                    Tu calificación ha quedado registrada. Recuerda que en Tasksmith la certificación oficial exige <strong>resultado aprobatorio tanto en esta prueba teórica como en las evidencias prácticas</strong>. Ahora pasarás a capturar las fotos con tu cámara y grabar la explicación técnica con tu voz para que la IA complete tu dictamen.
                   </p>
                   
-                  <button type="button" class="btn btn-primary btn-lg" onclick="goToStep3_Evidencias()">
-                    Avanzar a Evidencias Prácticas (Cámara + Audio) →
-                  </button>
+                  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline" onclick="renderCertificationQuestions(currentTradeExam.questions)">
+                      Reintentar Examen Teórico
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="goToStep3_Evidencias()">
+                      Avanzar a Evidencias Prácticas (Cámara + Audio) →
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -289,7 +293,6 @@
                     <div class="evidence-panel">
                       <div class="evidence-panel-header">
                         <div class="evidence-panel-title">
-                          <span class="evidence-panel-icon">📷</span>
                           <span>Foto del Trabajo</span>
                         </div>
                         <span class="live-badge" id="badgePhotoStatus_1">Pendiente</span>
@@ -298,20 +301,19 @@
                       <input type="file" id="workPhotoInput_1" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoInputChange(1, this)">
 
                       <div class="upload-dropzone" id="photoDropzone_1">
-                        <div class="upload-dropzone-icon">📸</div>
                         <button type="button" class="btn-open-camera" onclick="openCameraModal(1)">
-                          📸 Abrir Cámara
+                          Abrir Cámara
                         </button>
                         <span style="font-size: 0.82rem; color: var(--ink-muted); margin: 4px 0;">o selecciona una imagen</span>
                         <button type="button" class="btn btn-outline btn-sm" onclick="triggerFileInput(1)">
-                          📁 Elegir Archivo
+                          Elegir Archivo
                         </button>
                       </div>
 
                       <div class="photo-preview-container" id="photoPreviewContainer_1">
                         <img src="" alt="Evidencia capturada" id="photoPreviewImg_1" class="photo-preview-img">
                         <div class="photo-preview-actions">
-                          <span style="font-weight: 600;">✓ Foto de evidencia lista</span>
+                          <span style="font-weight: 600;">Foto de evidencia lista</span>
                           <button type="button" class="btn btn-ghost btn-sm" style="color: #fff; padding: 2px 8px;" onclick="resetPhotoUpload(1)">Cambiar foto</button>
                         </div>
                       </div>
@@ -319,7 +321,7 @@
                       <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.78rem; color: var(--ink-muted);">Para probar rápido:</span>
                         <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSamplePhoto(1)">
-                          ✨ Foto de ejemplo
+                          Foto de ejemplo
                         </button>
                       </div>
                     </div>
@@ -328,7 +330,6 @@
                     <div class="evidence-panel">
                       <div class="evidence-panel-header">
                         <div class="evidence-panel-title">
-                          <span class="evidence-panel-icon">🎙️</span>
                           <span>Audio Explicativo</span>
                         </div>
                         <span class="live-badge" id="badgeAudioStatus_1">Pendiente</span>
@@ -336,7 +337,12 @@
 
                       <div class="audio-recorder-box" id="audioRecorderBox_1">
                         <button type="button" class="btn-mic-record" id="btnToggleRecord_1" onclick="toggleAudioRecording(1)" title="Toca para grabar audio">
-                          🎤
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                          </svg>
                         </button>
 
                         <div class="record-timer" id="recordTimer_1">00:00</div>
@@ -356,7 +362,7 @@
 
                       <div class="audio-playback-container" id="audioPlaybackContainer_1">
                         <div style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin-bottom: 8px;">
-                          🎧 Tu explicación grabada:
+                          Tu explicación grabada:
                         </div>
                         <div class="audio-playback-row">
                           <button type="button" class="audio-play-trigger" id="btnPlayEvidenceAudio_1" onclick="togglePlayEvidenceAudio(1)">
@@ -379,15 +385,26 @@
                         </div>
                         <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
                           <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem;" onclick="resetAudioRecording(1)">
-                            🔄 Grabar de nuevo
+                            Grabar de nuevo
                           </button>
                         </div>
+                      </div>
+
+                      <!-- Campo de Transcripción Real Editable por el Maestro -->
+                      <div class="audio-transcript-box-input" style="margin-top: 14px; text-align: left;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                          <label for="audioTranscriptInput_1" style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin: 0;">
+                            Transcripción técnica de lo que dijiste:
+                          </label>
+                          <span id="speechLiveTag_1" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
+                        </div>
+                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al hablar por el micrófono, tus palabras se transcribirán aquí automáticamente. También puedes escribir o ajustar los detalles técnicos de tu labor si tu micrófono no está disponible..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
                       </div>
 
                       <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.78rem; color: var(--ink-muted);">¿Sin micrófono ahora?</span>
                         <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(1)">
-                          🎧 Audio de ejemplo
+                          Audio de ejemplo
                         </button>
                       </div>
                     </div>
@@ -405,12 +422,12 @@
               <!-- Barra de Estado y Botón Enviar a la IA -->
               <div class="verification-status-bar">
                 <div class="status-check-items">
-                  <span class="status-tag-item" id="tagPhotoCheck">📷 Fotos: 0 listas</span>
-                  <span class="status-tag-item" id="tagAudioCheck">🎙️ Audios: 0 grabados</span>
+                  <span class="status-tag-item" id="tagPhotoCheck">Fotos: 0 listas</span>
+                  <span class="status-tag-item" id="tagAudioCheck">Audios: 0 grabados</span>
                 </div>
 
                 <button type="button" class="btn btn-primary btn-lg" id="btnRunAiEvaluation" onclick="startAiEvaluationFlow()">
-                  🤖 Enviar a Evaluación y Certificación por IA →
+                  Enviar a Evaluación y Certificación por IA →
                 </button>
               </div>
 
@@ -423,30 +440,35 @@
             <!-- Pantalla de Escaneo del Motor de IA (Simulación en Tiempo Real) -->
             <div class="ai-eval-screen" id="aiScannerBox">
               <div class="ai-engine-scanner">
-                <div class="ai-pulse-orb">🧠</div>
+                <div class="ai-pulse-orb">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 3"></path>
+                  </svg>
+                </div>
                 <h3 style="font-size: 1.6rem; color: var(--ink-primary); margin-bottom: 6px;">
                   Motor Pericial Tasksmith IA en Ejecución
                 </h3>
                 <p style="font-size: 0.92rem; color: var(--ink-muted); max-width: 540px; margin: 0 auto;">
-                  Nuestra red neuronal compara tu explicación de voz contra la Base de Conocimiento Experto del oficio.
+                  Evaluando correspondencia entre la prueba teórica de conocimientos y la auditoría pericial de tus evidencias de obra.
                 </p>
 
                 <div class="ai-scan-step-list">
                   <div class="ai-scan-step-item active" id="aiStep_1">
-                    <span>🎙️</span>
-                    <span>Procesando espectro de audio y transcribiendo explicación oral...</span>
+                    <span>1</span>
+                    <span>Procesando espectro de audio y transcribiendo explicación oral del maestro...</span>
                   </div>
                   <div class="ai-scan-step-item" id="aiStep_2">
-                    <span>📚</span>
-                    <span id="aiStep2Label">Comparando con estándares y normas técnicas de Plomería...</span>
+                    <span>2</span>
+                    <span id="aiStep2Label">Comparando con estándares y normas técnicas del oficio...</span>
                   </div>
                   <div class="ai-scan-step-item" id="aiStep_3">
-                    <span>⚖️</span>
-                    <span>Auditando 4 pilares: Diagnóstico, Herramientas, Procedimiento y Calidad...</span>
+                    <span>3</span>
+                    <span>Auditando 4 pilares: Diagnóstico, Herramientas, Procedimiento y Control de Calidad...</span>
                   </div>
                   <div class="ai-scan-step-item" id="aiStep_4">
-                    <span>🏆</span>
-                    <span>Generando dictamen pericial y emitiendo Certificado Oficial...</span>
+                    <span>4</span>
+                    <span>Verificando doble idoneidad (teoría + práctica) para emisión de dictamen...</span>
                   </div>
                 </div>
               </div>
@@ -459,28 +481,28 @@
               <div class="ai-verdict-card">
                 <div class="ai-verdict-header">
                   <div>
-                    <span class="live-badge" style="background: var(--green-soft); color: var(--green-verified); font-weight: 700;">
-                      ✓ Evaluación Completada por la IA
+                    <span class="live-badge" style="background: var(--green-soft); color: var(--green-verified); font-weight: 700;" id="aiVerdictStatusBadge">
+                      Evaluación Pericial Completada
                     </span>
                     <h3 style="font-size: 1.45rem; margin-top: 6px; color: var(--ink-primary);">
                       Dictamen Pericial de Habilidad Técnica
                     </h3>
                   </div>
                   <div style="text-align: right;">
-                    <div style="font-size: 0.78rem; color: var(--ink-muted); text-transform: uppercase;">Índice de Pericia IA</div>
+                    <div style="font-size: 0.78rem; color: var(--ink-muted); text-transform: uppercase;">Índice Práctico IA</div>
                     <div style="font-size: 1.8rem; font-weight: 800; color: var(--green-verified);" id="aiScoreOverallBadge">94 / 100</div>
                   </div>
                 </div>
 
                 <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink-secondary);">
-                  📝 Transcripción Técnica Extraída del Audio del Maestro:
+                  Transcripción Técnica Extraída del Audio del Maestro:
                 </div>
                 <div class="ai-transcript-box" id="aiAudioTranscriptText">
-                  "Identifiqué fuga activa en sifón flexible y fisura en codo de PVC bajo el lavaplatos. Desmonté el ensamble deteriorado, limpié los terminales, apliqué soldadura líquida y coloqué sifón rígido registrable con teflón de alta densidad en las roscas. Realicé prueba hidrostática a máxima presión sin ninguna gota residual, garantizando el trabajo por un mes."
+                  <!-- Se inyecta exactamente lo que el usuario habló o escribió -->
                 </div>
 
                 <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink-secondary); margin-top: 14px;">
-                  🔍 Conceptos Normativos y Técnicas Validadas por la IA:
+                  Conceptos Normativos y Técnicas Validadas por la IA:
                 </div>
                 <div class="ai-concepts-cloud" id="aiConceptsCloud">
                   <!-- Inyectado por JS -->
@@ -515,6 +537,65 @@
                 </p>
               </div>
 
+              <!-- ================= TARJETA DE EVALUACIÓN NO APROBADA (DOBLE CONDICIÓN) ================= -->
+              <div class="ai-eval-failed-card" id="aiEvaluationFailedCard" style="display: none; margin-top: 24px; padding: 32px; border-radius: var(--radius-lg); background: var(--bg-card); border: 2px solid #ef4444; box-shadow: var(--shadow-card);">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+                  <div style="width: 48px; height: 48px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800;">
+                    &times;
+                  </div>
+                  <div>
+                    <span class="live-badge" style="background: #fee2e2; color: #dc2626; font-weight: 700;">
+                      Certificación No Otorgada
+                    </span>
+                    <h3 style="font-size: 1.4rem; color: var(--ink-primary); margin: 4px 0 0;">
+                      Requisitos de Doble Evaluación Insuficientes
+                    </h3>
+                  </div>
+                </div>
+
+                <p style="font-size: 0.95rem; color: var(--ink-secondary); line-height: 1.5; margin-bottom: 20px;">
+                  En Tasksmith el Certificado Oficial de Idoneidad Técnica <strong>sólo se otorga si se demuestra un resultado bueno (mínimo 75/100) tanto en la prueba teórica de conocimientos como en la prueba práctica audiovisual</strong>. Uno o ambos componentes no alcanzaron el estándar exigido.
+                </p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 22px;">
+                  <!-- Desglose Teórico -->
+                  <div style="padding: 16px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft);">
+                    <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700; margin-bottom: 4px;">1. Prueba Teórica de Preguntas</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                      <span style="font-size: 1.6rem; font-weight: 800;" id="failedTheoreticalScore">50/100</span>
+                      <span id="failedTheoreticalBadge" class="live-badge">Insuficiente</span>
+                    </div>
+                    <p style="font-size: 0.84rem; color: var(--ink-secondary); margin-top: 6px;" id="failedTheoreticalMsg">
+                      Se requiere un mínimo de 75 puntos (al menos 3 de 4 casos correctos).
+                    </p>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="goToStep(2)" style="margin-top: 8px; width: 100%;">
+                      Repetir Prueba Teórica
+                    </button>
+                  </div>
+
+                  <!-- Desglose Práctico -->
+                  <div style="padding: 16px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft);">
+                    <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700; margin-bottom: 4px;">2. Prueba Práctica Audiovisual</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                      <span style="font-size: 1.6rem; font-weight: 800;" id="failedPracticalScore">40/100</span>
+                      <span id="failedPracticalBadge" class="live-badge">Insuficiente</span>
+                    </div>
+                    <p style="font-size: 0.84rem; color: var(--ink-secondary); margin-top: 6px;" id="failedPracticalMsg">
+                      Se requiere registro fotográfico real y explicación técnica oral o transcrita.
+                    </p>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="goToStep(3)" style="margin-top: 8px; width: 100%;">
+                      Completar Evidencia Práctica
+                    </button>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-ghost" onclick="restartCertificationWizard()">
+                    Reiniciar Todo el Proceso
+                  </button>
+                </div>
+              </div>
+
               <!-- ================= CERTIFICADO OFICIAL TASKSMITH EMITIDO ================= -->
               <div class="official-cert-wrapper" id="printableCertificate">
                 
@@ -525,7 +606,7 @@
                   <div class="cert-corner-ornament cert-corner-br"></div>
 
                   <div class="cert-badge-gold">
-                    ★ Acreditación Oficial Smith ★
+                    Acreditación Oficial Smith
                   </div>
 
                   <h2 class="cert-main-title">Certificado de Idoneidad Técnica</h2>
@@ -544,11 +625,11 @@
                   </div>
 
                   <div class="cert-trade-title" id="certTradeNameDisplay">
-                    🔧 Plomería & Redes Hidráulicas
+                    Plomería & Redes Hidráulicas
                   </div>
 
                   <div style="display: inline-flex; align-items: center; gap: 8px; background: var(--green-soft); color: var(--green-verified); padding: 6px 16px; border-radius: var(--radius-full); font-weight: 700; font-size: 0.88rem; margin-bottom: 24px;">
-                    <span>✓ Portador del Distintivo Smith Verificado</span>
+                    <span>Portador del Distintivo Smith Verificado</span>
                   </div>
 
                   <!-- Fila de Firmas y Validación -->
@@ -567,8 +648,8 @@
                           <rect x="3" y="14" width="7" height="7"></rect>
                           <line x1="7" y1="7" x2="7.01" y2="7"></line>
                           <line x1="17" y1="7" x2="17.01" y2="7"></line>
-                          <line x1="7" y1="17" x2="7.01" y2="17"></line>
-                          <line x1="17" y1="17" x2="17.01" y2="17"></line>
+                          <line x1="7" y1="17" x2="7.01" y2="7"></line>
+                          <line x1="17" y1="17" x2="17.01" y2="7"></line>
                         </svg>
                       </div>
                       <div style="font-size: 0.72rem; color: var(--ink-muted); margin-top: 4px;" id="certHashId">TS-CERT-2026-PL94</div>
@@ -590,15 +671,15 @@
               </div>
 
               <!-- Botones de Acción Posterior al Certificado -->
-              <div class="cert-no-print" style="display: flex; gap: 14px; justify-content: center; margin-top: 28px; flex-wrap: wrap;">
+              <div class="cert-no-print" id="certPostActions" style="display: flex; gap: 14px; justify-content: center; margin-top: 28px; flex-wrap: wrap;">
                 <button type="button" class="btn btn-primary btn-lg" onclick="printCertificate()">
-                  🖨️ Imprimir o Guardar en PDF
+                  Imprimir o Guardar en PDF
                 </button>
                 <button type="button" class="btn btn-outline btn-lg" onclick="openUserProfileModal()">
-                  🔨 Ver mi Perfil de Smith con el Distintivo
+                  Ver mi Perfil de Smith con el Distintivo
                 </button>
                 <button type="button" class="btn btn-ghost btn-lg" onclick="restartCertificationWizard()">
-                  🔄 Certificarme en Otro Oficio
+                  Certificarme en Otro Oficio
                 </button>
               </div>
 
@@ -615,9 +696,9 @@
   <!-- ================= MODAL: CÁMARA EN VIVO ================= -->
   <div class="modal-backdrop" id="cameraModal">
     <div class="modal-box" role="dialog" aria-modal="true" style="max-width: 540px; text-align: center;">
-      <button class="modal-close-btn" onclick="closeCameraModal()" aria-label="Cerrar cámara">✕</button>
+      <button class="modal-close-btn" onclick="closeCameraModal()" aria-label="Cerrar cámara">&times;</button>
 
-      <h3 style="font-size: 1.35rem; margin-bottom: 6px;">📸 Capturar Foto de la Obra</h3>
+      <h3 style="font-size: 1.35rem; margin-bottom: 6px;">Capturar Foto de la Obra</h3>
       <p style="font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 16px;">
         Apunta al arreglo, instalación o detalle técnico y toma la foto.
       </p>
@@ -632,7 +713,7 @@
 
       <div style="display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap;">
         <button type="button" class="btn btn-primary" onclick="capturePhotoFromCamera()" style="font-size: 1rem; padding: 12px 24px;">
-          📸 Tomar Foto Ahora
+          Tomar Foto Ahora
         </button>
         <button type="button" class="btn btn-ghost" onclick="closeCameraModal()">
           Cancelar
@@ -645,7 +726,7 @@
   <!-- Modal Login -->
   <div class="modal-backdrop" id="loginModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" onclick="closeAllModals()" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" onclick="closeAllModals()" aria-label="Cerrar modal">&times;</button>
       <div class="modal-header">
         <h3 class="modal-title">Iniciar Sesión</h3>
         <p class="modal-sub">Ingresa a tu cuenta de Tasksmith</p>
@@ -669,7 +750,7 @@
   <!-- Modal Registro -->
   <div class="modal-backdrop" id="registerModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" onclick="closeAllModals()" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" onclick="closeAllModals()" aria-label="Cerrar modal">&times;</button>
       <div class="modal-header">
         <h3 class="modal-title">Crear Cuenta</h3>
         <p class="modal-sub">Únete a la comunidad de Tasksmith</p>
@@ -718,13 +799,18 @@
   <!-- Modal Perfil Smith -->
   <div class="modal-backdrop" id="profileModalSmith">
     <div class="modal-box" role="dialog" aria-modal="true" style="max-width: 640px;">
-      <button class="modal-close-btn" onclick="closeAllModals()" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" onclick="closeAllModals()" aria-label="Cerrar modal">&times;</button>
       <div class="modal-header" style="text-align: left; display: flex; align-items: center; gap: 16px;">
-        <div class="profile-avatar-circle">🔨</div>
+        <div class="profile-avatar-circle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
         <div>
           <h3 class="modal-title" id="smithProfileName">Luis Rodríguez</h3>
           <p class="modal-sub" id="smithProfileTrade">Especialista en Plomería</p>
-          <span class="live-badge" id="smithProfileCertBadge" style="margin-top: 4px; display: inline-block;">✓ Acreditado por IA</span>
+          <span class="live-badge" id="smithProfileCertBadge" style="margin-top: 4px; display: inline-block;">Acreditado por IA</span>
         </div>
       </div>
 

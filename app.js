@@ -16,7 +16,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     initNavbar();
     initAuthUI();
-    initThreeScene();
     initAudioSimulator();
     initPracticalVerificationModule();
     initExamModule();
@@ -87,34 +86,34 @@
         const actionHtml = `
           <button class="user-profile-badge" onclick="openUserProfileModal()">
             <span class="user-avatar-dot"></span>
-            <span>🔨 ${currentUser.name.split(' ')[0]} (Maestro)</span>
+            <span>${currentUser.name.split(' ')[0]} (Maestro)</span>
           </button>
           <button class="btn btn-primary btn-sm" onclick="openUserProfileModal()">
             Mi Perfil
           </button>
-          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+          <button class="mobile-toggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         `;
         if (navActions) navActions.innerHTML = actionHtml;
         if (mobileAuthSlot) {
           mobileAuthSlot.innerHTML = `
-            <button class="btn btn-primary full" onclick="openUserProfileModal()">Mi Perfil de Maestro (🔨)</button>
+            <button class="btn btn-primary full" onclick="openUserProfileModal()">Mi Perfil de Maestro</button>
           `;
         }
       } else {
         const actionHtml = `
           <button class="user-profile-badge" onclick="openUserProfileModal()">
             <span class="user-avatar-dot"></span>
-            <span>👤 ${currentUser.name.split(' ')[0]}</span>
+            <span>${currentUser.name.split(' ')[0]}</span>
           </button>
           <button class="btn btn-primary btn-sm" data-open-booking>
             Pedir un Especialista
           </button>
-          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+          <button class="mobile-toggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         `;
         if (navActions) navActions.innerHTML = actionHtml;
         if (mobileAuthSlot) {
           mobileAuthSlot.innerHTML = `
-            <button class="btn btn-ghost full" onclick="openUserProfileModal()" style="margin-bottom:8px;">Mi Perfil (👤 ${currentUser.name.split(' ')[0]})</button>
+            <button class="btn btn-ghost full" onclick="openUserProfileModal()" style="margin-bottom:8px;">Mi Perfil (${currentUser.name.split(' ')[0]})</button>
             <button class="btn btn-primary full" data-open-booking>Pedir un Especialista</button>
           `;
         }
@@ -123,7 +122,7 @@
       const actionHtml = `
         <button class="btn btn-ghost btn-sm" onclick="openLoginModal()" id="btnNavLogin">Ingresar</button>
         <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" id="btnNavRegister">Registro</button>
-        <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+        <button class="mobile-toggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
       `;
       if (navActions) navActions.innerHTML = actionHtml;
       if (mobileAuthSlot) {
@@ -293,7 +292,7 @@
     currentUser.zone = zone;
 
     localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
-    showToast('✓ Configuración del perfil de maestro guardada.', 'success');
+    showToast(' Configuración del perfil de maestro guardada.', 'success');
   }
 
   window.openUserProfileModal = function () {
@@ -319,11 +318,11 @@
       if (badgeEl) {
         if (currentUser.certified) {
           badgeEl.className = 'live-badge';
-          badgeEl.textContent = '✓ Examen Técnico Aprobado';
+          badgeEl.textContent = ' Examen Técnico Aprobado';
           badgeEl.style.color = 'var(--green-verified)';
         } else {
           badgeEl.className = 'live-badge';
-          badgeEl.textContent = '⚠️ Certificación Pendiente';
+          badgeEl.textContent = 'Certificación Pendiente';
           badgeEl.style.color = 'var(--wood-primary)';
         }
       }
@@ -375,7 +374,7 @@
       <span class="portfolio-item-label">${desc}</span>
     `;
     grid.prepend(item);
-    showToast('✓ Nueva foto añadida a tu portafolio público.', 'success');
+    showToast(' Nueva foto añadida a tu portafolio público.', 'success');
   };
 
   window.logoutUser = function () {
@@ -386,445 +385,9 @@
     showToast('Has cerrado sesión correctamente.', 'normal');
   };
 
-  /* ================= 3. BALANCED NATURAL CRAFT DIORAMA 3D (THREE.JS) ================= */
+  /* ================= 3. MODELO 3D (DESACTIVADO TEMPORALMENTE) ================= */
   function initThreeScene() {
-    const canvas = document.getElementById('threeCanvas');
-    if (!canvas || typeof THREE === 'undefined') return;
-
-    const container = canvas.parentElement;
-    const scene = new THREE.Scene();
-
-    // Camera setup centered on the diorama
-    const camera = new THREE.PerspectiveCamera(37, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 3.3, 6.6);
-    camera.lookAt(0, 0.4, 0);
-
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    // Natural Balanced Studio Lighting (Clean, Warm & Clear)
-    const ambientLight = new THREE.AmbientLight(0xFFFAF2, 1.25);
-    scene.add(ambientLight);
-
-    const sunLight = new THREE.DirectionalLight(0xFFF1DC, 1.85);
-    sunLight.position.set(4.5, 7.5, 4.5);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
-    sunLight.shadow.bias = -0.0006;
-    scene.add(sunLight);
-
-    const skyLight = new THREE.DirectionalLight(0xB0D4F1, 0.95);
-    skyLight.position.set(-4.5, 3.5, -3);
-    scene.add(skyLight);
-
-    // Warm interior house pointlight
-    const houseGlow = new THREE.PointLight(0xFFA726, 1.8, 4.0);
-    houseGlow.position.set(0, 0.8, 0.6);
-    scene.add(houseGlow);
-
-    // Master Group (Diorama World)
-    const world = new THREE.Group();
-    scene.add(world);
-
-    // Helper Materials Factory
-    const mat = (col, extra = {}) => new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, metalness: 0.05, ...extra });
-    const metalMat = (col, extra = {}) => new THREE.MeshStandardMaterial({ color: col, metalness: 0.82, roughness: 0.28, ...extra });
-    const woodMat = mat(0x5E3D26, { roughness: 0.5 }); // Natural warm timber
-
-    // 1. FLOATING NATURAL ISLAND (Natural Grass + Earth Stone Plinth)
-    const islandGroup = new THREE.Group();
-    world.add(islandGroup);
-
-    // Natural garden grass (Healthy, vibrant yet calm green)
-    const lawnGeo = new THREE.CylinderGeometry(2.28, 2.42, 0.32, 48);
-    const lawn = new THREE.Mesh(lawnGeo, mat(0x5EA048, { roughness: 0.7 }));
-    lawn.position.y = -0.15;
-    lawn.receiveShadow = true;
-    islandGroup.add(lawn);
-
-    // Warm natural sandstone base layer
-    const stoneGeo = new THREE.CylinderGeometry(2.42, 1.85, 0.5, 48);
-    const stoneBase = new THREE.Mesh(stoneGeo, mat(0x8C7765, { roughness: 0.8 }));
-    stoneBase.position.y = -0.55;
-    stoneBase.receiveShadow = true;
-    islandGroup.add(stoneBase);
-
-    // Warm bronze trim ring
-    const trimGeo = new THREE.TorusGeometry(2.44, 0.03, 16, 64);
-    const trimMesh = new THREE.Mesh(trimGeo, mat(0xC5A059, { metalness: 0.7, roughness: 0.3 }));
-    trimMesh.rotation.x = Math.PI / 2;
-    trimMesh.position.y = -0.31;
-    islandGroup.add(trimMesh);
-
-    // Cobblestone walkway to the front door
-    for (let i = 0; i < 4; i++) {
-      const pathStone = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22 - i * 0.02, 0.24 - i * 0.02, 0.05, 12),
-        mat(0xD5C9BD, { roughness: 0.85 })
-      );
-      pathStone.position.set(0 + (i % 2 === 0 ? 0.04 : -0.04), 0.03, 0.88 + i * 0.31);
-      pathStone.receiveShadow = true;
-      islandGroup.add(pathStone);
-    }
-
-    // 2. COZY MODERN HOME (El Hogar)
-    const houseGroup = new THREE.Group();
-    world.add(houseGroup);
-
-    // Clean warm off-white stucco walls
-    const houseBody = new THREE.Mesh(
-      new THREE.BoxGeometry(1.95, 1.38, 1.75),
-      mat(0xFFFDF8, { roughness: 0.5 })
-    );
-    houseBody.position.y = 0.7;
-    houseBody.castShadow = true;
-    houseBody.receiveShadow = true;
-    houseGroup.add(houseBody);
-
-    // Timber plinth / zócalo
-    const plinth = new THREE.Mesh(
-      new THREE.BoxGeometry(2.05, 0.1, 1.85),
-      woodMat
-    );
-    plinth.position.y = 0.05;
-    houseGroup.add(plinth);
-
-    // Traditional Warm Terracotta Clay Roof (Normal warm brick/terracotta tile)
-    const terracottaMat = mat(0xBA5A3A, { roughness: 0.5 });
-
-    const roofLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(1.42, 0.11, 2.05),
-      terracottaMat
-    );
-    roofLeft.position.set(-0.54, 1.72, 0);
-    roofLeft.rotation.z = Math.PI / 5.6;
-    roofLeft.castShadow = true;
-    houseGroup.add(roofLeft);
-
-    const roofRight = new THREE.Mesh(
-      new THREE.BoxGeometry(1.42, 0.11, 2.05),
-      terracottaMat
-    );
-    roofRight.position.set(0.54, 1.72, 0);
-    roofRight.rotation.z = -Math.PI / 5.6;
-    roofRight.castShadow = true;
-    houseGroup.add(roofRight);
-
-    // Front & Back Timber Gables
-    const gableGeo = new THREE.BufferGeometry();
-    const gableVertices = new Float32Array([
-      -0.97, 1.39, 0.88,
-       0.97, 1.39, 0.88,
-       0.0,  2.01, 0.88,
-      -0.97, 1.39, -0.88,
-       0.0,  2.01, -0.88,
-       0.97, 1.39, -0.88
-    ]);
-    gableGeo.setAttribute('position', new THREE.BufferAttribute(gableVertices, 3));
-    gableGeo.computeVertexNormals();
-    const gableMesh = new THREE.Mesh(gableGeo, woodMat);
-    gableMesh.castShadow = true;
-    houseGroup.add(gableMesh);
-
-    // Natural Wood Front Door with Brass Doorknob
-    const door = new THREE.Mesh(
-      new THREE.BoxGeometry(0.52, 0.92, 0.07),
-      woodMat
-    );
-    door.position.set(0, 0.48, 0.91);
-    houseGroup.add(door);
-
-    const doorHandle = new THREE.Mesh(
-      new THREE.SphereGeometry(0.038, 16, 16),
-      metalMat(0xD4AF37) // Polished brass
-    );
-    doorHandle.position.set(0.18, 0.48, 0.96);
-    houseGroup.add(doorHandle);
-
-    // Warm Glowing Circular Window (Friendly natural golden interior glow)
-    const windowFrame = new THREE.Mesh(
-      new THREE.TorusGeometry(0.3, 0.04, 16, 32),
-      woodMat
-    );
-    windowFrame.position.set(0, 1.42, 0.91);
-    houseGroup.add(windowFrame);
-
-    const windowGlass = new THREE.Mesh(
-      new THREE.CircleGeometry(0.28, 32),
-      new THREE.MeshStandardMaterial({
-        color: 0xFFD56B,
-        emissive: 0xFFA726,
-        emissiveIntensity: 0.75,
-        roughness: 0.25
-      })
-    );
-    windowGlass.position.set(0, 1.42, 0.92);
-    houseGroup.add(windowGlass);
-
-    // Side window with warm ambient light
-    const sideWinFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.07, 0.56, 0.56),
-      woodMat
-    );
-    sideWinFrame.position.set(1.0, 0.76, 0);
-    houseGroup.add(sideWinFrame);
-
-    const sideWinGlass = new THREE.Mesh(
-      new THREE.BoxGeometry(0.05, 0.48, 0.48),
-      new THREE.MeshStandardMaterial({
-        color: 0xFFD56B,
-        emissive: 0xFFA726,
-        emissiveIntensity: 0.7,
-        roughness: 0.25
-      })
-    );
-    sideWinGlass.position.set(1.01, 0.76, 0);
-    houseGroup.add(sideWinGlass);
-
-    // Clay brick chimney
-    const chimney = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 0.85, 0.32),
-      mat(0x8A6250, { roughness: 0.7 })
-    );
-    chimney.position.set(-0.58, 1.9, -0.3);
-    chimney.castShadow = true;
-    houseGroup.add(chimney);
-
-    // 3. NATURAL GARDEN TREE (Friendly, Lush Foliage)
-    const treeGroup = new THREE.Group();
-    treeGroup.position.set(1.38, 0, -0.75);
-    world.add(treeGroup);
-
-    const trunk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.09, 0.78, 12),
-      mat(0x543924, { roughness: 0.8 })
-    );
-    trunk.position.y = 0.39;
-    trunk.castShadow = true;
-    treeGroup.add(trunk);
-
-    const canopy1 = new THREE.Mesh(
-      new THREE.SphereGeometry(0.46, 20, 20),
-      mat(0x4D8C3E, { roughness: 0.65 }) // Healthy lush green
-    );
-    canopy1.position.y = 0.88;
-    canopy1.castShadow = true;
-    treeGroup.add(canopy1);
-
-    const canopy2 = new THREE.Mesh(
-      new THREE.SphereGeometry(0.33, 16, 16),
-      mat(0x5DA54C, { roughness: 0.65 })
-    );
-    canopy2.position.set(0.1, 1.2, 0.06);
-    canopy2.castShadow = true;
-    treeGroup.add(canopy2);
-
-    // 4. FLOATING WORKSHOP CRAFT TOOLS (Natural recognizable materials)
-    const tools = [];
-    function registerTool(group, baseY, speed, amp) {
-      world.add(group);
-      tools.push({ group, baseY, speed, amp, rotSpeed: 0.008 });
-    }
-
-    // A) Llave de Fontanero (Wrench - Chrome & Tasksmith Blue)
-    {
-      const wrenchGroup = new THREE.Group();
-      wrenchGroup.position.set(-1.8, 1.1, 1.0);
-
-      const handle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.055, 0.065, 0.92, 16),
-        mat(0x255886, { roughness: 0.35 }) // Tasksmith blue handle
-      );
-      wrenchGroup.add(handle);
-
-      const head = new THREE.Mesh(
-        new THREE.TorusGeometry(0.16, 0.06, 16, 24, Math.PI * 1.5),
-        metalMat(0xDDE2E8) // Polished chrome
-      );
-      head.position.y = 0.48;
-      head.rotation.z = Math.PI / 4;
-      wrenchGroup.add(head);
-
-      wrenchGroup.rotation.z = 0.32;
-      registerTool(wrenchGroup, 1.1, 1.1, 0.1);
-    }
-
-    // B) Martillo de Carpintero (Hammer - Beech Wood & Forged Steel)
-    {
-      const hammerGroup = new THREE.Group();
-      hammerGroup.position.set(1.8, 1.25, 0.8);
-
-      const hHandle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.05, 0.06, 1.0, 16),
-        mat(0xB58054, { roughness: 0.45 }) // Warm natural beechwood
-      );
-      hammerGroup.add(hHandle);
-
-      const hHead = new THREE.Mesh(
-        new THREE.BoxGeometry(0.44, 0.2, 0.2),
-        metalMat(0x434E5B) // Forged steel
-      );
-      hHead.position.y = 0.48;
-      hammerGroup.add(hHead);
-
-      const claw = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.09, 0.26, 12),
-        metalMat(0x434E5B)
-      );
-      claw.position.set(-0.22, 0.43, 0);
-      claw.rotation.z = Math.PI / 3;
-      hammerGroup.add(claw);
-
-      hammerGroup.rotation.z = -0.38;
-      registerTool(hammerGroup, 1.25, 1.0, 0.09);
-    }
-
-    // C) Rodillo de Pintor (Paint Roller - Warm Terracotta Paint)
-    {
-      const rollerGroup = new THREE.Group();
-      rollerGroup.position.set(-1.75, 1.6, -0.85);
-
-      const roll = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.15, 0.15, 0.6, 24),
-        mat(0xD9703E, { roughness: 0.6 }) // Warm terracotta paint roll
-      );
-      roll.rotation.z = Math.PI / 2;
-      rollerGroup.add(roll);
-
-      const wire = new THREE.Mesh(
-        new THREE.TorusGeometry(0.28, 0.022, 12, 24, Math.PI),
-        metalMat(0xC5A059) // Brass wire
-      );
-      wire.position.set(0.34, -0.14, 0);
-      rollerGroup.add(wire);
-
-      const rGrip = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.055, 0.055, 0.4, 16),
-        woodMat
-      );
-      rGrip.position.set(0.34, -0.5, 0);
-      rollerGroup.add(rGrip);
-
-      rollerGroup.rotation.x = 0.35;
-      registerTool(rollerGroup, 1.6, 1.3, 0.11);
-    }
-
-    // D) Bombilla Encendida (Glowing Lightbulb - Electricidad)
-    {
-      const bulbGroup = new THREE.Group();
-      bulbGroup.position.set(1.45, 1.95, -0.65);
-
-      const bulbGlass = new THREE.Mesh(
-        new THREE.SphereGeometry(0.21, 22, 22),
-        new THREE.MeshStandardMaterial({
-          color: 0xFFE082,
-          emissive: 0xFFB300,
-          emissiveIntensity: 0.75,
-          roughness: 0.2,
-          metalness: 0.08
-        })
-      );
-      bulbGroup.add(bulbGlass);
-
-      const bulbBase = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.11, 0.14, 16),
-        metalMat(0xC5A059) // Brass socket
-      );
-      bulbBase.position.y = -0.23;
-      bulbGroup.add(bulbBase);
-
-      registerTool(bulbGroup, 1.95, 1.2, 0.11);
-    }
-
-    // Responsive Canvas Resizing
-    function handleResize() {
-      if (!container) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    }
-    window.addEventListener('resize', handleResize);
-
-    // Interactive Drag and Mouse Parallax (Smooth and Natural)
-    let isDragging = false;
-    let prevMouseX = 0;
-    let dragVelocity = 0;
-    let mouseParallaxX = 0;
-    let mouseParallaxY = 0;
-
-    canvas.style.cursor = 'grab';
-
-    canvas.addEventListener('pointerdown', (e) => {
-      isDragging = true;
-      prevMouseX = e.clientX;
-      canvas.style.cursor = 'grabbing';
-    });
-
-    window.addEventListener('pointerup', () => {
-      if (isDragging) {
-        isDragging = false;
-        canvas.style.cursor = 'grab';
-      }
-    });
-
-    window.addEventListener('pointermove', (e) => {
-      if (isDragging) {
-        const deltaX = e.clientX - prevMouseX;
-        world.rotation.y += deltaX * 0.0075;
-        dragVelocity = deltaX * 0.0035;
-        prevMouseX = e.clientX;
-      }
-
-      const rect = container.getBoundingClientRect();
-      const nx = (e.clientX - rect.left) / rect.width - 0.5;
-      const ny = (e.clientY - rect.top) / rect.height - 0.5;
-      mouseParallaxX = nx * 0.35;
-      mouseParallaxY = -ny * 0.18;
-    });
-
-    // Main Render & Animation Loop
-    const clock = new THREE.Clock();
-    let currentParallaxX = 0;
-    let currentParallaxY = 0;
-
-    function renderLoop() {
-      requestAnimationFrame(renderLoop);
-      const elapsed = clock.getElapsedTime();
-
-      // Gentle auto-rotation when idle
-      if (!isDragging) {
-        world.rotation.y += 0.0022 + dragVelocity;
-        dragVelocity *= 0.94; // inertia damping
-      }
-
-      // Smooth camera parallax
-      currentParallaxX += (mouseParallaxX - currentParallaxX) * 0.045;
-      currentParallaxY += (mouseParallaxY - currentParallaxY) * 0.045;
-
-      camera.position.x = currentParallaxX * 2.0;
-      camera.position.y = 3.3 + currentParallaxY * 1.2;
-      camera.lookAt(0, 0.5, 0);
-
-      // Subtle breathing motion of the island
-      islandGroup.position.y = Math.sin(elapsed * 0.7) * 0.03;
-      houseGroup.position.y = islandGroup.position.y;
-      treeGroup.position.y = islandGroup.position.y;
-
-      // Floating Tools gentle harmonic motion
-      tools.forEach(t => {
-        t.group.position.y = t.baseY + Math.sin(elapsed * t.speed) * t.amp;
-        t.group.rotation.y += t.rotSpeed;
-      });
-
-      renderer.render(scene, camera);
-    }
-    renderLoop();
+    // Desactivado temporalmente
   }
 
   /* ================= 4. AUDIO SIMULATOR (LIBRETA DE OBRA) ================= */
@@ -841,7 +404,7 @@
     audioBox.addEventListener('click', () => {
       if (!isPlaying) {
         isPlaying = true;
-        if (playBtn) playBtn.textContent = '❚❚';
+        if (playBtn) playBtn.textContent = '';
         if (label) label.textContent = 'Reproduciendo audio de Don Luis (0:14)...';
 
         interval = setInterval(() => {
@@ -851,7 +414,7 @@
           });
         }, 120);
 
-        showToast('🔊 "Doña Carmen, ya montamos el nuevo codo de cobre con teflón. 100% probado sin fugas."', 'normal');
+        showToast('"Doña Carmen, ya montamos el nuevo codo de cobre con teflón. 100% probado sin fugas."', 'normal');
 
         setTimeout(() => {
           isPlaying = false;
@@ -1138,7 +701,7 @@
         feedbackBox.style.border = `1px solid ${isCorrect ? 'var(--green-border)' : '#FFCDD2'}`;
         feedbackBox.innerHTML = `
           <div style="font-weight: 700; margin-bottom: 6px; color: ${isCorrect ? 'var(--green-verified)' : '#C62828'}">
-            ${isCorrect ? '✓ ¡Respuesta Correcta y Fundamentada!' : '✗ Diagnóstico No Óptimo'}
+            ${isCorrect ? ' ¡Respuesta Correcta y Fundamentada!' : ' Diagnóstico No Óptimo'}
           </div>
           <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 14px;">${q.explanation}</p>
           <button class="btn btn-primary btn-sm" id="btnNextQuestion">
@@ -1175,7 +738,7 @@
 
       container.innerHTML = `
         <div class="exam-badge-result">
-          <div style="font-size: 3.5rem; margin-bottom: 12px;">${passed ? '🏆' : '📖'}</div>
+          <div style="font-size: 3.5rem; margin-bottom: 12px;">${passed ? 'Aprobado' : 'Pendiente'}</div>
           <h3 style="font-size: 1.8rem; margin-bottom: 8px;">
             ${passed ? '¡Aprobado con Distinción Técnica!' : 'Examen Completado: Refuerzo Necesario'}
           </h3>
@@ -1185,7 +748,7 @@
 
           ${passed ? `
             <div class="certificate-stamp">
-              ✓ SMITH VERIFICADO EN COMPETENCIAS TÉCNICAS
+               SMITH VERIFICADO EN COMPETENCIAS TÉCNICAS
             </div>
             <p style="font-size: 0.9rem; color: var(--green-verified); font-weight: 600; margin-bottom: 24px;">
               Tu perfil ahora cuenta con el distintivo de aptitud para resolución de incidencias en obra.
@@ -1266,7 +829,7 @@
     localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
     updateNavUserSlot();
     updateSmithGatekeeperUI();
-    showToast('🔨 Sesión iniciada como Don Luis (Maestro Smith). Prueba desbloqueada.', 'success');
+    showToast('Sesión iniciada como Don Luis (Maestro Smith). Prueba desbloqueada.', 'success');
   };
 
   function initPracticalVerificationModule() {
@@ -1324,14 +887,14 @@
       .catch(err => {
         console.log('No direct webcam stream available, using simulated shutter mode:', err);
         if (fallback) {
-          fallback.textContent = '📸 Sensor de cámara listo (Modo captura fotográfica simulada)';
+          fallback.textContent = 'Sensor de cámara listo (Modo captura fotográfica simulada)';
           fallback.style.display = 'block';
         }
         if (video) video.style.display = 'none';
       });
     } else {
       if (fallback) {
-        fallback.textContent = '📸 Sensor de cámara listo (Modo captura fotográfica)';
+        fallback.textContent = 'Sensor de cámara listo (Modo captura fotográfica)';
         fallback.style.display = 'block';
       }
       if (video) video.style.display = 'none';
@@ -1362,7 +925,7 @@
 
     setEvidencePhoto(activeCameraEvidenceId, photoDataUrl);
     closeCameraModal();
-    showToast('📸 Foto capturada desde la cámara y adjuntada a la evidencia.', 'success');
+    showToast('Foto capturada desde la cámara y adjuntada a la evidencia.', 'success');
   };
 
   window.closeCameraModal = function () {
@@ -1404,14 +967,14 @@
     if (container) container.style.display = 'block';
 
     if (badgePhoto) {
-      badgePhoto.textContent = '✓ Foto Cargada';
+      badgePhoto.textContent = ' Foto Cargada';
       badgePhoto.style.color = 'var(--green-verified)';
       badgePhoto.style.background = 'var(--green-soft)';
     }
 
     updateEvidenceStepBadge(id);
     updateEvidenceCountUI();
-    showToast(`✓ Foto del paso #${getEvidenceIndex(id)} adjuntada correctamente.`, 'success');
+    showToast(` Foto del paso #${getEvidenceIndex(id)} adjuntada correctamente.`, 'success');
   }
 
   window.resetPhotoUpload = function (id) {
@@ -1456,14 +1019,61 @@
     const btn = document.getElementById(`btnToggleRecord_${id}`);
     const timerEl = document.getElementById(`recordTimer_${id}`);
     const instrEl = document.getElementById(`recordInstructionText_${id}`);
+    const liveTag = document.getElementById(`speechLiveTag_${id}`);
+    const transcriptInput = document.getElementById(`audioTranscriptInput_${id}`);
 
     if (!ev.isRecording) {
       // Iniciar grabación
       ev.isRecording = true;
       ev.recordSeconds = 0;
       if (btn) btn.classList.add('recording');
-      if (instrEl) instrEl.textContent = 'Grabando explicación general... Toca de nuevo para finalizar';
+      if (instrEl) instrEl.textContent = 'Grabando explicación... Habla sobre tu trabajo y toca de nuevo para finalizar.';
       if (timerEl) timerEl.textContent = '00:00';
+      if (liveTag) {
+        liveTag.textContent = 'Escuchando tu voz...';
+        liveTag.style.color = 'var(--green-verified)';
+      }
+
+      // Reconocimiento de voz real con Web Speech API
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.lang = 'es-CO';
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          ev.speechRecognition = recognition;
+
+          let initialText = (transcriptInput && transcriptInput.value.trim()) ? transcriptInput.value.trim() + ' ' : '';
+
+          recognition.onresult = (event) => {
+            let sessionTranscript = '';
+            for (let i = 0; i < event.results.length; ++i) {
+              sessionTranscript += event.results[i][0].transcript;
+            }
+            const fullSpoken = (initialText + sessionTranscript).trim();
+            ev.realTranscript = fullSpoken;
+            if (transcriptInput) {
+              transcriptInput.value = fullSpoken;
+            }
+            if (liveTag) {
+              liveTag.textContent = 'Transcribiendo en tiempo real...';
+            }
+          };
+
+          recognition.onerror = (e) => {
+            console.log('Aviso de voz:', e.error);
+            if (liveTag) {
+              liveTag.textContent = 'Puedes escribir tu explicación técnica';
+              liveTag.style.color = 'var(--ink-muted)';
+            }
+          };
+
+          recognition.start();
+        } catch (err) {
+          console.log('SpeechRecognition fallback:', err);
+        }
+      }
 
       ev.recordTimerId = setInterval(() => {
         ev.recordSeconds++;
@@ -1499,7 +1109,7 @@
         });
       }
 
-      showToast(`🎙️ Grabando audio explicativo del paso #${getEvidenceIndex(id)}...`, 'normal');
+      showToast(`Grabando audio explicativo del paso #${getEvidenceIndex(id)}...`, 'normal');
     } else {
       // Detener grabación
       ev.isRecording = false;
@@ -1509,11 +1119,21 @@
       }
       if (btn) btn.classList.remove('recording');
 
+      if (ev.speechRecognition) {
+        try { ev.speechRecognition.stop(); } catch (e) {}
+        ev.speechRecognition = null;
+      }
+
+      if (liveTag) {
+        liveTag.textContent = 'Audio transcrito (editable)';
+        liveTag.style.color = 'var(--green-verified)';
+      }
+
       if (ev.mediaRecorder && ev.mediaRecorder.state !== 'inactive') {
         try { ev.mediaRecorder.stop(); } catch (e) {}
       }
 
-      const durSec = Math.max(ev.recordSeconds, 8);
+      const durSec = Math.max(ev.recordSeconds, 6);
       const durStr = `0:${durSec < 10 ? '0' : ''}${durSec}`;
       finishAudioRecording(id, durStr);
     }
@@ -1533,7 +1153,7 @@
     if (playbackBox) playbackBox.style.display = 'block';
 
     if (badgeAudio) {
-      badgeAudio.textContent = '✓ Audio Grabado';
+      badgeAudio.textContent = ' Audio Grabado';
       badgeAudio.style.color = 'var(--green-verified)';
       badgeAudio.style.background = 'var(--green-soft)';
     }
@@ -1542,12 +1162,21 @@
 
     updateEvidenceStepBadge(id);
     updateEvidenceCountUI();
-    showToast(`✓ Explicación de audio guardada (${durationStr}) para el paso #${getEvidenceIndex(id)}.`, 'success');
+    showToast(` Explicación de audio guardada (${durationStr}) para el paso #${getEvidenceIndex(id)}.`, 'success');
   }
 
   window.loadSampleAudio = function (id) {
+    const ev = verificationEvidences.find(item => item.id === id);
+    if (ev) {
+      ev.usedSampleAudio = true;
+      const transcriptInput = document.getElementById(`audioTranscriptInput_${id}`);
+      if (transcriptInput && !transcriptInput.value.trim()) {
+        transcriptInput.value = currentTradeExam ? currentTradeExam.sampleTranscript : 'Diagnóstico inicial de la falla, desmontaje con herramienta técnica, reemplazo de partes y prueba de estanqueidad garantizada.';
+        ev.realTranscript = transcriptInput.value;
+      }
+    }
     finishAudioRecording(id, '0:22');
-    showToast(`🎧 Audio general de muestra cargado para el paso #${getEvidenceIndex(id)}.`, 'success');
+    showToast(`Audio de muestra cargado para el paso #${getEvidenceIndex(id)}.`, 'success');
   };
 
   window.resetAudioRecording = function (id) {
@@ -1661,10 +1290,11 @@
 
   /* --- GESTIÓN DE PARES DINÁMICOS DE EVIDENCIA (FOTO + AUDIO) --- */
   window.addEvidencePair = function () {
-    const newId = nextEvidenceId++;
-    const stepNumber = verificationEvidences.length + 1;
+    const newId = verificationEvidences.length > 0 
+      ? Math.max(...verificationEvidences.map(e => e.id)) + 1 
+      : 1;
 
-    const newEvidence = {
+    const newEvidenceObj = {
       id: newId,
       photo: null,
       audioUrl: null,
@@ -1675,9 +1305,12 @@
       mediaRecorder: null,
       audioChunks: [],
       isPlaying: false,
-      audioPlayerObj: null
+      audioElement: null,
+      realTranscript: ''
     };
-    verificationEvidences.push(newEvidence);
+
+    verificationEvidences.push(newEvidenceObj);
+    const stepNumber = verificationEvidences.length;
 
     const container = document.getElementById('evidenceListContainer');
     if (!container) return;
@@ -1693,7 +1326,7 @@
         <div style="display: flex; align-items: center; gap: 8px;">
           <span class="live-badge" id="badgeStepStatus_${newId}">Pendiente</span>
           <button type="button" class="btn-remove-evidence" onclick="removeEvidencePair(${newId})" title="Eliminar este paso">
-            ✕ Eliminar paso
+            &times; Eliminar paso
           </button>
         </div>
       </div>
@@ -1703,7 +1336,6 @@
         <div class="evidence-panel">
           <div class="evidence-panel-header">
             <div class="evidence-panel-title">
-              <span class="evidence-panel-icon">📷</span>
               <span>Foto del Trabajo</span>
             </div>
             <span class="live-badge" id="badgePhotoStatus_${newId}">Pendiente</span>
@@ -1712,20 +1344,19 @@
           <input type="file" id="workPhotoInput_${newId}" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoInputChange(${newId}, this)">
 
           <div class="upload-dropzone" id="photoDropzone_${newId}">
-            <div class="upload-dropzone-icon">📸</div>
             <button type="button" class="btn-open-camera" onclick="openCameraModal(${newId})">
-              📸 Abrir Cámara
+              Abrir Cámara
             </button>
             <span style="font-size: 0.82rem; color: var(--ink-muted); margin: 4px 0;">o selecciona una imagen</span>
             <button type="button" class="btn btn-outline btn-sm" onclick="triggerFileInput(${newId})">
-              📁 Elegir Archivo
+              Elegir Archivo
             </button>
           </div>
 
           <div class="photo-preview-container" id="photoPreviewContainer_${newId}">
             <img src="" alt="Evidencia capturada" id="photoPreviewImg_${newId}" class="photo-preview-img">
             <div class="photo-preview-actions">
-              <span style="font-weight: 600;">✓ Foto de evidencia lista</span>
+              <span style="font-weight: 600;">Foto de evidencia lista</span>
               <button type="button" class="btn btn-ghost btn-sm" style="color: #fff; padding: 2px 8px;" onclick="resetPhotoUpload(${newId})">Cambiar foto</button>
             </div>
           </div>
@@ -1733,7 +1364,7 @@
           <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.78rem; color: var(--ink-muted);">Para probar rápido:</span>
             <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSamplePhoto(${newId})">
-              ✨ Foto de ejemplo
+              Foto de ejemplo
             </button>
           </div>
         </div>
@@ -1742,7 +1373,6 @@
         <div class="evidence-panel">
           <div class="evidence-panel-header">
             <div class="evidence-panel-title">
-              <span class="evidence-panel-icon">🎙️</span>
               <span>Audio Explicativo</span>
             </div>
             <span class="live-badge" id="badgeAudioStatus_${newId}">Pendiente</span>
@@ -1750,7 +1380,12 @@
 
           <div class="audio-recorder-box" id="audioRecorderBox_${newId}">
             <button type="button" class="btn-mic-record" id="btnToggleRecord_${newId}" onclick="toggleAudioRecording(${newId})" title="Toca para grabar audio">
-              🎤
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
             </button>
 
             <div class="record-timer" id="recordTimer_${newId}">00:00</div>
@@ -1770,7 +1405,7 @@
 
           <div class="audio-playback-container" id="audioPlaybackContainer_${newId}">
             <div style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin-bottom: 8px;">
-              🎧 Tu explicación grabada:
+              Tu explicación grabada:
             </div>
             <div class="audio-playback-row">
               <button type="button" class="audio-play-trigger" id="btnPlayEvidenceAudio_${newId}" onclick="togglePlayEvidenceAudio(${newId})">
@@ -1793,15 +1428,26 @@
             </div>
             <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
               <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem;" onclick="resetAudioRecording(${newId})">
-                🔄 Grabar de nuevo
+                Grabar de nuevo
               </button>
             </div>
+          </div>
+
+          <!-- Campo de Transcripción Real Editable por el Maestro -->
+          <div class="audio-transcript-box-input" style="margin-top: 14px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="audioTranscriptInput_${newId}" style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin: 0;">
+                Transcripción técnica de lo que dijiste:
+              </label>
+              <span id="speechLiveTag_${newId}" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
+            </div>
+            <textarea id="audioTranscriptInput_${newId}" class="form-input" rows="3" placeholder="Al hablar por el micrófono, tus palabras se transcribirán aquí automáticamente. También puedes escribir o ajustar los detalles técnicos de tu labor si tu micrófono no está disponible..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
           </div>
 
           <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.78rem; color: var(--ink-muted);">¿Sin micrófono ahora?</span>
             <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(${newId})">
-              🎧 Audio de ejemplo
+              Audio de ejemplo
             </button>
           </div>
         </div>
@@ -1811,7 +1457,7 @@
     container.appendChild(block);
     initDropzoneForEvidence(newId);
     updateEvidenceCountUI();
-    showToast(`✓ Se agregó el Paso #${stepNumber}. Abre la cámara y graba el audio para este paso.`, 'success');
+    showToast(`Se agregó el Paso #${stepNumber}. Abre la cámara y graba el audio para este paso.`, 'success');
 
     block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
@@ -1840,7 +1486,7 @@
     });
 
     updateEvidenceCountUI();
-    showToast('✓ Paso eliminado correctamente.', 'normal');
+    showToast(' Paso eliminado correctamente.', 'normal');
   };
 
   function getEvidenceIndex(id) {
@@ -1854,7 +1500,7 @@
     if (!badgeStep || !ev) return;
 
     if (ev.photo && ev.audioDuration) {
-      badgeStep.textContent = '✓ Paso Completo';
+      badgeStep.textContent = ' Paso Completo';
       badgeStep.style.color = 'var(--green-verified)';
       badgeStep.style.background = 'var(--green-soft)';
     } else if (ev.photo || ev.audioDuration) {
@@ -1877,13 +1523,13 @@
     const tagAudio = document.getElementById('tagAudioCheck');
 
     if (tagPhoto) {
-      tagPhoto.textContent = `📷 Fotos: ${readyPhotos} de ${total} listas`;
+      tagPhoto.textContent = `Fotos: ${readyPhotos} de ${total} listas`;
       if (readyPhotos > 0) tagPhoto.classList.add('ready');
       else tagPhoto.classList.remove('ready');
     }
 
     if (tagAudio) {
-      tagAudio.textContent = `🎙️ Audios: ${readyAudios} de ${total} grabados`;
+      tagAudio.textContent = `Audios: ${readyAudios} de ${total} grabados`;
       if (readyAudios > 0) tagAudio.classList.add('ready');
       else tagAudio.classList.remove('ready');
     }
@@ -1951,7 +1597,7 @@
     const submitBtn = document.getElementById('btnSubmitVerification');
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = `✓ ${verificationEvidences.length} Pasos Evaluados y Certificados`;
+      submitBtn.textContent = ` ${verificationEvidences.length} Pasos Evaluados y Certificados`;
       submitBtn.classList.remove('btn-primary');
       submitBtn.classList.add('btn-outline');
     }
@@ -1963,12 +1609,12 @@
       item.className = 'portfolio-item';
       item.innerHTML = `
         <img src="${verificationEvidences[0].photo}" alt="${jobTitle}">
-        <span class="portfolio-item-label">⭐ ${jobTitle} (${verificationEvidences.length} fotos + audios)</span>
+        <span class="portfolio-item-label">${jobTitle} (${verificationEvidences.length} fotos + audios)</span>
       `;
       grid.prepend(item);
     }
 
-    showToast(`🏆 ¡Felicidades! Se certificaron ${verificationEvidences.length} evidencias de tu trabajo. Ahora portas el distintivo de Smith Verificado.`, 'success');
+    showToast(`¡Felicidades! Se certificaron ${verificationEvidences.length} evidencias de tu trabajo. Ahora portas el distintivo de Smith Verificado.`, 'success');
   };
 
   window.resetEntireVerification = function () {
@@ -2053,7 +1699,7 @@
     const loc = document.getElementById('bookingLocInput')?.value;
 
     closeAllModals();
-    showToast(`✓ Solicitud de ${trade} publicada. 3 smiths verificados en ${loc} han sido notificados.`, 'success');
+    showToast(` Solicitud de ${trade} publicada. 3 smiths verificados en ${loc} han sido notificados.`, 'success');
   }
 
   window.closeAllModals = function () {
@@ -2072,7 +1718,7 @@
 
     const toast = document.createElement('div');
     toast.className = `toast ${type === 'success' ? 'success' : ''}`;
-    toast.innerHTML = `<span>${type === 'success' ? '✓' : 'ℹ'}</span> <span>${message}</span>`;
+    toast.innerHTML = `<span>${type === 'success' ? '' : 'ℹ'}</span> <span>${message}</span>`;
 
     container.appendChild(toast);
     setTimeout(() => toast.classList.add('show'), 20);
@@ -2083,149 +1729,972 @@
     }, 4200);
   };
 
-  /* ================= 8. MOTOR DE INTELIGENCIA ARTIFICIAL Y ASISTENTE DE CERTIFICACIÓN ================= */
+  /* ================= 8. MOTOR DE INTELIGENCIA ARTIFICIAL Y ASISTENTE DE CERTIFICACIÓN UNIVERSAL ================= */
   let currentCertStep = 1;
-  let selectedCertTradeKey = 'plomeria';
+  let currentTradeExam = null;
   let certTheoreticalScore = 0;
   let certUserAnswers = {};
 
-  const TRADE_EXPERT_KNOWLEDGE = {
+  // Perfiles de Conocimiento Experto Curados (Multi-Especialidad)
+  const TRADE_EXPERT_PROFILES = {
     plomeria: {
       tradeName: 'Plomería & Redes Hidráulicas',
-      icon: '🔧',
+      icon: '',
       norms: 'NTC 1500 (Código Colombiano de Fontanería)',
+      questions: [
+        {
+          title: 'Diagnóstico de Caída de Presión y Fuga Oculta',
+          scenario: 'Un hogar presenta baja de presión repentina en griferías del segundo piso y el medidor registra consumo continuo con llaves cerradas. ¿Cuál es el procedimiento normativo para diagnosticar la falla?',
+          options: [
+            'Aislar por sectores las válvulas de paso y aplicar prueba de presión hidrostática con bomba de prueba manométrica para ubicar la línea averiada.',
+            'Demoler de inmediato los muros del baño principal para buscar humedad a simple vista.',
+            'Aumentar la presión de entrada conectando una bomba de sobrepresión directa a la red pública.',
+            'Cerrar la llave de paso por las noches y sugerir al cliente convivir con la avería.'
+          ],
+          correct: 0,
+          explanation: 'La NTC 1500 exige sectorización y prueba hidrostática con manómetro para localizar fugas sin generar daños destructivos innecesarios.'
+        },
+        {
+          title: 'Materiales y Normas de Tuberías Hidráulicas',
+          scenario: 'Al sustituir un tramo de tubería empotrada para agua caliente sanitaria a 65°C, ¿qué material y unión exige la norma técnica?',
+          options: [
+            'Tubería de PVC sanitario unido con pegamento tradicional para desagües.',
+            'Tubería de Polipropileno Copolímero Random (PPR) unida mediante termofusión a 260°C o CPVC para agua caliente con soldadura química especial.',
+            'Manguera flexible de polietileno negro ajustada con abrazaderas metálicas sinfín.',
+            'Tubería de hierro galvanizado oxidado recuperada de otra demolición.'
+          ],
+          correct: 1,
+          explanation: 'El agua caliente a 65°C deforma el PVC sanitario. Es obligatorio usar PPR termofusionado o CPVC apto para alta temperatura y presión continua.'
+        },
+        {
+          title: 'Instalación Técnica de Sifones y Desagües',
+          scenario: 'En la instalación de un lavaplatos nuevo, ¿cómo se garantiza que no ingresen malos olores ni gases de la red de alcantarillado?',
+          options: [
+            'Colocando tubo recto directo al bajante sin ningún tipo de curvatura.',
+            'Instalando un sifón registrable rígido con sello hidráulico permanente (trampa de agua de mínimo 5 cm) y ventilación secundaria.',
+            'Enrollando un tubo flexible en múltiples vueltas sin sello hidráulico fijo.',
+            'Sellando la boca del desagüe con silicona sanitaria sin dejar sello de agua.'
+          ],
+          correct: 1,
+          explanation: 'El sello de agua permanente en la trampa del sifón es la única barrera física que impide el retorno de gases mefíticos y vectores sanitarios.'
+        },
+        {
+          title: 'Control de Calidad y Entrega Garantizada',
+          scenario: 'Tras realizar una reparación de tubería de distribución principal, ¿qué prueba obligatoria debe superar antes de revocar el muro?',
+          options: [
+            'Prueba hidrostática a 1.5 veces la presión de trabajo normal durante al menos 15 minutos con cero caída de aguja en el manómetro.',
+            'Abrir la llave solo dos segundos y tocar con el dedo si se siente húmedo.',
+            'Tapar el hueco de inmediato con yeso rápido antes de abrir el paso general.',
+            'Dejar la llave cerrada y cobrar el servicio sin comprobar el flujo.'
+          ],
+          correct: 0,
+          explanation: 'La prueba hidrostática a 1.5x de presión de trabajo garantiza estanqueidad absoluta y previene daños catastróficos posteriores al cierre de obra.'
+        }
+      ],
       sampleTranscript: 'Detecté fuga activa en el sifón y fisura en codo de PVC de pulgada y media bajo el lavaplatos. Desmonté el ensamble con llave para tubo, limpié impurezas y apliqué soldadura de PVC virgen. Instalé sifón rígido registrable sellando roscas con teflón de alta densidad. Realicé prueba hidrostática llenando a capacidad máxima y descargando a presión continua; verifiqué cero fugas y sellado hermético al 100%, dejando el trabajo garantizado.',
       expectedConcepts: [
-        'Prueba hidrostática',
-        'Sifón rígido registrable',
+        'Prueba hidrostática manométrica',
+        'Sifón rígido registrable con sello de agua',
         'Teflón de alta densidad',
-        'Soldadura líquida PVC',
-        'Estanqueidad hermética',
-        'Garantía técnica de 30 días'
+        'Soldadura líquida de PVC virgen',
+        'Estanqueidad hermética comprobada',
+        'Garantía técnica por escrito'
       ],
-      aiScores: { c1: 24, c2: 23, c3: 24, c4: 24, overall: 95 },
-      verdictParagraph: 'La IA determinó que la explicación oral denota pericia avanzada conforme a la norma NTC 1500: diagnóstico preciso de la falla, selección de tubería rígida en lugar de flexible (antisedimento), aplicación correcta de cinta sellante y validación rigurosa mediante prueba de presión hidrostática.'
+      aiScores: { c1: 24, c2: 24, c3: 25, c4: 24, overall: 97 },
+      verdictParagraph: 'La IA determinó que la explicación oral y las respuestas demuestran pericia avanzada conforme a la norma NTC 1500: diagnóstico preciso de la falla, selección de tubería rígida en lugar de flexible, aplicación correcta de cinta sellante y validación rigurosa mediante prueba de presión hidrostática.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80'
     },
     electricidad: {
-      tradeName: 'Electricidad Residencial',
-      icon: '⚡',
-      norms: 'Reglamento Técnico RETIE y NTC 2050',
+      tradeName: 'Electricidad Residencial & RETIE',
+      icon: '',
+      norms: 'Reglamento Técnico RETIE y Código NTC 2050',
+      questions: [
+        {
+          title: 'Diagnóstico de Sobrecarga y Disparo de Protecciones',
+          scenario: 'Un circuito de tomacorrientes en la cocina dispara el breaker termomagnético cada vez que se usa el microondas y la freidora de aire simultáneamente. ¿Cuál es el diagnóstico pericial?',
+          options: [
+            'El consumo combinado excede la capacidad nominal de conducción del cable y la protección actúa por sobrecarga térmica.',
+            'El breaker está descompuesto y debe ser reemplazado por uno de 50 amperios sin cambiar el cable.',
+            'Hay un cortocircuito a tierra permanente en el enchufe del electrodoméstico.',
+            'La tensión de la red pública está invertida entre la fase y el neutro.'
+          ],
+          correct: 0,
+          explanation: 'El disparo térmico protege el conductor contra sobrecalentamiento e incendio cuando la corriente de carga supera el calibre instalado.'
+        },
+        {
+          title: 'Selección Normativa de Conductor y Protección (RETIE)',
+          scenario: 'Para alimentar un circuito general de tomas de 20A en una vivienda bajo norma RETIE / NTC 2050, ¿qué especificación técnica debe cumplirse?',
+          options: [
+            'Conductor de cobre calibre 12 AWG con aislamiento termoplástico THHN/THWN y breaker de 20A curva C.',
+            'Cable dúplex de audio calibre 18 amarrado con cinta aislante económica.',
+            'Conductor de aluminio calibre 16 sin puesta a tierra.',
+            'Alambre de timbre telefónico para ahorrar espacio en la tubería conduit.'
+          ],
+          correct: 0,
+          explanation: 'El RETIE exige calibre mínimo 12 AWG en cobre para circuitos ramales de 20 amperios con aislamiento certificado anti-llama.'
+        },
+        {
+          title: 'Sistema de Puesta a Tierra y Seguridad Humana',
+          scenario: '¿Cuál es el rol primordial del electrodo y conductor de puesta a tierra (cable verde o desnudo) en una instalación residencial?',
+          options: [
+            'Derivar corrientes de falla por contacto indirecto hacia tierra para disparar la protección y evitar la electrocución de personas.',
+            'Ahorrar consumo de energía reduciendo la factura mensual de electricidad.',
+            'Servir como retorno de corriente en lugar del conductor neutro.',
+            'Sostener físicamente las cajas de paso empotradas en los muros.'
+          ],
+          correct: 0,
+          explanation: 'La puesta a tierra equipotencial canaliza corrientes parásitas y fallas de aislamiento hacia el suelo activando las protecciones en milisegundos.'
+        },
+        {
+          title: 'Verificación Instrumental y Protocolo de Entrega',
+          scenario: 'Antes de energizar y entregar un tablero de distribución renovado, ¿qué mediciones con multímetro o pinza deben registrarse?',
+          options: [
+            'Tensión fase-neutro (120V ±5%), tensión fase-tierra (120V), neutro-tierra (<2V) y ausencia de continuidad entre fase y tierra.',
+            'Comprobar únicamente que al encender la bombilla haya luz.',
+            'Tocar los cables con la mano para verificar si transmiten cosquilleo.',
+            'Conectar directamente los cables sin verificar la polaridad.'
+          ],
+          correct: 0,
+          explanation: 'Las mediciones cuantitativas de voltaje y resistencia de aislamiento son obligatorias por el RETIE para certificar la instalación.'
+        }
+      ],
       sampleTranscript: 'El cliente presentaba disparo continuo del interruptor termomagnético en la cocina. Con pinza voltiamperimétrica medí consumo de 22 amperios en conductor calibre 14, violando la norma RETIE. Desenergicé y bloqueé el tablero, recableé el circuito con conductor de cobre calibre 12 AWG y sustituí la protección por un breaker de 20A curva C. Verifiqué continuidad en el polo a tierra al barraje equipotencial y comprobé 120 voltios estables bajo carga.',
       expectedConcepts: [
         'Código RETIE / NTC 2050',
-        'Conductor calibre 12 AWG',
-        'Interruptor termomagnético 20A',
-        'Polo a tierra equipotencial',
-        'Pinza voltiamperimétrica',
-        'Medición de tensión (120V)'
+        'Conductor calibre 12 AWG de cobre',
+        'Protección termomagnética calibrada (20A)',
+        'Polo a tierra equipotencial verificado',
+        'Medición instrumental con pinza y multímetro',
+        'Tensión nominal estable (120V)'
       ],
       aiScores: { c1: 25, c2: 24, c3: 24, c4: 25, overall: 98 },
-      verdictParagraph: 'La IA califica el procedimiento con nivel de Maestría Senior según RETIE: identificación de sobrecarga térmica por subdimensionamiento del conductor, sustitución normativa a calibre 12 AWG, conexión de seguridad a tierra y mediciones cuantitativas de amperaje y voltaje.'
+      verdictParagraph: 'La IA califica el procedimiento con nivel de Maestría Senior según RETIE: identificación certera de sobrecarga térmica, recableado normativo a calibre 12 AWG, conexión de seguridad a tierra y mediciones cuantitativas instrumentales bajo carga.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80'
+    },
+    solar: {
+      tradeName: 'Instalación de Energía Solar Fotovoltaica',
+      icon: '',
+      norms: 'RETIE Cap. 8, IEC 61215 y Código Eléctrico NTC 2050',
+      questions: [
+        {
+          title: 'Diagnóstico de Sombras y Rendimiento en Strings Fotovoltaicos',
+          scenario: 'Un arreglo fotovoltaico residencial en string presenta una caída del 40% en su generación en horas de la mañana. ¿Cuál es la causa técnica más probable?',
+          options: [
+            'Sombreado parcial sobre uno de los módulos que limita la corriente de todo el string conectado en serie debido a la curva I-V.',
+            'Los módulos solares generan menos energía porque están sobrecalentados por la luz del amanecer.',
+            'El inversor se apaga intencionalmente porque las baterías están en modo de ecualización diurna.',
+            'La radiación solar viaja en polaridad invertida en las primeras horas del día.'
+          ],
+          correct: 0,
+          explanation: 'En conexiones en serie (strings), la celda o módulo más ensombrecido actúa como cuello de botella para la corriente de todo el circuito.'
+        },
+        {
+          title: 'Dimensionamiento de Protecciones DC y DPS',
+          scenario: 'En el lado de corriente continua (DC) entre los paneles solares y el inversor híbrido, ¿qué elementos de protección son indispensables?',
+          options: [
+            'Seccionador bajo carga DC, fusibles fotovoltaicos tipo gPV para 1000V y descargador de sobretensiones (DPS) transitorias DC.',
+            'Interruptores termomagnéticos convencionales de corriente alterna AC de ferretería común.',
+            'Empalmes directos encintados sin fusible ni caja combinadora (combiner box).',
+            'Un interruptor de luz simple de pared para cortar la corriente manualmente.'
+          ],
+          correct: 0,
+          explanation: 'La corriente continua genera arcos eléctricos de difícil extinción; exige protecciones homologadas específicamente para DC (gPV) y DPS.'
+        },
+        {
+          title: 'Estructura de Montaje y Sellado de Cubiertas',
+          scenario: 'Al anclar la perfilería de aluminio anodizado en una cubierta de teja o losa de concreto, ¿cómo se previene la filtración de agua?',
+          options: [
+            'Utilizando pernos de acero inoxidable con arandela de caucho EPDM y sellador de poliuretano estructural de alta resistencia UV.',
+            'Fijando las patas con clavos de acero común sin empaquetadura ni sellador.',
+            'Apoyando los paneles sueltos sobre la cubierta sin atornillar para no perforar el tejado.',
+            'Aplicando cemento de contacto escolar alrededor de la perforación.'
+          ],
+          correct: 0,
+          explanation: 'El caucho vulcanizado EPDM y el sellador de poliuretano garantizan estanqueidad frente a lluvias torrenciales y soportan la radiación UV por décadas.'
+        },
+        {
+          title: 'Puesta en Marcha y Verificación de Voc e Isc',
+          scenario: 'Antes de conectar los strings a las entradas MPPT del inversor, ¿qué pruebas de control de calidad deben realizarse obligatoriamente?',
+          options: [
+            'Medir voltaje de circuito abierto (Voc) comprobando polaridad correcta y verificar corriente de cortocircuito (Isc) bajo irradiancia conocida.',
+            'Conectar directamente los cables al inversor para ver si echa humo o enciende.',
+            'Medir únicamente con la lengua para verificar si hay corriente en las terminales MC4.',
+            'Omitir mediciones y encender el sistema sin comprobar aislamiento a tierra.'
+          ],
+          correct: 0,
+          explanation: 'La comprobación previa de Voc y polaridad en conectores MC4 evita la destrucción catastrófica de las etapas MPPT del inversor por polaridad inversa.'
+        }
+      ],
+      sampleTranscript: 'Realicé la instalación de un sistema fotovoltaico de 3.6 kWp con 8 módulos monocristalinos de 450W en cubierta metálica. Anclé la perfilería de aluminio con pernos sellados con arandelas EPDM y poliuretano. Conecté el string con cable solar fotovoltaico de 4mm² con doble aislamiento UV, instalando caja de protecciones DC con fusibles gPV de 15A y DPS tipo 2. Medí un Voc total de 396V en vacío y conecté al inversor híbrido, configurando la inyección cero y comprobando sincronismo estable con la red a 60 Hz.',
+      expectedConcepts: [
+        'Curva I-V y cálculo de Voc / Isc',
+        'Fusibles fotovoltaicos gPV y DPS DC',
+        'Cable solar resistente a radiación UV',
+        'Anclajes estructurales con sellado EPDM',
+        'Inversor MPPT y sincronismo de red',
+        'Protocolo RETIE y pruebas de aislamiento'
+      ],
+      aiScores: { c1: 25, c2: 24, c3: 25, c4: 24, overall: 98 },
+      verdictParagraph: 'La IA certifica idoneidad con honores en energía solar: cálculo preciso de series de paneles, uso estricto de protecciones DC homologadas, anclaje estanco en cubierta y mediciones de seguridad antes de la interconexión con la red eléctrica.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80'
     },
     carpinteria: {
-      tradeName: 'Carpintería & Muebles',
-      icon: '🪵',
+      tradeName: 'Carpintería Fina & Ebanistería',
+      icon: '',
       norms: 'Estándares de Ebanistería y Secado de Madera',
+      questions: [
+        {
+          title: 'Diagnóstico de Deformación por Contracción y Humedad',
+          scenario: 'Un mueble de madera maciza presenta alabeo en la tapa superior y fisuras en las uniones tras un cambio de temporada. ¿Cuál es el diagnóstico pericial?',
+          options: [
+            'La madera fue trabajada con contenido de humedad desequilibrado (>14%) y se contrajo tangencialmente al secarse en ambiente interior.',
+            'El mueble fue armado con tornillos demasiado cortos para el peso de la madera.',
+            'La madera fue atacada de inmediato por polillas invisibles que doblan las fibras.',
+            'El pegamento utilizado era demasiado flexible y desalineó las tablas por gravedad.'
+          ],
+          correct: 0,
+          explanation: 'La madera es un material higroscópico. Si no se seca al 8-10% antes del ensamble, los cambios de humedad relativa generan alabeos y tensiones internas.'
+        },
+        {
+          title: 'Técnica de Ensamble y Uniones Estructurales',
+          scenario: 'Para ensamblar el marco de una puerta de madera maciza sometida a uso continuo, ¿qué unión garantiza mayor durabilidad mecánica?',
+          options: [
+            'Ensamble de caja y espiga pasante o espiga ciega encolada con adhesivo D3/D4 bajo prensa.',
+            'Unión a tope fijada únicamente con clavos sin cabeza y silicona acrílica.',
+            'Pegado simple de canto a canto sin ninguna espiga, tarugo o galleta de refuerzo.',
+            'Grapas metálicas de tapicería en las esquinas exteriores.'
+          ],
+          correct: 0,
+          explanation: 'La unión de caja y espiga proporciona gran área de contacto de fibra y resistencia mecánica al torque y a los ciclos de apertura.'
+        },
+        {
+          title: 'Preparación de Superficie y Lijado Progresivo',
+          scenario: 'Antes de aplicar acabado con poliuretano o barniz catalizado, ¿cuál es la secuencia correcta de lijado para no rayar la madera?',
+          options: [
+            'Lijado progresivo en el sentido de la veta con granos 100, 150, 180 y 240, limpiando el polvo residual entre granos.',
+            'Lijado transversal en círculos con lija gruesa grano 60 únicamente.',
+            'Aplicar el barniz directo sobre la madera en bruto sin lijar para que penetre más.',
+            'Usar cepillo de alambre de acero para desgastar la veta rápidamente.'
+          ],
+          correct: 0,
+          explanation: 'El lijado progresivo siguiendo la veta elimina los arañazos del grano anterior y abre el poro de manera uniforme sin dejar marcas visibles bajo la luz.'
+        },
+        {
+          title: 'Protección y Sellado contra la Humedad',
+          scenario: 'Al instalar muebles en zonas de baño o cocina, ¿cómo se protegen los cantos inferiores que tocan el suelo?',
+          options: [
+            'Sellando los cantos con parafina, fondo de poliuretano impermeable y colocando niveladores de nylon para elevar el mueble del piso.',
+            'Dejando el aglomerado o madera al corte vivo directamente en contacto con el agua del trapero.',
+            'Cubriendo la base con papel adhesivo decorativo sin sellado químico.',
+            'Echando pintura de agua común en los cantos sin lijado previo.'
+          ],
+          correct: 0,
+          explanation: 'Los cantos en corte absorben humedad por capilaridad; el sellado hidrófugo y el aislamiento con niveladores evita que el mueble se hinche y deteriore.'
+        }
+      ],
       sampleTranscript: 'La puerta principal rozaba contra el marco por dilatación estacional y el ensamble superior presentaba holgura. Desmonté la hoja, cepillé el canto respetando la luz de 3 milímetros perimetral, y reforcé el ensamble a inglete mediante espiga oculta encolada con adhesivo D3 y prensas de escuadra. Lijé en gradación 120 a 220 y apliqué sellador de poliuretano para proteger contra la humedad.',
       expectedConcepts: [
-        'Ensamble a inglete con espiga',
+        'Ensamble de caja y espiga encolada',
         'Luz de dilatación perimetral (3mm)',
-        'Adhesivo para madera D3',
+        'Adhesivo para madera D3 resistente a humedad',
         'Prensas de escuadra a 90°',
-        'Lijado progresivo (grano 120-220)',
-        'Sellador de poliuretano antihumedad'
-      ],
-      aiScores: { c1: 23, c2: 24, c3: 24, c4: 23, overall: 94 },
-      verdictParagraph: 'La IA valida la pericia del maestro en carpintería fina: corrección de dilatación térmica sin desbalancear la escuadra, aplicación de adhesivo resistente y sellado químico para prevenir reincidencia por humedad ambiental.'
-    },
-    pintura: {
-      tradeName: 'Pintura & Acabados',
-      icon: '🎨',
-      norms: 'NTC 5828 y Preparación de Superficies',
-      sampleTranscript: 'El muro de la sala presentaba descascaramiento y microfisuras por humedad previa ya reparada. Rasqueteé la película suelta, apliqué fijador sellador impermeabilizante y nivelé las fisuras con masilla acrílica elástica. Tras curado de 4 horas, realicé lijado fino al ras y apliqué dos manos uniformes de vinilo tipo 1 lavable con rodillo de microfibra, protegiendo zócalos con cinta de enmascarar.',
-      expectedConcepts: [
-        'Fijador sellador impermeabilizante',
-        'Masilla acrílica elástica',
-        'Vinilo Tipo 1 lavable',
-        'Curado de 4 horas entre capas',
-        'Lijado fino al ras',
-        'Acabado homogéneo sin traslape'
-      ],
-      aiScores: { c1: 24, c2: 23, c3: 24, c4: 23, overall: 94 },
-      verdictParagraph: 'La IA comprueba excelente dominio técnico: preparación del sustrato previa a la pintura, uso de masilla elastomérica para impedir reaparición de fisuras y aplicación de pintura tipo 1 con tiempos de secado normativos.'
-    },
-    electrodomesticos: {
-      tradeName: 'Electrodomésticos & Neveras',
-      icon: '🧊',
-      norms: 'Normas de Seguridad en Circuitos Frigoríficos',
-      sampleTranscript: 'La nevera no enfriaba en el compartimento inferior y acumulaba escarcha en el evaporador. Con multímetro medí continuidad en la resistencia de deshielo, encontrándola abierta a circuito infinito. Reemplacé la resistencia bimetálica por repuesto original, verifiqué el fusible térmico y probé el flujo de aire del ventilador forzado. El ciclo de defrost automático operó correctamente y la temperatura estabilizó a 4 grados centígrados.',
-      expectedConcepts: [
-        'Diagnóstico de bimetálico y resistencia',
-        'Medición de continuidad en ohmios',
-        'Fusible térmico de protección',
-        'Ventilador forzado de evaporador',
-        'Ciclo de deshielo (defrost) automático',
-        'Estabilización térmica (4°C)'
-      ],
-      aiScores: { c1: 25, c2: 24, c3: 24, c4: 24, overall: 97 },
-      verdictParagraph: 'La IA evalúa con honores el diagnóstico frigorífico: medición instrumental de resistencia en lugar de suposiciones, reemplazo con repuestos originales y verificación de ciclo completo de temperatura controlada.'
-    },
-    cerrajeria: {
-      tradeName: 'Cerrajería de Seguridad',
-      icon: '🔑',
-      norms: 'Estándares de Seguridad Física y Cilindros',
-      sampleTranscript: 'La cerradura principal presentaba bloqueo intermitente y desalineación entre el pestillo y la cantonera del marco por asentamiento de la puerta. Desmonté el cilindro de seguridad, limpié las guardas internas aplicando grafito seco micronizado, rebajé y realineé el cerradero metálico en el marco con formón y lima, comprobando un giro suave y dos golpes de llave sin fricción.',
-      expectedConcepts: [
-        'Cilindro de seguridad europerfil',
-        'Lubricación con grafito seco en polvo',
-        'Alineación de cantonera en marco',
-        'Ajuste de pestillo y resbalón',
-        'Cero fricción en giros de llave',
-        'Garantía de mecanismo antirobo'
-      ],
-      aiScores: { c1: 24, c2: 23, c3: 24, c4: 24, overall: 95 },
-      verdictParagraph: 'La IA aprueba con distinción la pericia en cerrajería: aplicación de la regla de oro (usar grafito y jamás aceites viscosos que apelmazan las guardas) y ajuste milimétrico del recibidor en marco.'
-    },
-    albanileria: {
-      tradeName: 'Albañilería & Enchapes',
-      icon: '🧱',
-      norms: 'NSR-10 y Normas de Acabados Cerámicos',
-      sampleTranscript: 'Se requería enchapar piso y muro en baño con cerámica de gran formato. Nivelé la base con mortero 1 a 4 con aditivo impermeabilizante, verifiqué pendiente hacia el sifón del 1.5% y apliqué pega flexible con llana dentada de 10mm mediante técnica de doble encolado. Utilicé crucetas autonivelantes de 2mm, emboquillé con fragua antimicótica y comprobé planeidad absoluta con regla de aluminio.',
-      expectedConcepts: [
-        'Mortero nivelador impermeabilizado',
-        'Pendiente hacia sifón del 1.5%',
-        'Técnica de doble encolado con llana 10mm',
-        'Crucetas autonivelantes',
-        'Fragua epóxica / antimicótica',
-        'Comprobación de planeidad con regla'
+        'Lijado progresivo siguiendo la veta',
+        'Sellador de poliuretano hidrófugo'
       ],
       aiScores: { c1: 24, c2: 24, c3: 25, c4: 24, overall: 97 },
-      verdictParagraph: 'La IA certifica el conocimiento de albañilería moderna: doble encolado para evitar piezas huecas en gran formato, nivelación con pendiente correcta hacia el desagüe y uso de boquilla resistente a la humedad.'
+      verdictParagraph: 'La IA valida la pericia del maestro en carpintería fina: corrección de dilatación térmica sin desbalancear la escuadra, aplicación de adhesivo resistente y sellado químico para prevenir reincidencia por humedad ambiental.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80'
+    },
+    mecanica: {
+      tradeName: 'Mecánica Automotriz & Diagnóstico OBD2',
+      icon: '',
+      norms: 'Estándares SAE, Normas OBD-II y Seguridad de Taller',
+      questions: [
+        {
+          title: 'Diagnóstico Electrónico con Escáner OBD2',
+          scenario: 'Un vehículo presenta testigo Check Engine encendido y código de falla P0301 (Fallo de combustión en cilindro 1). ¿Cuál es la ruta metódica de diagnóstico?',
+          options: [
+            'Intercambiar la bobina del cilindro 1 al 2 y verificar si la falla migra; si migra es la bobina, si no, revisar bujía, pulso de inyector y compresión mecánica.',
+            'Desconectar la batería por 10 minutos para borrar la luz y entregar el vehículo al cliente sin revisar.',
+            'Reemplazar de inmediato la computadora (ECU) del motor sin realizar ninguna medición previa.',
+            'Vaciar el tanque de gasolina y echarle combustible premium sin diagnosticar los componentes.'
+          ],
+          correct: 0,
+          explanation: 'La prueba cruzada de componentes y el análisis de causa raíz evitan gastos innecesarios al cliente y aíslan con certeza la avería eléctrica o mecánica.'
+        },
+        {
+          title: 'Torque Normativo y Sustitución de Componentes Críticos',
+          scenario: 'Al sustituir la culata o empaque de motor, ¿qué herramienta de precisión es obligatoria para ajustar los pernos según manual de taller?',
+          options: [
+            'Torquímetro de zafre calibrado y goniómetro angular respetando la secuencia en espiral y las etapas de apriete del fabricante.',
+            'Llave neumática de impacto a máxima potencia hasta que el perno ya no gire.',
+            'Alicate de presión con tubo de extensión para hacer palanca con el pie.',
+            'Apretado a mano con llave fija hasta que se sienta apretado.'
+          ],
+          correct: 0,
+          explanation: 'El apriete angular y por torque especificado en manual garantiza deformación elástica controlada del perno y asentamiento hermético del empaque sin quebrar el bloque.'
+        },
+        {
+          title: 'Sistema de Frenos y Purga Hidráulica',
+          scenario: 'Tras cambiar pastillas y mangueras de freno delanteras, el pedal se va al fondo con tacto esponjoso. ¿Cómo se soluciona técnicamente?',
+          options: [
+            'Realizar purga completa del líquido de frenos DOT 4 en las 4 ruedas en la secuencia recomendada para expulsar cualquier burbuja de aire.',
+            'Ajustar más el freno de mano para compensar la falta de frenado hidráulico.',
+            'Agregar aceite de motor en el depósito de frenos para espesar el fluido.',
+            'Indicar al cliente que el freno se irá ajustando solo con los kilómetros.'
+          ],
+          correct: 0,
+          explanation: 'El aire es compresible a diferencia del líquido de frenos; una sola microburbuja reduce drásticamente la fuerza de frenado poniendo en riesgo la vida.'
+        },
+        {
+          title: 'Prueba Dinámica de Carretera y Validación Final',
+          scenario: 'Finalizada una reparación del tren delantero y suspensión, ¿qué validación obligatoria se debe realizar antes de la entrega?',
+          options: [
+            'Alineación y balanceo computarizado de las ruedas y prueba de ruta comprobando estabilidad de volante, frenado recto y ausencia de ruidos parásitos.',
+            'Lavar el vehículo y no probarlo en movimiento.',
+            'Revisar únicamente la presión de aire en las llantas.',
+            'Entregar el vehículo sin verificar los pernos de las rótulas ni terminales.'
+          ],
+          correct: 0,
+          explanation: 'La alineación y la prueba dinámica en carretera garantizan que la geometría de la dirección esté dentro de especificación y no desgaste prematuramente los neumáticos.'
+        }
+      ],
+      sampleTranscript: 'El vehículo ingresó con testigo Check Engine encendido y ralentí inestable. Conecté el escáner automotriz OBD2 detectando código P0301. Realicé prueba cruzada de bobinas confirmando que el fallo seguía en el cilindro 1, medí compresión registrando 160 PSI parejo, y al desmontar la bujía encontré electrodo desgastado con resistencia abierta. Cambié el juego de bujías de iridio calibradas a 0.040 pulgadas, limpié el cuerpo de aceleración y reajusté el ralentí, verificando ajuste de combustible en tiempo real a cero error.',
+      expectedConcepts: [
+        'Diagnóstico con escáner OBD2',
+        'Prueba cruzada de componentes y pulso',
+        'Medición de compresión en PSI',
+        'Bujías calibradas a especificación',
+        'Torquímetro para ajuste normativo',
+        'Prueba de ruta y lectura de datos en vivo'
+      ],
+      aiScores: { c1: 25, c2: 25, c3: 24, c4: 25, overall: 99 },
+      verdictParagraph: 'La IA evalúa con distinción la pericia en mecánica automotriz: secuencia diagnóstica deductiva impecable, medición instrumental de compresión y uso de parámetros en vivo para validar la reparación.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80'
+    },
+    refrigeracion: {
+      tradeName: 'Refrigeración & Aires Acondicionados HVAC',
+      icon: '',
+      norms: 'Normas ASHRAE 15 y Manejo Seguro de Gases Refrigerantes',
+      questions: [
+        {
+          title: 'Protocolo de Vacío y Deshidratación del Sistema',
+          scenario: 'Al instalar una unidad minisplit de aire acondicionado con refrigerante ecológico R410A / R32, ¿cuál es el procedimiento normativo para el vacío?',
+          options: [
+            'Conectar bomba de vacío de dos etapas con vacuómetro digital y descender a menos de 500 micrones, comprobando estanqueidad durante 15 minutos.',
+            'Hacer una purga rápida abriendo la válvula de gas para barrer el aire por la otra toma.',
+            'Omitir la bomba de vacío y encender el equipo directamente con el aire atmosférico adentro.',
+            'Conectar un compresor de aire común para empujar el aire atrapado.'
+          ],
+          correct: 0,
+          explanation: 'La humedad atmosférica combinada con aceite POE forma ácidos que destruyen el bobinado del compresor; los 500 micrones garantizan evaporación total del agua.'
+        },
+        {
+          title: 'Detección de Fugas y Presurización con Nitrógeno',
+          scenario: 'Para ubicar una microfuga en un serpentín evaporador de climatización, ¿qué gas debe utilizarse para presurizar el circuito de forma segura?',
+          options: [
+            'Nitrógeno seco (OFN) regulado a presión de prueba (150 a 300 PSI según fabricante) y agua jabonosa o detector electrónico.',
+            'Oxígeno puro a alta presión.',
+            'Gas propano para detectar la fuga encendiendo fuego cerca.',
+            'Aire comprimido húmedo de estación de gasolina.'
+          ],
+          correct: 0,
+          explanation: 'El nitrógeno seco es un gas inerte, seco y seguro. El oxígeno puro reacciona explosivamente con el aceite de refrigeración y está terminantemente prohibido.'
+        },
+        {
+          title: 'Carga de Refrigerante por Masa (Báscula Digital)',
+          scenario: 'Al reponer la carga completa de gas refrigerante en un equipo que perdió todo el fluido, ¿cómo se dosifica la cantidad exacta?',
+          options: [
+            'Pesando el refrigerante en fase líquida con báscula digital de precisión conforme a los gramos indicados en la placa técnica del fabricante.',
+            'Cargando a ojo hasta que el tubo grueso se sienta frío con la mano.',
+            'Vaciando la botella completa sin importar el tamaño del equipo.',
+            'Midiendo solo la presión manométrica sin considerar la temperatura ambiente ni el subenfriamiento.'
+          ],
+          correct: 0,
+          explanation: 'Los refrigerantes modernos son mezclas que deben cargarse en fase líquida pesada exactamente en gramos para no desbalancear la capacidad ni quemar el compresor.'
+        },
+        {
+          title: 'Control de Calidad: Salto Térmico y Sobrecalentamiento',
+          scenario: 'Para certificar el correcto funcionamiento de un aire acondicionado en modo frío, ¿qué delta térmico (°ΔT) debe existir entre el retorno y la inyección?',
+          options: [
+            'Un salto térmico de entre 10°C y 14°C (18°F a 24°F) con sobrecalentamiento y subenfriamiento dentro de los rangos de la tabla del fabricante.',
+            'Una diferencia menor a 2°C indicando que el aire casi no enfría.',
+            'El aire debe salir caliente para indicar que el compresor está trabajando al máximo.',
+            'No se mide ninguna temperatura, solo se verifica que sople viento.'
+          ],
+          correct: 0,
+          explanation: 'Un delta térmico entre 10°C y 14°C en aire de retorno vs inyección valida la transferencia de calor óptima y la eficiencia energética del equipo.'
+        }
+      ],
+      sampleTranscript: 'Atendí servicio de aire acondicionado minisplit que no enfriaba. Localicé fuga en la pestaña abocardada de la tubería de un cuarto de pulgada. Corté el tramo dañado, realicé nuevo abocardado a 45 grados y ajusté con torquímetro al par del fabricante. Presuricé con nitrógeno seco a 350 PSI confirmando estanqueidad. Bajé el vacío a 380 micrones manteniéndolo estable, y cargué 850 gramos exactos de R410A con báscula digital, verificando un salto térmico de 12 grados centígrados y drenaje fluido del condensado.',
+      expectedConcepts: [
+        'Vacío profundo con vacuómetro (<500 micrones)',
+        'Presurización con nitrógeno seco (OFN)',
+        'Carga en fase líquida con báscula digital',
+        'Abocardado a 45° con torque calibrado',
+        'Salto térmico verificado (12°C)',
+        'Manejo seguro de gases refrigerantes'
+      ],
+      aiScores: { c1: 25, c2: 24, c3: 25, c4: 25, overall: 99 },
+      verdictParagraph: 'La IA evalúa con maestría pericial el diagnóstico frigorífico: respeto absoluto del vacío profundo para proteger el aceite POE, carga volumétrica pesada en báscula y medición rigurosa del salto térmico.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80'
+    },
+    soldadura: {
+      tradeName: 'Soldadura TIG / MIG de Alta Precisión',
+      icon: '',
+      norms: 'Código AWS D1.1 (Structural Welding) y Normas ASME Sección IX',
+      questions: [
+        {
+          title: 'Preparación de Bisel y Limpieza de Metal Base',
+          scenario: 'Al preparar una junta a tope en placa de acero estructural de 10mm para soldadura con penetración completa, ¿cuál es el paso previo esencial?',
+          options: [
+            'Biselar a 60° con talón de 1.5mm y limpiar la zona con amoladora hasta metal blanco eliminando óxido, grasa y cascarilla.',
+            'Soldar directamente sobre la chapa oxidada y pintada para ahorrar tiempo de preparación.',
+            'Dejar una separación de 20 milímetros entre piezas sin bisel.',
+            'Rellenar la unión con masilla antes de aplicar el arco.'
+          ],
+          correct: 0,
+          explanation: 'La presencia de óxido, humedad o cascarilla genera porosidades internas, inclusiones de escoria y falta de fusión que debilitan la soldadura.'
+        },
+        {
+          title: 'Protección Gaseosa y Selección de Parámetros TIG/MIG',
+          scenario: 'Para soldar acero inoxidable austenítico con proceso GTAW (TIG), ¿qué gas de protección y tipo de corriente deben seleccionarse?',
+          options: [
+            'Gas Argón 100% de alta pureza con corriente continua y polaridad directa (DCEN) y electrodo de tungsteno al 2% cerio o torio afilado en punta.',
+            'Gas acetileno inflamable con corriente alterna de alto voltaje.',
+            'Dióxido de carbono (CO2) puro con polaridad inversa.',
+            'Soldar sin gas protector al aire libre expuesto al viento.'
+          ],
+          correct: 0,
+          explanation: 'El argón puro protege el baño fundido de la oxidación atmosférica y la polaridad DCEN concentra el 70% del calor en la pieza garantizando fusión limpia.'
+        },
+        {
+          title: 'Control de Aporte Térmico y Secuencia de Pasadas',
+          scenario: 'Para evitar la distorsión angular y la fragilización por sobrecalentamiento en estructuras soldadas, ¿qué técnica aplica un maestro soldador?',
+          options: [
+            'Controlar el aporte térmico mediante pasadas osciladas controladas, mantener la temperatura entre pasadas y soldar en secuencia de paso de peregrino.',
+            'Quedarse inmóvil con el arco encendido en el mismo punto durante 5 minutos para calentar todo el metal.',
+            'Enfriar el cordón inmediatamente echándole un balde de agua fría.',
+            'Aplicar el máximo amperaje de la máquina en una sola pasada descontrolada.'
+          ],
+          correct: 0,
+          explanation: 'El enfriamiento brusco con agua templa el acero volviéndolo quebradizo; la secuencia escalonada distribuye las tensiones residuales evitando deformaciones.'
+        },
+        {
+          title: 'Inspección Visual y Ensayos No Destructivos (END)',
+          scenario: '¿Qué criterios determinan que un cordón de soldadura cumple los estándares de calidad de la norma AWS D1.1?',
+          options: [
+            'Cordón homogéneo sin poros visibles, ausencia de socavaciones marginales, penetración completa en la raíz y sobreespesor conforme a tolerancia.',
+            'Cordón lleno de poros negros y salpicaduras abundantes por toda la chapa.',
+            'Presencia de fisuras longitudinales en el centro del cordón.',
+            'Falta de fusión evidente donde el metal de aporte quedó pegado sin fundir la base.'
+          ],
+          correct: 0,
+          explanation: 'La norma AWS D1.1 establece límites milimétricos estrictos para discontinuidades superficiales e internas garantizando la integridad estructural bajo cargas dinámicas.'
+        }
+      ],
+      sampleTranscript: 'Realicé la unión estructural de tubería de acero al carbono cédula 40 mediante proceso combinado TIG en raíz y pase de presentación. Biselé a 60 grados con talón de un milímetro y separación uniforme. Purgué el interior de la tubería con gas argón para evitar la oxidación interna. Apliqué el pase de raíz con varilla ER70S-6 a 85 amperios asegurando penetración total con refuerzo interno positivo. Completé los pases de relleno y peinado con cordones uniformes y sin socavación, superando la inspección visual con galga y prueba de líquidos penetrantes.',
+      expectedConcepts: [
+        'Código AWS D1.1 / ASME IX',
+        'Preparación de bisel a 60° y talón',
+        'Gas argón de purga y protección',
+        'Penetración de raíz completa',
+        'Control de aporte térmico sin socavaciones',
+        'Inspección con galga y líquidos penetrantes'
+      ],
+      aiScores: { c1: 25, c2: 24, c3: 25, c4: 25, overall: 99 },
+      verdictParagraph: 'La IA certifica maestría en soldadura de alta exigencia: purga interna con gas inerte para evitar la oxidación en la raíz, control de parámetros de amperaje y acabado visual homologado bajo normas AWS.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'
+    },
+    cerrajeria: {
+      tradeName: 'Cerrajería Digital & Alta Seguridad',
+      icon: '',
+      norms: 'Normas de Seguridad Física UNE-EN 1303 y Cerraduras Electrónicas',
+      questions: [
+        {
+          title: 'Diagnóstico de Ataques de Vulnerabilidad Física (Bumping y Ganzuado)',
+          scenario: 'Un cliente solicita blindar la puerta principal de su vivienda frente a intrusiones silenciosas. ¿Qué tecnología de cilindro es la requerida?',
+          options: [
+            'Cilindro de seguridad de perfil europeo con certificación antibumping, antiganzúa, barra de acero antitaladro y pines telescópicos.',
+            'Cerradura de pomo simple con llave de serreta tradicional fácil de forzar.',
+            'Un candado de hierro colgado de un cáncamo de madera.',
+            'Retirar la cerradura y colocar un pestillo de resorte sin llave.'
+          ],
+          correct: 0,
+          explanation: 'Los cilindros certificados bajo norma europea cuentan con trampas internas, rotores acerados y pines de doble línea que impiden la apertura por bumping y taladrado.'
+        },
+        {
+          title: 'Lubricación y Mantenimiento Técnico de Guardas',
+          scenario: 'Al lubricar los componentes mecánicos de un cilindro de seguridad que gira con dureza, ¿qué producto debe utilizarse exclusivamente?',
+          options: [
+            'Polvo de grafito seco micronizado o lubricante sintético seco de teflón que no atraiga polvo.',
+            'Aceite de motor usado o grasa espesa de automoción.',
+            'Aceite comestible de cocina que se oxida y se vuelve pegajoso.',
+            'Agua con detergente para enjuagar las guardas.'
+          ],
+          correct: 0,
+          explanation: 'Los aceites viscosos apelmazan el polvo atmosférico dentro del cilindro bloqueando las guardas y resortes. La regla de oro es usar siempre grafito seco en polvo.'
+        },
+        {
+          title: 'Alineación de Cerradero y Cantonera en Marco',
+          scenario: 'Por asentamiento de la puerta, los cerrojos de una cerradura de seguridad frotan con fuerza contra el cerradero del marco impidiendo girar la llave suavemente. ¿Cómo se calibra?',
+          options: [
+            'Alinear y embutir la cantonera metálica en el marco respetando la holgura con formón y lima para que los pasadores entren holgados sin roce.',
+            'Forzar la llave con un alicate hasta romperla dentro del cilindro.',
+            'Limar los pernos de seguridad de la cerradura debilitando su grosor.',
+            'Dejar la puerta sin cerrar con pasadores.'
+          ],
+          correct: 0,
+          explanation: 'La cerradura debe cerrar suavemente con dos golpes de llave sin que el usuario deba empujar o levantar la hoja de la puerta.'
+        },
+        {
+          title: 'Instalación de Cerraduras Electrónicas y Biométrica',
+          scenario: 'Al instalar una cerradura digital inteligente con huella y teclado en puerta exterior, ¿qué factor crítico de seguridad no debe omitirse?',
+          options: [
+            'Verificar la resistencia a la intemperie (grado IP), la llave mecánica de emergencia de alta seguridad y el puerto de alimentación externa para batería agotada.',
+            'Desechar la llave física de respaldo y dejar que el cliente dependa solo de las pilas.',
+            'Conectar la cerradura directamente a la red de 110V sin transformador ni fusible.',
+            'Dejar la contraseña de fábrica (1234) sin cambiar por el usuario.'
+          ],
+          correct: 0,
+          explanation: 'Las cerraduras electrónicas deben contar obligatoriamente con redundancia mecánica de emergencia para garantizar acceso seguro en caso de fallo de batería.'
+        }
+      ],
+      sampleTranscript: 'La cerradura principal presentaba bloqueo intermitente y desalineación entre el pestillo y la cantonera del marco por asentamiento de la puerta. Desmonté el cilindro de seguridad, limpié las guardas internas aplicando grafito seco micronizado, rebajé y realineé el cerradero metálico en el marco con formón y lima, comprobando un giro suave y dos golpes de llave sin fricción.',
+      expectedConcepts: [
+        'Cilindro de seguridad europerfil antibumping',
+        'Lubricación con polvo de grafito micronizado',
+        'Alineación milimétrica de cantonera en marco',
+        'Ajuste de pestillo y resbalón sin fricción',
+        'Redundancia de seguridad mecánica',
+        'Garantía formal de seguridad antirrobo'
+      ],
+      aiScores: { c1: 24, c2: 25, c3: 24, c4: 25, overall: 98 },
+      verdictParagraph: 'La IA aprueba con honores la pericia en cerrajería: aplicación de la regla de oro de la disciplina (grafito seco y jamás aceites apelmazantes) y alineación de precisión en marco para evitar torque excesivo.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80'
+    },
+    barismo: {
+      tradeName: 'Barismo Profesional & Café de Especialidad',
+      icon: '',
+      norms: 'Estándares SCA (Specialty Coffee Association)',
+      questions: [
+        {
+          title: 'Calibración de Molienda y Ratio de Extracción Espresso',
+          scenario: 'Un espresso preparado con 18g de café en el portafiltro extrae 60g de bebida en 14 segundos, resultando en una taza agria y con crema pálida. ¿Cuál es el diagnóstico pericial?',
+          options: [
+            'Subextracción severa por molienda demasiado gruesa o canalización del flujo; se debe ajustar el molino a una granulometría más fina para alcanzar ratio 1:2 en 25-30 segundos.',
+            'Sobreextracción extrema por quemar el café con agua fría.',
+            'El café es demasiado fino y tapó la ducha de la máquina.',
+            'Se debe agregar azúcar antes de la extracción para espesar la crema.'
+          ],
+          correct: 0,
+          explanation: 'El flujo rápido en 14 segundos arrastra solo los ácidos de alta solubilidad dejando atrás los azúcares y notas dulces que equilibran el espresso conforme al protocolo SCA.'
+        },
+        {
+          title: 'Química del Agua y Temperatura de Extracción',
+          scenario: 'Bajo los estándares de la SCA para café de especialidad, ¿qué parámetros de agua y temperatura garantizan la solubilidad ideal?',
+          options: [
+            'Agua filtrada con TDS de 75 a 150 ppm, dureza balanceada y temperatura de caldera controlada entre 90°C y 94°C.',
+            'Agua destilada pura con 0 ppm de minerales a 70°C.',
+            'Agua de mar salada sin filtrar para realzar el cuerpo del café.',
+            'Agua hirviendo a 105°C para quemar los aceites del grano.'
+          ],
+          correct: 0,
+          explanation: 'El agua necesita iones de calcio y magnesio para disolver los compuestos aromáticos del café; el agua destilada extrae una bebida plana y astringente.'
+        },
+        {
+          title: 'Técnica de Emulsión y Texturizado de Leche (Microespuma)',
+          scenario: 'Al vaporizar leche para un cappuccino o latte art, ¿cuál es la técnica para obtener microespuma sedosa sin burbujas visibles?',
+          options: [
+            'Posicionar la lanceta justo bajo la superficie para inyectar aire suave hasta 37°C y luego sumergirla generando un vórtice hasta alcanzar 60-65°C.',
+            'Dejar la lanceta en el fondo de la jarra sin moverla hasta que hierva a 90°C.',
+            'Batir la leche fría con una cuchara de plástico y verterla directamente.',
+            'Inyectar vapor a máxima potencia en la superficie hasta formar grandes burbujas secas de jabón.'
+          ],
+          correct: 0,
+          explanation: 'El vórtice rompe las burbujas integrándolas con las proteínas de la leche, logrando una textura elástica y dulce a 65°C antes de desnaturalizar la lactosa.'
+        },
+        {
+          title: 'Limpieza y Desengrasado del Grupo Espresso',
+          scenario: 'Al finalizar el turno en barra, ¿qué protocolo de mantenimiento previene la contaminación por sabores rancios en la taza?',
+          options: [
+            'Retrolavado (backflush) con filtro ciego y detergente especializado para remover aceites oxidados de la válvula de tres vías, ducha y dispersor.',
+            'Enjuagar el portafiltro únicamente con agua de grifo sin limpiar las duchas internas.',
+            'Dejar la borra de café dentro del grupo hasta el día siguiente.',
+            'Aplicar cloro concentrado dentro del calderín de agua.'
+          ],
+          correct: 0,
+          explanation: 'Los aceites del café se oxidan con el calor en horas adquiriendo sabor a quemado rancio; el retrolavado químico diario preserva la pureza sensorial del grano.'
+        }
+      ],
+      sampleTranscript: 'Calibré la barra para un café colombiano de origen Nariño proceso lavado con tueste medio. Ajusté el molino micrométrico para una dosis de 18.5 gramos en canasta de precisión, nivelé con distribuidor y apliqué compactado uniforme a 15 kilos de presión. En la máquina a 93 grados y 9 bares de presión obtuve una extracción de 37 gramos en 27 segundos con crema avellanada elástica y notas cítricas balanceadas. Texturicé leche a 62 grados logrando microespuma sedosa y realicé retrolavado del grupo con filtro ciego al cierre.',
+      expectedConcepts: [
+        'Estándares SCA de extracción',
+        'Dosis, rendimiento (ratio 1:2) y tiempo (27s)',
+        'Calibración micrométrica de molienda',
+        'Temperatura de agua controlada (93°C)',
+        'Texturizado de leche con microespuma (62°C)',
+        'Mantenimiento con retrolavado y filtro ciego'
+      ],
+      aiScores: { c1: 25, c2: 24, c3: 25, c4: 25, overall: 99 },
+      verdictParagraph: 'La IA certifica maestría en barismo profesional: control exhaustivo de variables de extracción según SCA, química del agua y emulsión de leche a temperatura de dulzor natural.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80'
+    },
+    drones: {
+      tradeName: 'Mantenimiento y Calibración de Drones',
+      icon: '',
+      norms: 'Regulaciones Aeronáuticas RAC 100 y Estándares de Aviónica UAV',
+      questions: [
+        {
+          title: 'Calibración de Sensores Inerciales (IMU y Brújula Magnetométrica)',
+          scenario: 'Un dron multirotor presenta deriva lateral inesperada (drift) y comportamiento errático en modo GPS. ¿Cuál es el procedimiento técnico pericial?',
+          options: [
+            'Calibrar la IMU en una superficie perfectamente nivelada a temperatura ambiente y calibrar la brújula en campo abierto lejos de estructuras metálicas y hormigón armado.',
+            'Acelerar a fondo los motores con las manos para forzar el enderezamiento.',
+            'Ponerle una piedra de contrapeso en el brazo con deriva.',
+            'Desactivar los satélites GPS y volar a ciegas cerca de cables de alta tensión.'
+          ],
+          correct: 0,
+          explanation: 'El hormigón armado contiene varillas de acero que distorsionan el campo magnético local alterando la calibración de la brújula y provocando pérdida de control en vuelo.'
+        },
+        {
+          title: 'Diagnóstico de Baterías LiPo y Seguridad de Carga',
+          scenario: 'Al inspeccionar una batería LiPo 4S de 14.8V, una celda marca 3.1V mientras las otras tres marcan 4.15V y presenta leve hinchamiento. ¿Cuál es la acción técnica?',
+          options: [
+            'Dar de baja la batería de inmediato descargándola a 0V en salmuera para reciclaje seguro, ya que la celda desbalanceada presenta riesgo inminente de ignición térmica.',
+            'Pinchar la celda hinchada con un alfiler para sacarle el gas y seguir volando.',
+            'Cargarla a 5 veces su amperaje nominal para forzar la celda dañada.',
+            'Envolverla en cinta aislante y usarla en vuelos de larga distancia.'
+          ],
+          correct: 0,
+          explanation: 'Una celda LiPo con caída inferior a 3.2V y degradación química con hinchamiento sufre descomposición interna irreversible con alto riesgo de fuego espontáneo.'
+        },
+        {
+          title: 'Balanceo de Hélices y Control de Vibraciones',
+          scenario: '¿Por qué es indispensable balancear dinámicamente las palas de las hélices antes de instalar en motores brushless?',
+          options: [
+            'Para eliminar vibraciones de alta frecuencia que saturan los giroscopios de la controladora de vuelo y degradan la nitidez de la cámara del gimbal.',
+            'Para que el dron haga más ruido durante el despegue.',
+            'Para cambiar el color del plástico de las palas.',
+            'No es necesario balancear las hélices porque los motores giran despacio.'
+          ],
+          correct: 0,
+          explanation: 'Las vibraciones mecánicas son leídas como aceleraciones falsas por la controladora, provocando sobrecalentamiento de motores y pérdida de estabilidad.'
+        },
+        {
+          title: 'Configuración de Fail-Safe y Pruebas Previas al Despegue',
+          scenario: 'En la lista de chequeo (pre-flight checklist), ¿qué parámetro de seguridad fail-safe debe ser verificado antes de armar los motores?',
+          options: [
+            'Fijación del punto de retorno a casa (RTH / Home Point) con más de 12 satélites bloqueados y altitud de RTH configurada por encima de los obstáculos circundantes.',
+            'Desconectar la antena del radiocontrol para ver si el dron se queda quieto.',
+            'Volar sin verificar el estado de la memoria SD ni el enlace de telemetría.',
+            'Armar los motores con personas a menos de un metro de las hélices.'
+          ],
+          correct: 0,
+          explanation: 'Si el dron pierde el enlace de radio con el piloto, el sistema Fail-Safe RTH sube automáticamente a la altura segura programada y regresa autónomamente al despegue.'
+        }
+      ],
+      sampleTranscript: 'Realicé el mantenimiento preventivo y calibración general de un dron cuadricóptero tras 100 horas de vuelo. Desmonté los 4 motores brushless limpiando rodamientos y verificando holgura milimétrica. Reemplacé las hélices desbalanceadas por repuestos originales de fibra de carbono. En banco de calibración ejecuté calibración de la IMU en 6 ejes a nivel cero absoluto y calibración de brújula en exterior. Configuré el Fail-Safe de regreso a casa a 45 metros sobre el terreno y verifiqué telemetría con 18 satélites y enlace de radio al 100%.',
+      expectedConcepts: [
+        'Regulaciones aeronáuticas UAV RAC 100',
+        'Calibración de IMU en 6 ejes y brújula',
+        'Gestión y seguridad de baterías LiPo',
+        'Balanceo dinámico de hélices y motores brushless',
+        'Configuración de Fail-Safe y Home Point RTH',
+        'Checklist pre-vuelo y telemetría de enlace'
+      ],
+      aiScores: { c1: 25, c2: 25, c3: 24, c4: 25, overall: 99 },
+      verdictParagraph: 'La IA dictamina competencia de élite en aviónica y mantenimiento de drones: riguroso protocolo de calibración inercial, gestión de baterías químicas y priorización de la seguridad operacional en vuelo.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=800&q=80'
+    },
+    panaderia: {
+      tradeName: 'Panadería Artesanal & Masas Madre',
+      icon: '',
+      norms: 'BPM (Buenas Prácticas de Manufactura) y Fermentación Biológica',
+      questions: [
+        {
+          title: 'Control de Fermentación y Actividad de Masa Madre',
+          scenario: 'Al elaborar pan con masa madre 100% natural, ¿cómo se determina que el fermento está en su punto óptimo para el amasado?',
+          options: [
+            'Ha triplicado su volumen tras el refresco, presenta estructura esponjosa de panal, aroma dulce-afrutado y supera la prueba de flotabilidad en agua.',
+            'Huele a vinagre puro y se ha desinflado completamente en el fondo del frasco.',
+            'Está congelada en bloque de hielo sin ninguna burbuja de gas carbónico.',
+            'Se debe mezclar con levadura química en polvo antes de que fermente.'
+          ],
+          correct: 0,
+          explanation: 'La masa madre en su punto pico de maduración concentra levaduras salvajes y bacterias ácido-lácticas en equilibrio para dar volumen y acidez controlada.'
+        },
+        {
+          title: 'Desarrollo de Red de Gluten y Prueba de la Membrana',
+          scenario: 'Durante el amasado de una masa con 75% de hidratación, ¿cómo se comprueba que el gluten ha alcanzado su elasticidad máxima?',
+          options: [
+            'Estirando una porción suavemente entre los dedos hasta formar una película traslúcida que no se rompe (prueba de la membrana o ventana de gluten).',
+            'La masa se rompe en pedazos secos y agrietados al menor intento de estirado.',
+            'Debe quedar líquida como sopa para que sea esponjosa.',
+            'Amasando con batidora a máxima velocidad hasta quemar la masa por fricción térmica.'
+          ],
+          correct: 0,
+          explanation: 'La red viscoelástica de gluten bien desarrollada retiene el dióxido de carbono producido en la fermentación generando alveolos abiertos y miga ligera.'
+        },
+        {
+          title: 'Fermentación en Bloque y Retardo en Frío',
+          scenario: '¿Por qué los maestros panaderos aplican una fermentación prolongada en frío a 4°C durante 16 a 24 horas?',
+          options: [
+            'Para ralentizar las levaduras y permitir que las bacterias lácticas degraden fitatos, faciliten la digestibilidad del trigo y desarrollen complejos perfiles de sabor y aroma.',
+            'Para que la masa no fermente nunca y quede dura como una piedra.',
+            'Porque el panadero se fue a dormir y olvidó el horno encendido.',
+            'Para congelar la masa y evitar que tome volumen.'
+          ],
+          correct: 0,
+          explanation: 'El retardo en frío frena la producción rápida de gas permitiendo la fermentación enzimática secundaria que otorga corteza caramelizada y alta digestibilidad.'
+        },
+        {
+          title: 'Horneado con Inyección de Vapor y Formación de Greña',
+          scenario: '¿Cuál es el rol del vapor de agua durante los primeros 10-15 minutos de horneado en un pan artesanal?',
+          options: [
+            'Mantener la corteza flexible permitiendo que el pan expanda al máximo (salto de horno) y gelatinizar los almidones para lograr una corteza crujiente y brillante.',
+            'Enfriar el horno para que el pan tarde el doble de tiempo en cocinarse.',
+            'Humedecer la miga para que quede cruda y pegajosa en el centro.',
+            'Evitar que la cuchilla corte el pan antes de meterlo.'
+          ],
+          correct: 0,
+          explanation: 'El vapor evita la formación prematura de una costra rígida, permitiendo que los gases se expandan abriendo la greña con volumen espectacular y brillo dorado.'
+        }
+      ],
+      sampleTranscript: 'Elaboré hogazas de pan de campo con harina de trigo de alta fuerza al 75% de hidratación y 20% de masa madre activa al pico. Apliqué autólisis de 45 minutos para hidratar las proteínas, incorporé sal marina y desarrollé la malla de gluten con amasado francés y pliegues espaciados. Realicé fermentación en bloque de 3 horas y retardo en banetones a 4 grados durante 18 horas. Horneé a 240 grados con inyección de vapor inicial sobre piedra refractaria, logrando greña abierta y corteza crujiente con alveolo abierto.',
+      expectedConcepts: [
+        'Masa madre natural y prueba de flotabilidad',
+        'Hidratación al 75% y autólisis',
+        'Prueba de la ventana de gluten (membrana)',
+        'Fermentación en frío prolongada a 4°C',
+        'Corte de greña con cuchilla (lame)',
+        'Horneado con vapor sobre piedra refractaria'
+      ],
+      aiScores: { c1: 25, c2: 24, c3: 25, c4: 25, overall: 99 },
+      verdictParagraph: 'La IA otorga calificación de Maestría Artesanal en panadería: dominio de la microbiología de la masa madre, desarrollo viscoelástico de la proteína y control del horno a vapor.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80'
     }
   };
 
+  // Motor Generador Universal de Pruebas Periciales con IA (Para CUALQUIER tema u oficio)
+  function getOrGenerateAiTradeExam(tradeQuery) {
+    const raw = (tradeQuery || '').trim();
+    if (!raw) return TRADE_EXPERT_PROFILES['plomeria'];
+
+    const norm = raw.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    // 1. Coincidencias temáticas por palabras clave
+    if (norm.includes('solar') || norm.includes('fotovolt') || norm.includes('panel')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.solar));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('plom') || norm.includes('agua') || norm.includes('fuga') || norm.includes('tub') || norm.includes('fontan')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.plomeria));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('electr') || norm.includes('retie') || norm.includes('luz') || norm.includes('cable') || norm.includes('breaker')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.electricidad));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('carpint') || norm.includes('mader') || norm.includes('muebl') || norm.includes('ebanist')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.carpinteria));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('mecanic') || norm.includes('auto') || norm.includes('carro') || norm.includes('motor') || norm.includes('vehic')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.mecanica));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('refrig') || norm.includes('aire') || norm.includes('clima') || norm.includes('hvac') || norm.includes('acondic')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.refrigeracion));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('soldad') || norm.includes('tig') || norm.includes('mig') || norm.includes('metalm')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.soldadura));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('cerraj') || norm.includes('chapa') || norm.includes('cerradur') || norm.includes('llav')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.cerrajeria));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('baris') || norm.includes('cafe') || norm.includes('espresso')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.barismo));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('dron') || norm.includes('uav') || norm.includes('vuelo') || norm.includes('robot')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.drones));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+    if (norm.includes('panad') || norm.includes('masa') || norm.includes('pan') || norm.includes('repost') || norm.includes('pasteler')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.panaderia));
+      p.tradeName = formatTradeTitle(raw);
+      return p;
+    }
+
+    // 2. GENERADOR UNIVERSAL SEMÁNTICO DE IA (Para cualquier otro oficio o tema libre)
+    const cleanTitle = formatTradeTitle(raw);
+    const inferredIcon = pickIconForTrade(cleanTitle);
+    const inferredNorm = `Estándares Técnicos Internacionales y Protocolos de Seguridad en ${cleanTitle}`;
+
+    return {
+      tradeName: cleanTitle,
+      icon: inferredIcon,
+      norms: inferredNorm,
+      questions: [
+        {
+          title: `Diagnóstico Inicial y Detección de Causa Raíz en ${cleanTitle}`,
+          scenario: `Un cliente solicita una intervención técnica especializada en ${cleanTitle} por un fallo de funcionamiento o requerimiento crítico. ¿Cuál es el protocolo pericial que distingue a un profesional en ${cleanTitle}?`,
+          options: [
+            `Efectuar una inspección inicial exhaustiva con instrumental y mediciones técnicas, aislando la causa raíz del fallo antes de intervenir componentes.`,
+            `Iniciar el desensamble o aplicación de inmediato sin registrar mediciones previas ni verificar el estado base.`,
+            `Aplicar una solución temporal sin determinar el origen del problema esperando a ver si vuelve a fallar.`,
+            `Delegar la evaluación en el cliente sin comprobar las especificaciones técnicas ni tolerancias del fabricante.`
+          ],
+          correct: 0,
+          explanation: `En ${cleanTitle}, la norma exige diagnosticar la causa raíz de manera sistemática para evitar reparaciones fallidas y sobrecostos.`
+        },
+        {
+          title: `Materiales Homologados, Herramientas de Precisión y Seguridad en ${cleanTitle}`,
+          scenario: `Para ejecutar labores en ${cleanTitle} con garantía de durabilidad y resguardo de la salud ocupacional, ¿qué criterio debe regir la selección de herramientas y consumibles?`,
+          options: [
+            `Utilizar equipos de protección individual (EPI) normativos, herramientas calibradas para ${cleanTitle} y materiales con ficha técnica certificada.`,
+            `Improvisar con herramientas genéricas desgastadas para abaratar el costo de la mano de obra.`,
+            `Omitir los elementos de bioseguridad y protección si la labor aparenta ser rápida o de poca envergadura.`,
+            `Utilizar insumos vencidos o de especificación inferior a la requerida por el manual técnico.`
+          ],
+          correct: 0,
+          explanation: `El cumplimiento de los estándares de seguridad y el uso de herramientas calibradas son indispensables para garantizar idoneidad en ${cleanTitle}.`
+        },
+        {
+          title: `Procedimiento Técnico Paso a Paso y Buenas Prácticas en ${cleanTitle}`,
+          scenario: `Durante la fase de ejecución técnica en ${cleanTitle}, ¿cuál es la secuencia metodológica obligatoria que avala la pericia del especialista?`,
+          options: [
+            `Seguir una secuencia metódica: preparación adecuada de la base, ejecución con tolerancias exactas, ensamble limpio y control constante de calidad.`,
+            `Acelerar el procedimiento forzando uniones o tolerancias mecánicas fuera del rango permitido.`,
+            `Saltarse los pasos de preparación preliminar y limpieza para finalizar antes de tiempo.`,
+            `Alterar el orden lógico del procedimiento e improvisar conexiones o mezclas sin sustento normativo.`
+          ],
+          correct: 0,
+          explanation: `La destreza técnica en ${cleanTitle} se fundamenta en el respeto estricto de los pasos secuenciales y el cuidado de las tolerancias críticas.`
+        },
+        {
+          title: `Control de Calidad, Pruebas Operativas y Política de Garantía en ${cleanTitle}`,
+          scenario: `Al concluir la labor técnica en ${cleanTitle}, ¿cómo se certifica formalmente la calidad del servicio antes de entregar al cliente?`,
+          options: [
+            `Realizar pruebas de funcionamiento bajo condiciones reales de servicio, verificar cero desviaciones o anomalías y emitir constancia con garantía escrita.`,
+            `Cobrar el servicio y retirarse del lugar sin encender ni probar la labor realizada.`,
+            `Indicar al cliente que pruebe el trabajo por su cuenta en los próximos días sin dejar ningún respaldo.`,
+            `Disimular posibles imperfecciones o ruidos anormales sin corregir el ajuste de precisión.`
+          ],
+          correct: 0,
+          explanation: `La prueba de carga y la entrega de garantía escrita son el sello de calidad innegociable de la red oficial de especialistas Tasksmith.`
+        }
+      ],
+      sampleTranscript: `Para esta labor especializada en ${cleanTitle}, inicié con una inspección técnica completa determinando con precisión la causa raíz del requerimiento. Utilicé herramientas especializadas y consumibles certificados según la norma aplicable. Ejecuté el procedimiento paso a paso cuidando las tolerancias y la seguridad, realicé pruebas de funcionamiento bajo condiciones reales de carga y entregué el trabajo con satisfacción total y garantía formal de 30 días.`,
+      expectedConcepts: [
+        'Diagnóstico de causa raíz metódico',
+        `Herramientas especializadas para ${cleanTitle}`,
+        `Normativa técnica y protocolos en ${cleanTitle}`,
+        'Procedimiento secuencial de precisión',
+        'Pruebas de funcionamiento y carga real',
+        'Garantía formal de entrega de 30 días'
+      ],
+      aiScores: { c1: 24, c2: 24, c3: 25, c4: 24, overall: 97 },
+      verdictParagraph: `La IA certifica idoneidad pericial en ${cleanTitle}: el especialista demostró solvencia técnica en diagnóstico, selección adecuada de herramientas y materiales, procedimiento de ejecución ordenado y validación de calidad antes de entrega.`,
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'
+    };
+  }
+
+  function formatTradeTitle(str) {
+    if (!str) return 'Especialidad Técnica';
+    return str.split(' ')
+      .filter(w => w.length > 0)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  function pickIconForTrade(title) { return ''; }
+
+  /* --- INICIALIZADOR DEL ASISTENTE DE CERTIFICACIÓN --- */
   function initCertificationWizard() {
     const wizardEl = document.querySelector('.cert-wizard-wrapper');
     if (!wizardEl) return;
 
-    window.selectCertificationTrade('plomeria');
+    // Foco en el campo de entrada abierta
+    const input = document.getElementById('customTradeInput');
+    if (input) {
+      setTimeout(() => input.focus(), 300);
+    }
   }
 
-  window.selectCertificationTrade = function (tradeKey) {
-    selectedCertTradeKey = tradeKey;
-    document.querySelectorAll('.trade-picker-card').forEach(card => {
-      if (card.getAttribute('data-trade-id') === tradeKey) {
-        card.classList.add('selected');
-      } else {
-        card.classList.remove('selected');
-      }
-    });
-
-    const info = TRADE_EXPERT_KNOWLEDGE[tradeKey];
-    const lbl = document.getElementById('lblSelectedTrade');
-    if (lbl && info) {
-      lbl.textContent = info.tradeName;
+  window.applyQuickTradeSuggestion = function (tradeName) {
+    const input = document.getElementById('customTradeInput');
+    if (input) {
+      input.value = tradeName;
     }
+    window.startCustomTradeCertification();
+  };
+
+  window.startCustomTradeCertification = function () {
+    const input = document.getElementById('customTradeInput');
+    const tradeQuery = input ? input.value.trim() : '';
+
+    if (!tradeQuery) {
+      showToast('Por favor escribe en qué oficio o especialidad deseas certificarte.', 'normal');
+      if (input) input.focus();
+      return;
+    }
+
+    const loaderBox = document.getElementById('aiGeneratingExamState');
+    const loaderTitle = document.getElementById('aiGeneratingTradeTitle');
+    const submitBtn = document.getElementById('btnPrepareCustomExam');
+
+    if (loaderTitle) {
+      loaderTitle.textContent = `La IA está preparando el formulario técnico para: "${tradeQuery}"...`;
+    }
+    if (loaderBox) loaderBox.style.display = 'flex';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.7';
+    }
+
+    // Simulación de formulación inteligente con IA
+    setTimeout(() => {
+      currentTradeExam = getOrGenerateAiTradeExam(tradeQuery);
+
+      if (loaderBox) loaderBox.style.display = 'none';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+      }
+
+      // Configurar y renderizar Paso 2 (Examen formulado)
+      const titleEl = document.getElementById('examTradeTitle');
+      const subtitleEl = document.getElementById('examTradeSubtitle');
+
+      if (titleEl) {
+        titleEl.textContent = `Prueba Pericial Formulada por IA: ${currentTradeExam.tradeName}`;
+      }
+      if (subtitleEl) {
+        subtitleEl.textContent = `Responde los siguientes 4 casos reales calibrados bajo ${currentTradeExam.norms}.`;
+      }
+
+      renderCertificationQuestions(currentTradeExam.questions);
+      goToStep(2);
+
+      showToast(` La IA ha preparado tu examen diagnóstico en ${currentTradeExam.tradeName}.`, 'success');
+    }, 650);
   };
 
   window.goToStep = function (stepNumber) {
@@ -2261,19 +2730,6 @@
     window.scrollTo({ top: 120, behavior: 'smooth' });
   };
 
-  window.goToStep2_Examen = function () {
-    const info = TRADE_EXPERT_KNOWLEDGE[selectedCertTradeKey];
-    const bank = TECHNICAL_EXAM_BANK[selectedCertTradeKey] || TECHNICAL_EXAM_BANK['plomeria'];
-
-    const titleEl = document.getElementById('examTradeTitle');
-    if (titleEl && info) {
-      titleEl.textContent = `Prueba de Diagnóstico: ${info.tradeName}`;
-    }
-
-    renderCertificationQuestions(bank.questions);
-    goToStep(2);
-  };
-
   function renderCertificationQuestions(questions) {
     const container = document.getElementById('certExamQuestionsContainer');
     if (!container) return;
@@ -2298,12 +2754,15 @@
 
       card.innerHTML = `
         <div class="exam-question-header">
-          <span class="exam-q-num">Pregunta ${qIndex + 1} de ${questions.length}</span>
+          <span class="exam-q-num">Caso #${qIndex + 1} de ${questions.length}</span>
           <span class="exam-q-title">${q.title}</span>
         </div>
         <div class="exam-q-scenario">${q.scenario}</div>
         <div class="exam-options-list">
           ${optionsHtml}
+        </div>
+        <div id="certExplanation_${qIndex}" style="display: none; margin-top: 14px; padding: 12px 16px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border-left: 3px solid var(--green-verified); font-size: 0.86rem; color: var(--ink-secondary);">
+          <strong>Criterio Técnico:</strong> ${q.explanation}
         </div>
       `;
       container.appendChild(card);
@@ -2332,35 +2791,69 @@
   };
 
   window.evaluateTheoreticalExam = function () {
-    const bank = TECHNICAL_EXAM_BANK[selectedCertTradeKey] || TECHNICAL_EXAM_BANK['plomeria'];
-    const totalQ = bank.questions.length;
+    if (!currentTradeExam) {
+      currentTradeExam = getOrGenerateAiTradeExam('Plomería & Redes Hidráulicas');
+    }
+    const questions = currentTradeExam.questions;
+    const totalQ = questions.length;
 
     let correctCount = 0;
-    bank.questions.forEach((q, idx) => {
+    questions.forEach((q, idx) => {
       const chosen = certUserAnswers[idx];
+      const explanationBlock = document.getElementById(`certExplanation_${idx}`);
+      if (explanationBlock) explanationBlock.style.display = 'block';
+
       if (chosen === q.correct) {
         correctCount++;
+        const chosenEl = document.getElementById(`certOpt_${idx}_${chosen}`);
+        if (chosenEl) {
+          chosenEl.style.borderColor = 'var(--green-verified)';
+          chosenEl.style.background = 'var(--green-soft)';
+        }
+      } else {
+        const correctEl = document.getElementById(`certOpt_${idx}_${q.correct}`);
+        if (correctEl) {
+          correctEl.style.borderColor = 'var(--green-verified)';
+          correctEl.style.boxShadow = '0 0 0 2px rgba(16, 185, 129, 0.3)';
+        }
       }
     });
 
-    // Score out of 100
-    const calculatedScore = Math.round((correctCount / totalQ) * 100);
-    // As per user specification: craftsman advances regardless of score
-    certTheoreticalScore = calculatedScore > 0 ? calculatedScore : 75;
+    // Calificación honesta y real (cada pregunta = 25%)
+    certTheoreticalScore = Math.round((correctCount / totalQ) * 100);
 
     const scoreNumEl = document.getElementById('examScoreNumber');
     if (scoreNumEl) scoreNumEl.textContent = `${certTheoreticalScore}/100`;
 
     const feedbackBadge = document.getElementById('examFeedbackBadge');
+    const verdictTitle = document.getElementById('examVerdictTitle');
+    const verdictDesc = document.getElementById('examVerdictDescription');
+
+    const passedTheoretical = (certTheoreticalScore >= 75);
+
     if (feedbackBadge) {
-      if (certTheoreticalScore >= 80) {
-        feedbackBadge.textContent = '✓ Excelente Desempeño Teórico';
+      if (passedTheoretical) {
+        feedbackBadge.textContent = `Evaluación Teórica Aprobada (${certTheoreticalScore}/100)`;
         feedbackBadge.style.color = 'var(--green-verified)';
         feedbackBadge.style.background = 'var(--green-soft)';
       } else {
-        feedbackBadge.textContent = '✓ Evaluación Teórica Registrada';
-        feedbackBadge.style.color = 'var(--blue-primary)';
-        feedbackBadge.style.background = 'var(--bg-accent-soft)';
+        feedbackBadge.textContent = `Evaluación Teórica Insuficiente (${certTheoreticalScore}/100)`;
+        feedbackBadge.style.color = '#dc2626';
+        feedbackBadge.style.background = '#fee2e2';
+      }
+    }
+
+    if (verdictTitle) {
+      verdictTitle.textContent = passedTheoretical
+        ? '¡Conocimientos Teóricos Aprobados!'
+        : 'Puntaje Teórico Insuficiente (Mínimo Requerido: 75/100)';
+    }
+
+    if (verdictDesc) {
+      if (passedTheoretical) {
+        verdictDesc.innerHTML = `Has respondido acertadamente <strong>${correctCount} de ${totalQ}</strong> casos de peritaje en <strong>${currentTradeExam.tradeName}</strong> (${certTheoreticalScore}/100). Recuerda que para emitir el certificado oficial es indispensable superar también la <strong>prueba práctica audiovisual</strong>. Ahora pasarás a capturar las fotos con tu cámara y grabar la explicación técnica con tu voz.`;
+      } else {
+        verdictDesc.innerHTML = `Has respondido correctamente <strong>${correctCount} de ${totalQ}</strong> casos (${certTheoreticalScore}/100). <strong>En Tasksmith el certificado sólo se otorga si se aprueba tanto la prueba de preguntas como la prueba práctica (mínimo 75/100 en cada una)</strong>. Puedes corregir tus respuestas ahora o avanzar a las evidencias prácticas si deseas completar el proceso antes de la evaluación final.`;
       }
     }
 
@@ -2373,17 +2866,32 @@
     const submitRow = document.getElementById('certExamSubmitRow');
     if (submitRow) submitRow.style.display = 'none';
 
-    showToast(`✓ Evaluación teórica registrada (${certTheoreticalScore}/100). Continúa con las evidencias prácticas.`, 'success');
+    if (passedTheoretical) {
+      showToast(`Examen teórico aprobado (${certTheoreticalScore}/100). Continúa con las evidencias prácticas.`, 'success');
+    } else {
+      showToast(`Puntaje teórico insuficiente (${certTheoreticalScore}/100). Se requiere mínimo 75/100 para certificar.`, 'normal');
+    }
   };
 
   window.goToStep3_Evidencias = function () {
     goToStep(3);
     initPracticalVerificationModule();
+
+    // Adaptar títulos del paso 3 a la especialidad
+    if (currentTradeExam) {
+      const jobInput = document.getElementById('certJobTitle');
+      if (jobInput) {
+        jobInput.value = `Diagnóstico técnico, reparación y puesta a punto en ${currentTradeExam.tradeName}`;
+      }
+    }
   };
 
   /* --- FLUJO DE EVALUACIÓN Y PERITAJE DE LA INTELIGENCIA ARTIFICIAL --- */
   window.startAiEvaluationFlow = function () {
-    const info = TRADE_EXPERT_KNOWLEDGE[selectedCertTradeKey] || TRADE_EXPERT_KNOWLEDGE['plomeria'];
+    if (!currentTradeExam) {
+      currentTradeExam = getOrGenerateAiTradeExam('Plomería & Redes Hidráulicas');
+    }
+    const info = currentTradeExam;
 
     // Asegurar que exista al menos una foto y audio para procesar
     if (!verificationEvidences[0]?.photo) {
@@ -2417,22 +2925,22 @@
     setTimeout(() => {
       if (stepItems[0]) stepItems[0].className = 'ai-scan-step-item done';
       if (stepItems[1]) stepItems[1].className = 'ai-scan-step-item active';
-    }, 900);
+    }, 850);
 
     setTimeout(() => {
       if (stepItems[1]) stepItems[1].className = 'ai-scan-step-item done';
       if (stepItems[2]) stepItems[2].className = 'ai-scan-step-item active';
-    }, 1800);
+    }, 1700);
 
     setTimeout(() => {
       if (stepItems[2]) stepItems[2].className = 'ai-scan-step-item done';
       if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item active';
-    }, 2700);
+    }, 2550);
 
     setTimeout(() => {
       if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item done';
       completeAiVerdictDisplay(info);
-    }, 3500);
+    }, 3400);
   };
 
   function completeAiVerdictDisplay(info) {
@@ -2445,16 +2953,59 @@
       verdictContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // Renderizar datos del dictamen pericial
-    const transcriptEl = document.getElementById('aiAudioTranscriptText');
-    if (transcriptEl) transcriptEl.textContent = `"${info.sampleTranscript}"`;
+    // 1. Extraer transcripción técnica REAL provista o grabada por el maestro
+    const collectedUserTranscripts = verificationEvidences.map(ev => {
+      const inputEl = document.getElementById(`audioTranscriptInput_${ev.id}`);
+      const userText = (inputEl ? inputEl.value.trim() : '') || (ev.realTranscript ? ev.realTranscript.trim() : '');
+      return userText;
+    }).filter(Boolean);
 
-    const conceptsCloud = document.getElementById('aiConceptsCloud');
-    if (conceptsCloud) {
-      conceptsCloud.innerHTML = info.expectedConcepts.map(c => `
-        <span class="ai-concept-chip">✓ ${c}</span>
-      `).join('');
+    let displayedTranscript = '';
+    let hasSubstantiveExplanation = false;
+
+    if (collectedUserTranscripts.length > 0) {
+      displayedTranscript = collectedUserTranscripts.join(' // ');
+      hasSubstantiveExplanation = displayedTranscript.length >= 25;
+    } else if (verificationEvidences.some(ev => ev.usedSampleAudio)) {
+      displayedTranscript = info.sampleTranscript;
+      hasSubstantiveExplanation = true;
+    } else {
+      displayedTranscript = 'No se registró explicación técnica oral ni notas del procedimiento en el audio proporcionado.';
+      hasSubstantiveExplanation = false;
     }
+
+    const transcriptEl = document.getElementById('aiAudioTranscriptText');
+    if (transcriptEl) {
+      transcriptEl.textContent = `"${displayedTranscript}"`;
+    }
+
+    // 2. Evaluar Prueba Práctica (Fotos y Explicación Oral/Técnica)
+    const readyPhotos = verificationEvidences.filter(e => !!e.photo).length;
+    const readyAudios = verificationEvidences.filter(e => !!e.audioDuration).length;
+    const totalEvidences = Math.max(verificationEvidences.length, 1);
+
+    // Puntaje fotográfico: hasta 45 pts
+    const photoRatio = readyPhotos / totalEvidences;
+    const photoScore = Math.round(photoRatio * 45);
+
+    // Puntaje de audio/explicación técnica: hasta 55 pts
+    let audioScore = 0;
+    if (hasSubstantiveExplanation) {
+      const audioRatio = readyAudios / totalEvidences;
+      audioScore += Math.round(audioRatio * 40);
+      if (displayedTranscript.length > 60) audioScore += 10;
+      else audioScore += 5;
+    } else if (readyAudios > 0) {
+      audioScore = 15; // grabó audio pero sin contenido técnico audible/transcrito
+    }
+
+    const practicalScore = Math.min(100, photoScore + audioScore);
+
+    // Criterios desglosados para la matriz pericial
+    const c1Score = Math.min(25, Math.round((practicalScore / 100) * 25));
+    const c2Score = Math.min(25, Math.round((practicalScore / 100) * 24));
+    const c3Score = Math.min(25, Math.round((practicalScore / 100) * 25));
+    const c4Score = Math.max(0, practicalScore - (c1Score + c2Score + c3Score));
 
     const c1 = document.getElementById('aiScoreC1');
     const c2 = document.getElementById('aiScoreC2');
@@ -2462,58 +3013,162 @@
     const c4 = document.getElementById('aiScoreC4');
     const overall = document.getElementById('aiScoreOverallBadge');
 
-    if (c1) c1.textContent = `${info.aiScores.c1}/25`;
-    if (c2) c2.textContent = `${info.aiScores.c2}/25`;
-    if (c3) c3.textContent = `${info.aiScores.c3}/25`;
-    if (c4) c4.textContent = `${info.aiScores.c4}/25`;
-    if (overall) overall.textContent = `${info.aiScores.overall} / 100`;
+    if (c1) c1.textContent = `${c1Score}/25`;
+    if (c2) c2.textContent = `${c2Score}/25`;
+    if (c3) c3.textContent = `${c3Score}/25`;
+    if (c4) c4.textContent = `${c4Score}/25`;
+    if (overall) {
+      overall.textContent = `${practicalScore} / 100`;
+      overall.style.color = practicalScore >= 75 ? 'var(--green-verified)' : '#dc2626';
+    }
 
+    // Conceptos identificados
+    const conceptsCloud = document.getElementById('aiConceptsCloud');
+    if (conceptsCloud) {
+      let matchedConcepts = info.expectedConcepts.filter(c => {
+        const words = c.toLowerCase().split(/\s+/);
+        return words.some(w => w.length > 4 && displayedTranscript.toLowerCase().includes(w));
+      });
+      if (matchedConcepts.length === 0) {
+        matchedConcepts = hasSubstantiveExplanation ? info.expectedConcepts.slice(0, 4) : ['Inspección pericial realizada'];
+      }
+      conceptsCloud.innerHTML = matchedConcepts.map(c => `
+        <span class="ai-concept-chip">${c}</span>
+      `).join('');
+    }
+
+    // 3. VALIDACIÓN ESTRICTA DE DOBLE CONDICIÓN
+    // El certificado sólo se otorga si se logra un resultado bueno (>= 75) tanto en preguntas como en práctica
+    const passedTheoretical = (certTheoreticalScore >= 75);
+    const passedPractical = (practicalScore >= 75);
+    const certApproved = passedTheoretical && passedPractical;
+
+    const certWrapper = document.getElementById('printableCertificate');
+    const failedCard = document.getElementById('aiEvaluationFailedCard');
+    const postActions = document.getElementById('certPostActions');
+    const statusBadge = document.getElementById('aiVerdictStatusBadge');
     const verdictP = document.getElementById('aiVerdictParagraph');
-    if (verdictP) {
-      verdictP.innerHTML = `<strong>Conclusión Pericial Tasksmith IA:</strong> ${info.verdictParagraph}`;
-    }
 
-    // Actualizar Certificado Oficial
-    const certTradeDisplay = document.getElementById('certTradeNameDisplay');
-    if (certTradeDisplay) {
-      certTradeDisplay.textContent = `${info.icon} ${info.tradeName}`;
-    }
+    if (certApproved) {
+      // AMBAS PRUEBAS APROBADAS -> EMITIR CERTIFICADO
+      if (statusBadge) {
+        statusBadge.textContent = 'Evaluación Aprobada: Doble Idoneidad Demostrada (Teórica y Práctica)';
+        statusBadge.style.color = 'var(--green-verified)';
+        statusBadge.style.background = 'var(--green-soft)';
+      }
+      if (verdictP) {
+        verdictP.innerHTML = `<strong>Conclusión del Peritaje IA:</strong> El especialista demostró competencia sobresaliente en la prueba teórica (${certTheoreticalScore}/100) y acreditó idoneidad práctica rigurosa en sus evidencias de obra (${practicalScore}/100). Cumple con la totalidad de los estándares exigidos para certificación oficial.`;
+      }
 
-    const certRecipientName = document.getElementById('certRecipientName');
-    const craftsmanName = currentUser ? currentUser.name : 'Luis Rodríguez';
-    if (certRecipientName) {
-      certRecipientName.textContent = craftsmanName;
-    }
+      if (failedCard) failedCard.style.display = 'none';
+      if (certWrapper) certWrapper.style.display = 'block';
+      if (postActions) postActions.style.display = 'flex';
 
-    const certHash = document.getElementById('certHashId');
-    if (certHash) {
-      const rnd = Math.floor(1000 + Math.random() * 9000);
-      certHash.textContent = `TS-CERT-2026-${info.tradeName.substring(0,2).toUpperCase()}${rnd}`;
-    }
+      // Actualizar datos del diploma
+      const certTradeDisplay = document.getElementById('certTradeNameDisplay');
+      if (certTradeDisplay) certTradeDisplay.textContent = info.tradeName;
 
-    // Actualizar estado del usuario en sesión
-    if (!currentUser) {
-      currentUser = {
-        name: craftsmanName,
-        email: 'luis@tasksmith.co',
-        phone: '312 456 7890',
-        role: 'smith',
-        trade: info.tradeName,
-        certified: true,
-        certifiedTrade: info.tradeName,
-        rate: '70000',
-        zone: 'Bogotá (Cobertura Integral)',
-        portfolio: []
-      };
+      const certRecipientName = document.getElementById('certRecipientName');
+      const craftsmanName = currentUser ? currentUser.name : 'Luis Rodríguez';
+      if (certRecipientName) certRecipientName.textContent = craftsmanName;
+
+      const certHash = document.getElementById('certHashId');
+      if (certHash) {
+        const codePrefix = info.tradeName.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+        const rnd = Math.floor(1000 + Math.random() * 9000);
+        certHash.textContent = `TS-CERT-2026-${codePrefix}${rnd}`;
+      }
+
+      // Otorgar credencial oficial en perfil
+      if (!currentUser) {
+        currentUser = {
+          name: craftsmanName,
+          email: 'luis@tasksmith.co',
+          phone: '312 456 7890',
+          role: 'smith',
+          trade: info.tradeName,
+          certified: true,
+          certifiedTrade: info.tradeName,
+          rate: '70000',
+          zone: 'Bogotá (Cobertura Integral)',
+          portfolio: []
+        };
+      } else {
+        currentUser.certified = true;
+        currentUser.certifiedTrade = info.tradeName;
+        currentUser.trade = info.tradeName;
+      }
+
+      localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
+      updateNavUserSlot();
+      showToast(`¡Acreditación Aprobada! Has superado la prueba teórica (${certTheoreticalScore}/100) y la práctica (${practicalScore}/100). Certificado emitido.`, 'success');
+
     } else {
-      currentUser.certified = true;
-      currentUser.certifiedTrade = info.tradeName;
+      // AL MENOS UNA PRUEBA NO CUMPLE EL ESTÁNDAR -> NO EMITIR CERTIFICADO
+      if (statusBadge) {
+        statusBadge.textContent = 'Certificación No Otorgada: Criterios Insuficientes';
+        statusBadge.style.color = '#dc2626';
+        statusBadge.style.background = '#fee2e2';
+      }
+
+      let reasons = [];
+      if (!passedTheoretical) reasons.push(`prueba teórica insuficiente (${certTheoreticalScore}/100, mínimo 75)`);
+      if (!passedPractical) reasons.push(`evidencia práctica insuficiente (${practicalScore}/100, mínimo 75)`);
+
+      if (verdictP) {
+        verdictP.innerHTML = `<strong>Dictamen Pericial IA:</strong> No es posible otorgar la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong>. En Tasksmith se exige demostrar idoneidad técnica plena en ambos campos para proteger a los hogares y respaldar la garantía oficial.`;
+      }
+
+      // Ocultar certificado y botones de emisión
+      if (certWrapper) certWrapper.style.display = 'none';
+      if (postActions) postActions.style.display = 'none';
+
+      // Mostrar tarjeta explicativa de falla
+      if (failedCard) {
+        failedCard.style.display = 'block';
+
+        const failedTheoScore = document.getElementById('failedTheoreticalScore');
+        const failedTheoBadge = document.getElementById('failedTheoreticalBadge');
+        const failedTheoMsg = document.getElementById('failedTheoreticalMsg');
+
+        if (failedTheoScore) failedTheoScore.textContent = `${certTheoreticalScore}/100`;
+        if (failedTheoBadge) {
+          failedTheoBadge.textContent = passedTheoretical ? 'Aprobada (>= 75)' : 'Insuficiente (< 75)';
+          failedTheoBadge.style.color = passedTheoretical ? 'var(--green-verified)' : '#dc2626';
+          failedTheoBadge.style.background = passedTheoretical ? 'var(--green-soft)' : '#fee2e2';
+        }
+        if (failedTheoMsg) {
+          failedTheoMsg.textContent = passedTheoretical
+            ? 'Superaste satisfactoriamente este componente.'
+            : `Puntaje obtenido: ${certTheoreticalScore}/100. Se requiere responder correctamente al menos 3 de los 4 casos técnicos.`;
+        }
+
+        const failedPractScore = document.getElementById('failedPracticalScore');
+        const failedPractBadge = document.getElementById('failedPracticalBadge');
+        const failedPractMsg = document.getElementById('failedPracticalMsg');
+
+        if (failedPractScore) failedPractScore.textContent = `${practicalScore}/100`;
+        if (failedPractBadge) {
+          failedPractBadge.textContent = passedPractical ? 'Aprobada (>= 75)' : 'Insuficiente (< 75)';
+          failedPractBadge.style.color = passedPractical ? 'var(--green-verified)' : '#dc2626';
+          failedPractBadge.style.background = passedPractical ? 'var(--green-soft)' : '#fee2e2';
+        }
+        if (failedPractMsg) {
+          failedPractMsg.textContent = passedPractical
+            ? 'Superaste satisfactoriamente las evidencias prácticas.'
+            : 'Faltan fotografías claras de obra o explicación de voz/transcripción con los materiales y pruebas ejecutadas.';
+        }
+      }
+
+      // Asegurar que el usuario no quede certificado con esta evaluación fallida
+      if (currentUser) {
+        currentUser.certified = false;
+        localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
+        updateNavUserSlot();
+      }
+
+      showToast(`Evaluación completada: No se otorgó el certificado. Se requiere mínimo 75/100 en ambas pruebas.`, 'normal');
     }
-
-    localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
-    updateNavUserSlot();
-
-    showToast(`🏆 ¡Acreditación Aprobada! La IA ha emitido tu Certificado Oficial en ${info.tradeName}.`, 'success');
   }
 
   window.printCertificate = function () {
@@ -2523,7 +3178,12 @@
   window.restartCertificationWizard = function () {
     window.resetEntireVerification();
     goToStep(1);
-    showToast('Inicia una nueva certificación técnica.', 'normal');
+    const input = document.getElementById('customTradeInput');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    showToast('Inicia una nueva certificación técnica con cualquier oficio.', 'normal');
   };
 
 })();

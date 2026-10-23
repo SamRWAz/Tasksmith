@@ -33,13 +33,12 @@
           <li><a href="como-funciona.html" class="nav-link">Cómo funciona</a></li>
           <li><a href="oficios.html" class="nav-link">Oficios</a></li>
           <li><a href="confianza.html" class="nav-link">Confianza</a></li>
-          <li><a href="certificacion.html" class="nav-link">Certificación</a></li>
         </ul>
 
         <div class="nav-actions" id="navActionsContainer">
           <button class="btn btn-ghost btn-sm" onclick="openLoginModal()" id="btnNavLogin">Ingresar</button>
           <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" id="btnNavRegister">Registro</button>
-          <button class="mobile-toggle" aria-label="Abrir menú">☰</button>
+          <button class="mobile-toggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </nav>
     </div>
@@ -51,7 +50,6 @@
     <a href="como-funciona.html" class="nav-link">Cómo funciona</a>
     <a href="oficios.html" class="nav-link">Oficios</a>
     <a href="confianza.html" class="nav-link">Confianza</a>
-    <a href="certificacion.html" class="nav-link">Certificación</a>
     <div style="display: flex; gap: 10px; margin-top: 14px;" id="mobileAuthSlot">
       <button class="btn btn-ghost" onclick="openLoginModal()" style="flex: 1;">Ingresar</button>
       <button class="btn btn-primary" onclick="openRegisterModal()" style="flex: 1;">Registro</button>
@@ -65,7 +63,7 @@
         <div class="hero-grid">
           <div class="hero-copy">
             <div class="hero-tag">
-              <span>🏠</span>
+              <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></span>
               <span>Oficios independientes para hogares tranquilos</span>
             </div>
 
@@ -102,14 +100,8 @@
             </div>
           </div>
 
-          <!-- Refined 3D Sculpture Card -->
-          <div class="hero-canvas-card">
-            <canvas id="threeCanvas"></canvas>
-            <div class="canvas-badge">
-              <span class="canvas-badge-dot"></span>
-              <span>Diorama 3D · Arrastra para girar en 360°</span>
-            </div>
-          </div>
+          <!-- Espacio en blanco reservado a solicitud del usuario -->
+          <div class="hero-empty-space" aria-hidden="true"></div>
         </div>
       </div>
     </section>
@@ -125,7 +117,7 @@
 
         <div class="grid-3">
           <div class="card">
-            <div class="card-icon">🤝</div>
+            <div class="card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11l-4-4a3 3 0 0 0-4.24 0l-1.41 1.41"></path><path d="M2 13l4.59 4.59a3 3 0 0 0 4.24 0l8.48-8.48"></path></svg></div>
             <h3 class="card-title">Trato directo y transparente</h3>
             <p class="card-desc">
               Hablas con quien repara tu casa. Su reputación le pertenece a él y tú pagas una tarifa justa sin intermediarios abusivos.
@@ -133,7 +125,7 @@
           </div>
 
           <div class="card">
-            <div class="card-icon">📸</div>
+            <div class="card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div>
             <h3 class="card-title">Evidencia en la "Libreta de Obra"</h3>
             <p class="card-desc">
               ¿Estás en tu trabajo? Recibes fotos del repuesto cambiado y notas de voz con el reporte en tiempo real en menos de 30 segundos.
@@ -141,80 +133,12 @@
           </div>
 
           <div class="card">
-            <div class="card-icon">🛡️</div>
+            <div class="card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
             <h3 class="card-title">Garantía y pago protegido</h3>
             <p class="card-desc">
               El valor acordado queda en custodia (escrow) y solo se libera al especialista cuando confirmas que el trabajo quedó perfecto.
             </p>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= OFICIOS DESTACADOS RESUMEN ================= -->
-    <section class="section">
-      <div class="container">
-        <div class="section-header">
-          <span class="section-tag">Especialidades</span>
-          <h2 class="section-title">Los oficios más solicitados</h2>
-          <p class="section-sub">Técnicos evaluados con casos prácticos de obra para dar solución real a tu hogar.</p>
-        </div>
-
-        <div class="grid-3">
-          <div class="trade-card">
-            <div class="trade-card-body">
-              <div class="trade-header">
-                <span class="trade-badge">Instalaciones</span>
-                <span class="trade-price">Desde $65.000</span>
-              </div>
-              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🔧 Plomería Residencial</h3>
-              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 20px;">
-                Fugas ocultas, griferías, desatascos de sifones, motobombas y cambio de tuberías.
-              </p>
-              <div class="trade-footer">
-                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 42 smiths activos hoy</span>
-                <button class="btn btn-ghost btn-sm" data-open-booking data-trade-preset="Plomería">Solicitar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="trade-card">
-            <div class="trade-card-body">
-              <div class="trade-header">
-                <span class="trade-badge">Norma RETIE</span>
-                <span class="trade-price">Desde $70.000</span>
-              </div>
-              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">⚡ Electricidad Segura</h3>
-              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 20px;">
-                Breakers que se disparan, cableados estructurados, luminarias LED y certificación de polo a tierra.
-              </p>
-              <div class="trade-footer">
-                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 38 smiths activos hoy</span>
-                <button class="btn btn-ghost btn-sm" data-open-booking data-trade-preset="Electricidad">Solicitar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="trade-card">
-            <div class="trade-card-body">
-              <div class="trade-header">
-                <span class="trade-badge">Acabados</span>
-                <span class="trade-price">Desde $55.000</span>
-              </div>
-              <h3 style="font-size: 1.3rem; margin-bottom: 8px;">🎨 Pintura & Drywall</h3>
-              <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-bottom: 20px;">
-                Tratamiento de humedades, resanes limpios, pintura interior lavable y divisiones modulares.
-              </p>
-              <div class="trade-footer">
-                <span style="font-size: 0.85rem; color: var(--green-verified); font-weight: 600;">✓ 51 smiths activos hoy</span>
-                <button class="btn btn-ghost btn-sm" data-open-booking data-trade-preset="Pintura">Solicitar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 40px;">
-          <a href="oficios.html" class="btn btn-ghost">Ver todos los oficios y tarifas →</a>
         </div>
       </div>
     </section>
@@ -290,7 +214,7 @@
   <!-- ================= MODAL: INICIAR SESIÓN (CORREO Y CONTRASEÑA) ================= -->
   <div class="modal-backdrop" id="loginModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <h3 style="font-size: 1.5rem; margin-bottom: 6px;">Iniciar Sesión</h3>
       <p style="font-size: 0.9rem; color: var(--ink-muted); margin-bottom: 22px;">Ingresa con tu correo y contraseña.</p>
@@ -320,7 +244,7 @@
   <!-- ================= MODAL: REGISTRO (CORREO Y CONTRASEÑA) ================= -->
   <div class="modal-backdrop" id="registerModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="tabs-nav">
         <button class="tab-btn active" id="tabRegHogar" onclick="setRegisterRole('hogar')">Para mi Hogar</button>
@@ -357,13 +281,16 @@
           <div class="form-group">
             <label class="form-label" for="regTradeSelect">Tu oficio principal</label>
             <select id="regTradeSelect" class="form-select">
-              <option value="Plomería">🔧 Plomería Residencial</option>
-              <option value="Electricidad">⚡ Electricidad (RETIE)</option>
-              <option value="Pintura">🎨 Pintura & Drywall</option>
-              <option value="Carpintería">🪵 Carpintería & Mobiliario</option>
-              <option value="Electrodomésticos">🧊 Electrodomésticos</option>
-              <option value="Aseo">🧹 Aseo y Cuidado del Hogar</option>
+              <option value="Plomería">Plomería & Redes Hidráulicas</option>
+              <option value="Electricidad">Electricidad (RETIE)</option>
+              <option value="Pintura">Pintura & Drywall</option>
+              <option value="Carpintería">Carpintería & Mobiliario</option>
+              <option value="Electrodomésticos">Electrodomésticos</option>
+              <option value="Aseo">Aseo y Cuidado del Hogar</option>
             </select>
+          </div>
+          <div style="background: var(--bg-accent-soft); border-left: 3px solid var(--blue-primary); padding: 12px 14px; border-radius: var(--radius-md); font-size: 0.84rem; color: var(--ink-secondary); margin-bottom: 12px; line-height: 1.45;">
+            <strong>Acreditación Exclusiva de Maestro:</strong> Al ingresar como maestro podrás realizar la evaluación de conocimientos y peritaje práctico con IA para obtener tu <strong>Certificado Oficial</strong> y convertirte en un <strong>Smith Verificado</strong>.
           </div>
         </div>
 
@@ -381,10 +308,10 @@
   <!-- ================= MODAL: PERFIL DE HOGAR ================= -->
   <div class="modal-backdrop" id="profileModalHogar">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="profile-header-card">
-        <div class="profile-avatar-circle">👤</div>
+        <div class="profile-avatar-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
         <div>
           <h3 id="hogarProfileName" style="font-size: 1.3rem;">Usuario</h3>
           <p id="hogarProfileEmail" style="font-size: 0.85rem; color: var(--ink-muted);">correo@ejemplo.com</p>
@@ -396,7 +323,7 @@
         <h4 style="font-size: 0.95rem; margin-bottom: 10px;">Mis Solicitudes de Arreglo</h4>
         <div style="background: var(--bg-card-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
           <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
-            <span>🔧 Revisión de Grifería</span>
+            <span>Revisión de Grifería</span>
             <span style="color: var(--blue-primary);">En curso</span>
           </div>
           <p style="font-size: 0.82rem; color: var(--ink-muted);">Asignado a: Luis Rodríguez · Garantía activa</p>
@@ -413,25 +340,25 @@
   <!-- ================= MODAL: PERFIL DE MAESTRO (SMITH) ================= -->
   <div class="modal-backdrop" id="profileModalSmith">
     <div class="modal-box modal-lg" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <div class="profile-header-card">
-        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);">🔨</div>
+        <div class="profile-avatar-circle" style="background: var(--green-soft); color: var(--green-verified);"></div>
         <div style="flex: 1;">
           <h3 id="smithProfileName" style="font-size: 1.35rem;">Luis Rodríguez</h3>
           <p id="smithProfileTrade" style="font-size: 0.88rem; color: var(--wood-primary); font-weight: 600;">Especialista en Plomería</p>
           <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
-            <span id="smithProfileCertBadge" class="live-badge">✓ Verificado en Competencias</span>
-            <span style="font-size: 0.82rem; color: var(--ink-muted);">⭐ 4.9 (24 reseñas)</span>
+            <span id="smithProfileCertBadge" class="live-badge"> Verificado en Competencias</span>
+            <span style="font-size: 0.82rem; color: var(--ink-muted);">4.9 (24 reseñas)</span>
           </div>
         </div>
       </div>
 
       <!-- Pestañas internas de Maestro -->
       <div class="profile-subtabs">
-        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">📸 Portafolio</button>
-        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">⚙️ Configuración</button>
-        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">📜 Certificación</button>
+        <button class="profile-subtab-btn active" id="tabBtn_portafolio" onclick="switchSmithProfileTab('portafolio')">Portafolio</button>
+        <button class="profile-subtab-btn" id="tabBtn_config" onclick="switchSmithProfileTab('config')">Configuración</button>
+        <button class="profile-subtab-btn" id="tabBtn_cert" onclick="switchSmithProfileTab('cert')">Certificación</button>
       </div>
 
       <!-- Tab 1: Portafolio -->
@@ -481,7 +408,7 @@
 
       <!-- Tab 3: Certificación -->
       <div class="smith-subtab-pane" id="tabPane_cert" style="display: none; text-align: center; padding: 14px 0;">
-        <div style="font-size: 2.5rem; margin-bottom: 8px;">📜</div>
+        <div style="margin-bottom: 8px; color: var(--blue-primary);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg></div>
         <h4 style="margin-bottom: 6px;">Validación de Habilidades en Obra</h4>
         <p style="font-size: 0.88rem; color: var(--ink-secondary); margin-bottom: 18px;">
           Presenta o renueva tu examen técnico para recibir solicitudes de clientes prioritarios con sello oficial.
@@ -498,7 +425,7 @@
   <!-- ================= MODAL: SOLICITUD DE SMITH ================= -->
   <div class="modal-backdrop" id="bookingModal">
     <div class="modal-box" role="dialog" aria-modal="true">
-      <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      <button class="modal-close-btn" aria-label="Cerrar modal">&times;</button>
 
       <h3 style="font-size: 1.4rem; margin-bottom: 6px;">Pedir un Especialista</h3>
       <p style="font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 20px;">Te asignamos técnicos verificados cercanos.</p>
@@ -507,11 +434,11 @@
         <div class="form-group">
           <label class="form-label" for="bookingTradeSelect">¿Qué tipo de arreglo necesitas?</label>
           <select id="bookingTradeSelect" class="form-select" required>
-            <option value="Plomería">🔧 Plomería (fugas, grifos, tuberías)</option>
-            <option value="Electricidad">⚡ Electricidad (cortos, breakers, tomas)</option>
-            <option value="Pintura">🎨 Pintura & Drywall (humedades, retoques)</option>
-            <option value="Carpintería">🪵 Carpintería (puertas, closets, muebles)</option>
-            <option value="Electrodomésticos">🧊 Electrodomésticos (neveras, lavadoras)</option>
+            <option value="Plomería">Plomería (fugas, grifos, tuberías)</option>
+            <option value="Electricidad">Electricidad (cortos, breakers, tomas)</option>
+            <option value="Pintura">Pintura & Drywall (humedades, retoques)</option>
+            <option value="Carpintería">Carpintería (puertas, closets, muebles)</option>
+            <option value="Electrodomésticos">Electrodomésticos (neveras, lavadoras)</option>
           </select>
         </div>
 
@@ -534,8 +461,6 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Three.js Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
