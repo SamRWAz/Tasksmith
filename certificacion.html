@@ -67,6 +67,67 @@
           </p>
         </div>
 
+        <!-- ================= BARRA DE CONFIGURACIÓN DEL MOTOR IA (GEMINI / CHATGPT API KEY) ================= -->
+        <div class="card" id="aiConfigPanelCard" style="max-width: 920px; margin: 0 auto 28px; padding: 18px 24px; border: 1.5px solid var(--blue-primary); background: linear-gradient(135deg, rgba(27,85,226,0.04) 0%, rgba(16,185,129,0.04) 100%); box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--blue-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+                IA
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <strong style="font-size: 0.98rem; color: var(--ink-primary);">Motor Evaluador & Transcriptor de Audio IA</strong>
+                  <span class="live-badge" id="aiEngineStatusBadge" style="background: var(--green-soft); color: var(--green-verified); font-size: 0.76rem;">
+                    ✅ Conectado: Google Gemini 2.5 Flash Activo
+                  </span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--ink-muted); margin: 2px 0 0;">
+                  Soporta <strong>Google Gemini (2.5 Flash)</strong> y <strong>OpenAI ChatGPT (GPT-4o + Whisper)</strong> para transcribir audios reales, analizar fotos de cámara y calificar toda la prueba.
+                </p>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleAiApiKeyDrawer()" id="btnToggleAiConfig">
+              ⚙️ Configurar API Key (Gemini / ChatGPT)
+            </button>
+          </div>
+
+          <!-- Panel Desplegable de Configuración de API Key -->
+          <div id="aiApiKeyDrawer" style="display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-soft);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; align-items: end;">
+              <div>
+                <label class="form-label" for="aiProviderSelect" style="font-size: 0.85rem; font-weight: 700;">1. Proveedor de Inteligencia Artificial</label>
+                <select id="aiProviderSelect" class="form-select" onchange="handleAiProviderChange()">
+                  <option value="gemini">Google Gemini (gemini-2.5-flash) — Recomendado (Audio + Fotos + Gratis)</option>
+                  <option value="openai">OpenAI ChatGPT (gpt-4o-mini + Whisper Audio)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" for="aiApiKeyInput" style="font-size: 0.85rem; font-weight: 700;">2. Tu API Key (<span id="aiKeyProviderLabel">Google AI Studio</span>)</label>
+                <input type="password" id="aiApiKeyInput" class="form-input" placeholder="Pega aquí tu API Key (Ej: AIzaSy... o sk-...)" autocomplete="off">
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-primary" onclick="saveAndTestAiApiKey()" id="btnSaveAiKey" style="flex: 1;">
+                  Guardar y Conectar IA
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="clearAiApiKey()" title="Borrar API Key">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem; color: var(--ink-muted); background: var(--bg-card); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-soft);">
+              <div>
+                💡 <strong>¿Cómo obtener tu API Key gratis en 30 segundos?</strong>
+                Para <strong>Gemini</strong>: entra a <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">Google AI Studio (aistudio.google.com/app/apikey)</a> y pulsa <em>"Create API Key"</em>.
+                Para <strong>ChatGPT</strong>: entra a <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">OpenAI Platform</a>.
+              </div>
+              <span style="font-size: 0.75rem; color: var(--green-verified); font-weight: 600;">🔒 Se guarda solo en tu navegador (localStorage)</span>
+            </div>
+          </div>
+        </div>
+
         <div class="cert-wizard-wrapper">
           
           <!-- STEPPER DE PROGRESO (4 PASOS) -->
@@ -126,25 +187,53 @@
                 </div>
               </div>
 
-              <!-- Formulario de Entrada Libre para Cualquier Especialidad -->
+              <!-- Formulario de Entrada Libre para Cualquier Especialidad + Contexto para la IA -->
               <div class="trade-input-action-box">
                 <label class="form-label" for="customTradeInput" style="font-size: 1rem; font-weight: 700; color: var(--ink-primary); margin-bottom: 10px;">
                   1. Escribe el oficio o especialidad a certificar:
                 </label>
                 
-                <div class="trade-input-row">
-                  <div class="trade-input-icon-wrap">
+                <div class="trade-input-row" style="margin-bottom: 18px;">
+                  <div class="trade-input-icon-wrap" style="flex: 1;">
                     <input 
                       type="text" 
                       id="customTradeInput" 
                       class="form-input trade-text-input" 
                       placeholder="Ej: Plomería de alta presión, Instalación solar fotovoltaica, Soldadura TIG, Mecánica diésel, Ebanistería, Barismo, Reparación de drones..." 
                       autocomplete="off"
-                      onkeydown="if(event.key === 'Enter') startCustomTradeCertification()"
                     />
                   </div>
-                  <button type="button" class="btn btn-primary btn-lg trade-submit-btn" id="btnPrepareCustomExam" onclick="startCustomTradeCertification()">
-                    <span>Preparar Formulario con IA</span>
+                </div>
+
+                <!-- Contexto Específico del Candidato para la Evaluación Integral de la IA -->
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 18px;">
+                  <div>
+                    <label class="form-label" for="customTradeExperienceSelect" style="font-size: 0.9rem; font-weight: 700; color: var(--ink-primary);">
+                      2. Nivel de experiencia en el oficio:
+                    </label>
+                    <select id="customTradeExperienceSelect" class="form-select" style="font-weight: 600;">
+                      <option value="Maestro Senior (Más de 5 años de experiencia en terreno)">Maestro Senior (+5 años en obra)</option>
+                      <option value="Técnico Intermedio (2 a 5 años de experiencia práctica)">Técnico Intermedio (2 a 5 años)</option>
+                      <option value="Especialista Técnico Certificado / Perito">Especialista / Perito Técnico</option>
+                      <option value="Oficial en Formación (1 a 2 años de práctica)">Oficial Inicial (1 a 2 años)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" for="customTradeContextInput" style="font-size: 0.9rem; font-weight: 700; color: var(--ink-primary);">
+                      3. Contexto y alcance de lo que deseas certificar (Guía para el Perito IA):
+                    </label>
+                    <input 
+                      type="text" 
+                      id="customTradeContextInput" 
+                      class="form-input" 
+                      placeholder="Ej: Quiero certificarme en diagnóstico de fugas ocultas, termofusión PPR y pruebas hidrostáticas para hogares y oficinas..."
+                    />
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                  <button type="button" class="btn btn-primary btn-lg trade-submit-btn" id="btnPrepareCustomExam" onclick="startCustomTradeCertification()" style="width: 100%; justify-content: center;">
+                    <span>Generar Examen y Contexto de Evaluación con IA</span>
                     <span style="font-size: 1.2rem; line-height: 1;">→</span>
                   </button>
                 </div>
@@ -440,19 +529,29 @@
                         </div>
                       </div>
 
+                      <!-- Input oculto para subir archivo de audio grabado previamente -->
+                      <input type="file" id="workAudioFileInput_1" accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm" style="display: none;" onchange="handleAudioFileInputChange(1, this)">
+
                       <!-- Campo de Transcripción Técnica Robusta por IA -->
                       <div class="audio-transcript-box-input" style="margin-top: 14px; text-align: left;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                           <label for="audioTranscriptInput_1" style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin: 0;">
                             Transcripción técnica confrontada por IA:
                           </label>
-                          <span id="speechLiveTag_1" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="speechLiveTag_1" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
+                            <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 2px 8px;" onclick="retranscribeEvidenceWithAi(1)" title="Forzar transcripción de alta precisión con Gemini Audio o OpenAI Whisper">
+                              ✨ Transcribir Audio con IA
+                            </button>
+                          </div>
                         </div>
-                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al hablar por el micrófono, tus palabras se transcribirán aquí automáticamente. La IA confrontará lo que digas con normas y conocimientos reales del oficio. Puedes ajustar cualquier detalle técnico..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
+                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al hablar por el micrófono o subir un archivo de voz, el audio se transcribe con IA (Gemini / Whisper) y corrector técnico. También puedes complementar cualquier detalle aquí..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
                       </div>
 
-                      <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.78rem; color: var(--ink-muted);">¿Sin micrófono ahora?</span>
+                      <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.78rem; padding: 4px 10px;" onclick="triggerAudioFileInput(1)">
+                          📁 Subir archivo de audio (.mp3/.wav/.m4a)
+                        </button>
                         <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(1)">
                           Audio de ejemplo
                         </button>

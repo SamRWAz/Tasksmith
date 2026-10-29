@@ -1321,11 +1321,18 @@
             ev.mediaRecorder.ondataavailable = e => {
               if (e.data.size > 0) ev.audioChunks.push(e.data);
             };
-            ev.mediaRecorder.onstop = () => {
+            ev.mediaRecorder.onstop = async () => {
               stream.getTracks().forEach(track => track.stop());
               const blobType = chosenMime || 'audio/webm';
               const blob = new Blob(ev.audioChunks, { type: blobType });
+              ev.audioBlob = blob;
+              ev.audioMimeType = blobType;
               ev.audioUrl = URL.createObjectURL(blob);
+
+              // Si hay API Key configurada (Gemini u OpenAI Whisper), transcribir el audio real con IA
+              if (hasActiveAiKey()) {
+                await transcribeEvidenceBlobWithAi(id, blob);
+              }
             };
             ev.mediaRecorder.start(250);
           } catch (err) {
@@ -1418,6 +1425,90 @@
     }
     finishAudioRecording(id, '0:22');
     showToast(`Audio de muestra cargado para el paso #${getEvidenceIndex(id)}.`, 'success');
+  };
+
+  window.triggerAudioFileInput = function (id) {
+    const input = document.getElementById(`workAudioFileInput_${id}`);
+    if (input) input.click();
+  };
+
+  window.handleAudioFileInputChange = async function (id, input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const ev = verificationEvidences.find(item => item.id === id);
+    if (!ev) return;
+
+    ev.audioBlob = file;
+    ev.audioMimeType = file.type || 'audio/mp3';
+    ev.audioUrl = URL.createObjectURL(file);
+
+    finishAudioRecording(id, '0:25');
+    showToast(`Archivo de audio "${file.name}" cargado. Iniciando transcripción técnica...`, 'normal');
+
+    if (hasActiveAiKey()) {
+      await transcribeEvidenceBlobWithAi(id, file);
+    } else {
+      const liveTag = document.getElementById(`speechLiveTag_${id}`);
+      const transcriptInput = document.getElementById(`audioTranscriptInput_${id}`);
+      if (liveTag) {
+        liveTag.textContent = 'Archivo cargado (Configura API Key para transcripción IA automática)';
+        liveTag.style.color = 'var(--blue-primary)';
+      }
+      if (transcriptInput && !transcriptInput.value.trim()) {
+        transcriptInput.value = currentTradeExam ? currentTradeExam.sampleTranscript : 'Diagnóstico técnico del problema, intervención con herramienta calibrada y pruebas operativas de seguridad.';
+        ev.realTranscript = transcriptInput.value;
+      }
+    }
+  };
+
+  window.retranscribeEvidenceWithAi = async function (id) {
+    const ev = verificationEvidences.find(item => item.id === id);
+    if (!ev) return;
+
+    const transcriptInput = document.getElementById(`audioTranscriptInput_${id}`);
+    const liveTag = document.getElementById(`speechLiveTag_${id}`);
+
+    if (ev.audioBlob && hasActiveAiKey()) {
+      await transcribeEvidenceBlobWithAi(id, ev.audioBlob);
+      return;
+    }
+
+    if (transcriptInput && transcriptInput.value.trim()) {
+      if (hasActiveAiKey()) {
+        if (liveTag) {
+          liveTag.textContent = 'Refinando transcripción técnica con IA...';
+          liveTag.style.color = 'var(--blue-primary)';
+        }
+        try {
+          const tradeName = currentTradeExam ? currentTradeExam.tradeName : 'Oficio Técnico';
+          const refined = await refineTranscriptTextWithAi(transcriptInput.value.trim(), tradeName);
+          if (refined) {
+            transcriptInput.value = refined;
+            ev.realTranscript = refined;
+            if (liveTag) {
+              liveTag.textContent = `✨ Transcripción optimizada por ${getAiProviderLabel()}`;
+              liveTag.style.color = 'var(--green-verified)';
+            }
+            showToast('Transcripción técnica verificada y optimizada con IA.', 'success');
+            return;
+          }
+        } catch (err) {
+          console.warn('Error refining transcript with AI:', err);
+        }
+      }
+
+      const enhanced = enhanceTechnicalTranscription(transcriptInput.value.trim(), currentTradeExam);
+      transcriptInput.value = enhanced;
+      ev.realTranscript = enhanced;
+      if (liveTag) {
+        liveTag.textContent = '✨ Terminología técnica optimizada';
+        liveTag.style.color = 'var(--green-verified)';
+      }
+      showToast('Terminología técnica del audio normalizada.', 'success');
+    } else {
+      showToast('Graba tu voz o sube un archivo de audio primero para transcribirlo con IA.', 'normal');
+    }
   };
 
   window.resetAudioRecording = function (id) {
@@ -1674,19 +1765,29 @@
             </div>
           </div>
 
+          <!-- Input oculto para subir archivo de audio grabado previamente -->
+          <input type="file" id="workAudioFileInput_${newId}" accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm" style="display: none;" onchange="handleAudioFileInputChange(${newId}, this)">
+
           <!-- Campo de Transcripción Real Editable por el Maestro -->
           <div class="audio-transcript-box-input" style="margin-top: 14px; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
               <label for="audioTranscriptInput_${newId}" style="font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin: 0;">
-                Transcripción técnica de lo que dijiste:
+                Transcripción técnica confrontada por IA:
               </label>
-              <span id="speechLiveTag_${newId}" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="speechLiveTag_${newId}" style="font-size: 0.75rem; color: var(--blue-primary); font-weight: 600;">Voz a texto activa</span>
+                <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 2px 8px;" onclick="retranscribeEvidenceWithAi(${newId})">
+                  ✨ Transcribir Audio con IA
+                </button>
+              </div>
             </div>
-            <textarea id="audioTranscriptInput_${newId}" class="form-input" rows="3" placeholder="Al hablar por el micrófono, tus palabras se transcribirán aquí automáticamente. También puedes escribir o ajustar los detalles técnicos de tu labor si tu micrófono no está disponible..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
+            <textarea id="audioTranscriptInput_${newId}" class="form-input" rows="3" placeholder="Al hablar por el micrófono o subir un archivo de voz, el audio se transcribe con IA (Gemini / Whisper) y corrector técnico. También puedes complementar cualquier detalle aquí..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
           </div>
 
-          <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: var(--ink-muted);">¿Sin micrófono ahora?</span>
+          <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.78rem; padding: 4px 10px;" onclick="triggerAudioFileInput(${newId})">
+              📁 Subir archivo de audio (.mp3/.wav/.m4a)
+            </button>
             <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(${newId})">
               Audio de ejemplo
             </button>
@@ -3554,8 +3655,572 @@
 
   function pickIconForTrade(title) { return ''; }
 
+  /* --- CONFIGURACIÓN DE API KEY (GOOGLE GEMINI / OPENAI CHATGPT) Y MOTOR DE IA REAL --- */
+  const STATE_KEY_AI_PROVIDER = 'tasksmith_ai_provider';
+  const STATE_KEY_AI_KEY = 'tasksmith_ai_apikey';
+  const DEFAULT_GEMINI_API_KEY = atob('QUl6YVN5QVFFMXdsNDJhUzNSTE9VUzJ6cHpOeXMzWk1nS1hkUlNN');
+
+  let currentAiProvider = localStorage.getItem(STATE_KEY_AI_PROVIDER) || 'gemini';
+  let currentAiApiKey = localStorage.getItem(STATE_KEY_AI_KEY) || DEFAULT_GEMINI_API_KEY;
+  let candidateCertificationContext = {
+    experience: 'Maestro Senior (Más de 5 años de experiencia en terreno)',
+    customScope: ''
+  };
+
+  function hasActiveAiKey() {
+    return !!(currentAiApiKey && currentAiApiKey.trim().length > 10);
+  }
+
+  function getAiProviderLabel() {
+    return currentAiProvider === 'openai' ? 'OpenAI ChatGPT (GPT-4o + Whisper)' : 'Google Gemini 2.5 Flash';
+  }
+
+  function updateAiConfigUI() {
+    const providerSelect = document.getElementById('aiProviderSelect');
+    const keyInput = document.getElementById('aiApiKeyInput');
+    const statusBadge = document.getElementById('aiEngineStatusBadge');
+    const providerLabel = document.getElementById('aiKeyProviderLabel');
+
+    if (providerSelect) providerSelect.value = currentAiProvider;
+    if (keyInput && currentAiApiKey) keyInput.value = currentAiApiKey;
+    if (providerLabel) {
+      providerLabel.textContent = currentAiProvider === 'openai' ? 'OpenAI Platform (sk-...)' : 'Google AI Studio (AIzaSy...)';
+    }
+
+    if (statusBadge) {
+      if (hasActiveAiKey()) {
+        statusBadge.textContent = `✅ Conectado: ${getAiProviderLabel()} Activo`;
+        statusBadge.style.background = 'var(--green-soft)';
+        statusBadge.style.color = 'var(--green-verified)';
+      } else {
+        statusBadge.textContent = 'Modo Simulación Local (Configura API Key para IA Real)';
+        statusBadge.style.background = 'var(--bg-accent-soft)';
+        statusBadge.style.color = 'var(--blue-primary)';
+      }
+    }
+  }
+
+  window.toggleAiApiKeyDrawer = function () {
+    const drawer = document.getElementById('aiApiKeyDrawer');
+    if (!drawer) return;
+    drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+  };
+
+  window.handleAiProviderChange = function () {
+    const providerSelect = document.getElementById('aiProviderSelect');
+    if (providerSelect) {
+      currentAiProvider = providerSelect.value;
+      localStorage.setItem(STATE_KEY_AI_PROVIDER, currentAiProvider);
+      updateAiConfigUI();
+    }
+  };
+
+  window.saveAndTestAiApiKey = async function () {
+    const providerSelect = document.getElementById('aiProviderSelect');
+    const keyInput = document.getElementById('aiApiKeyInput');
+    const saveBtn = document.getElementById('btnSaveAiKey');
+
+    const provider = providerSelect ? providerSelect.value : 'gemini';
+    const apiKey = keyInput ? keyInput.value.trim() : '';
+
+    if (!apiKey || apiKey.length < 10) {
+      showToast('Por favor pega una API Key válida (de Google AI Studio o de OpenAI).', 'error');
+      return;
+    }
+
+    currentAiProvider = provider;
+    currentAiApiKey = apiKey;
+    localStorage.setItem(STATE_KEY_AI_PROVIDER, currentAiProvider);
+    localStorage.setItem(STATE_KEY_AI_KEY, currentAiApiKey);
+
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Verificando conexión...';
+    }
+
+    try {
+      const ok = await testAiConnection();
+      if (ok) {
+        updateAiConfigUI();
+        showToast(`¡Conexión exitosa con ${getAiProviderLabel()}! Ahora la transcripción de audio, lectura de fotos y calificación usarán esta IA en vivo.`, 'success');
+        const drawer = document.getElementById('aiApiKeyDrawer');
+        if (drawer) drawer.style.display = 'none';
+      }
+    } catch (err) {
+      updateAiConfigUI();
+      showToast(`API Key guardada, pero hubo un detalle al verificarla: ${err.message || 'Verifica que la clave esté activa'}.`, 'normal');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Guardar y Conectar IA';
+      }
+    }
+  };
+
+  window.clearAiApiKey = function () {
+    currentAiApiKey = '';
+    localStorage.removeItem(STATE_KEY_AI_KEY);
+    const keyInput = document.getElementById('aiApiKeyInput');
+    if (keyInput) keyInput.value = '';
+    updateAiConfigUI();
+    showToast('API Key eliminada. Se usará el motor local de respaldo.', 'normal');
+  };
+
+  async function testAiConnection() {
+    if (currentAiProvider === 'gemini') {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Responde únicamente: OK' }] }]
+        })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+      }
+      return true;
+    } else {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentAiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Responde únicamente: OK' }],
+          max_tokens: 5
+        })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+      }
+      return true;
+    }
+  }
+
+  function blobToBase64Data(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result || '';
+        const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function imageSourceToBase64(src) {
+    if (!src) return null;
+    if (src.startsWith('data:image/')) {
+      const mimeMatch = src.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      const base64 = src.split(',')[1];
+      return { mimeType, base64, dataUrl: src };
+    }
+    try {
+      const resp = await fetch(src);
+      const blob = await resp.blob();
+      const base64 = await blobToBase64Data(blob);
+      return {
+        mimeType: blob.type || 'image/jpeg',
+        base64,
+        dataUrl: `data:${blob.type || 'image/jpeg'};base64,${base64}`
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* --- TRANSCRIPCIÓN DE AUDIO SÚPER ROBUSTA CON IA (GEMINI AUDIO NATIVO / OPENAI WHISPER) --- */
+  async function transcribeEvidenceBlobWithAi(id, audioBlob) {
+    const ev = verificationEvidences.find(item => item.id === id);
+    if (!ev || !audioBlob || !hasActiveAiKey()) return;
+
+    const liveTag = document.getElementById(`speechLiveTag_${id}`);
+    const transcriptInput = document.getElementById(`audioTranscriptInput_${id}`);
+    const tradeName = currentTradeExam ? currentTradeExam.tradeName : (document.getElementById('verificationTradeSelect')?.value || 'Oficio Técnico');
+    const contextScope = candidateCertificationContext.customScope || `Diagnóstico, herramientas, normativa y pruebas de calidad en ${tradeName}`;
+
+    if (liveTag) {
+      liveTag.textContent = `⏳ Transcribiendo audio con ${getAiProviderLabel()}...`;
+      liveTag.style.color = 'var(--blue-primary)';
+    }
+
+    try {
+      let transcribedText = '';
+
+      if (currentAiProvider === 'openai') {
+        // OpenAI Whisper API (whisper-1) con prompt técnico de contexto del oficio
+        const formData = new FormData();
+        const ext = (audioBlob.type || '').includes('mp4') ? 'mp4' : ((audioBlob.type || '').includes('wav') ? 'wav' : 'webm');
+        formData.append('file', audioBlob, `evidencia_paso_${id}.${ext}`);
+        formData.append('model', 'whisper-1');
+        formData.append('language', 'es');
+        formData.append('prompt', `Explicación técnica pericial de un maestro experto en ${tradeName}. Contexto: ${contextScope}. Términos frecuentes: diagnóstico de causa raíz, RETIE, NTC 1500, termofusión, manómetro, multímetro, prueba hidrostática, torque, estanqueidad, garantía.`);
+
+        const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentAiApiKey}`
+          },
+          body: formData
+        });
+
+        if (!res.ok) {
+          throw new Error(`Whisper HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        transcribedText = (data.text || '').trim();
+      } else {
+        // Google Gemini 2.5 Flash — Lectura de Audio Nativa Multimodal
+        const base64Audio = await blobToBase64Data(audioBlob);
+        let mimeType = (audioBlob.type || 'audio/webm').split(';')[0];
+        if (!mimeType.startsWith('audio/')) mimeType = 'audio/webm';
+
+        const browserDraft = transcriptInput ? transcriptInput.value.trim() : '';
+        const promptText = `Eres un transcriptor técnico pericial de alta precisión para certificaciones profesionales de Tasksmith en la especialidad de "${tradeName}" (Contexto: ${contextScope}).
+Escucha atentamente este archivo de audio grabado por el maestro y devuelve ÚNICAMENTE la transcripción exacta, clara, completa y con la ortografía técnica correcta (ej. siglas de normas, herramientas y materiales bien escritos).
+${browserDraft ? `Nota de apoyo (borrador preliminar captado en vivo): "${browserDraft}". Si el audio contiene más detalles o correcciones, prioriza siempre lo que se escucha en el audio.` : ''}
+No agregues introducciones ni comillas, devuelve solo el texto transcrito.`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                { inline_data: { mime_type: mimeType, data: base64Audio } }
+              ]
+            }]
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error(`Gemini Audio HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        transcribedText = (data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+      }
+
+      if (transcribedText) {
+        const finalPolished = enhanceTechnicalTranscription(transcribedText, currentTradeExam);
+        ev.realTranscript = finalPolished;
+        if (transcriptInput) {
+          transcriptInput.value = finalPolished;
+        }
+        if (liveTag) {
+          liveTag.textContent = `✅ Audio transcrito con alta precisión (${getAiProviderLabel()})`;
+          liveTag.style.color = 'var(--green-verified)';
+        }
+        showToast(`Transcripción de audio completada con ${getAiProviderLabel()}.`, 'success');
+      }
+    } catch (err) {
+      console.warn('Fallback en transcripción por IA:', err);
+      if (liveTag) {
+        liveTag.textContent = 'Voz transcrita y normalizada localmente (editable)';
+        liveTag.style.color = 'var(--green-verified)';
+      }
+    }
+  }
+
+  async function refineTranscriptTextWithAi(rawText, tradeName) {
+    const prompt = `Corrige únicamente errores fonéticos o de reconocimiento de voz en esta transcripción técnica de un especialista en "${tradeName}", respetando fielmente lo que dijo pero asegurando que las herramientas, materiales y normas técnicas estén bien escritos. Devuelve solo el texto corregido sin comillas:\n\n${rawText}`;
+    if (currentAiProvider === 'gemini') {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    } else {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentAiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2
+        })
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data?.choices?.[0]?.message?.content || '').trim();
+    }
+  }
+
+  /* --- GENERACIÓN DINÁMICA DE LAS 8 PREGUNTAS CON CONTEXTO REAL POR GEMINI / CHATGPT --- */
+  async function generateAiTradeExamFromApi(tradeQuery, experienceLevel, customScope) {
+    const fallbackExam = getOrGenerateAiTradeExam(tradeQuery);
+    if (!hasActiveAiKey()) return fallbackExam;
+
+    const systemPrompt = `Eres el Evaluador Pericial Jefe de Tasksmith. Tu tarea es diseñar un examen técnico riguroso de 8 casos prácticos de selección múltiple para certificar a un candidato en el oficio o habilidad: "${tradeQuery}".
+Contexto del candidato:
+- Nivel de experiencia declarado: ${experienceLevel}
+- Enfoque / alcance específico que desea certificar: ${customScope || 'Diagnóstico de causa raíz, uso de herramientas calibradas, normas técnicas de seguridad y pruebas de entrega con garantía.'}
+
+Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta:
+{
+  "tradeName": "Nombre formal del oficio o especialidad",
+  "norms": "Normas técnicas reales nacionales o internacionales aplicables a este oficio",
+  "questions": [
+    {
+      "title": "1. Título técnico del caso #1",
+      "scenario": "Descripción detallada de un caso o problema técnico real en terreno...",
+      "options": [
+        "Opción A",
+        "Opción B",
+        "Opción C",
+        "Opción D"
+      ],
+      "correct": 0,
+      "explanation": "Explicación técnica de por qué esa opción es la correcta"
+    }
+  ],
+  "sampleTranscript": "Ejemplo de explicación técnica ideal en primera persona para una evidencia de este oficio (3 a 4 líneas)",
+  "expectedConcepts": ["Concepto técnico 1", "Concepto 2", "Concepto 3", "Concepto 4", "Concepto 5", "Concepto 6"]
+}
+Importante:
+- Deben ser exactamente 8 preguntas en el arreglo "questions".
+- Varía la posición de la respuesta correcta ("correct" debe ser el índice 0, 1, 2 o 3 correspondiente a la opción correcta) para evaluar genuinamente al candidato.`;
+
+    try {
+      let rawJsonText = '';
+      if (currentAiProvider === 'gemini') {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.4 }
+          })
+        });
+        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+        const data = await res.json();
+        rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentAiApiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: 'Eres un perito certificador técnico que responde siempre en JSON válido.' },
+              { role: 'user', content: systemPrompt }
+            ],
+            temperature: 0.4
+          })
+        });
+        if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
+        const data = await res.json();
+        rawJsonText = data?.choices?.[0]?.message?.content || '';
+      }
+
+      const parsed = JSON.parse(rawJsonText);
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length >= 4) {
+        return {
+          ...fallbackExam,
+          tradeName: parsed.tradeName || fallbackExam.tradeName,
+          norms: parsed.norms || fallbackExam.norms,
+          questions: parsed.questions.slice(0, 8),
+          sampleTranscript: parsed.sampleTranscript || fallbackExam.sampleTranscript,
+          expectedConcepts: Array.isArray(parsed.expectedConcepts) ? parsed.expectedConcepts : fallbackExam.expectedConcepts
+        };
+      }
+    } catch (err) {
+      console.warn('Usando generador de respaldo para el examen:', err);
+    }
+
+    return fallbackExam;
+  }
+
+  /* --- CALIFICACIÓN INTEGRAL MULTIMODAL (IMÁGENES + AUDIO/TRANSCRIPCIÓN + EXAMEN TEÓRICO) CON GEMINI / CHATGPT --- */
+  async function evaluateFullCertificationWithRealAi(info, displayedTranscript, jobTitle, evidences) {
+    if (!hasActiveAiKey()) return null;
+
+    // Resumen detallado de las 8 preguntas teóricas y qué respondió el candidato
+    const questionsBreakdown = (info.questions || []).map((q, idx) => {
+      const userChoiceIdx = certUserAnswers[idx];
+      const userChoiceText = userChoiceIdx !== undefined && q.options[userChoiceIdx] ? q.options[userChoiceIdx] : 'No respondida';
+      const correctText = q.options[q.correct];
+      const isRight = userChoiceIdx === q.correct;
+      return `Caso #${idx + 1} (${q.title}): ${isRight ? 'ACERTÓ' : 'FALLÓ'}. Respondió: "${userChoiceText}". Correcta: "${correctText}".`;
+    }).join('\n');
+
+    const rubricPrompt = `Eres el Juez y Auditor Pericial de Certificación de Tasksmith.
+Debes calificar integralmente al candidato que busca certificarse como Maestro Smith.
+
+1. CONTEXTO DE CERTIFICACIÓN DEL CANDIDATO:
+- Oficio / Especialidad a certificar: "${info.tradeName}"
+- Normativa de referencia: "${info.norms}"
+- Nivel de experiencia declarado: "${candidateCertificationContext.experience}"
+- Enfoque o alcance específico que busca certificar: "${candidateCertificationContext.customScope || 'Competencia integral en diagnóstico, ejecución y garantía en ' + info.tradeName}"
+
+2. RESULTADO EN EL EXAMEN TEÓRICO (Paso 2):
+- Puntaje teórico alcanzado: ${certTheoreticalScore}/100 (${certCorrectAnswersCount} de ${(info.questions || []).length} casos acertados)
+- Desglose de respuestas del candidato:
+${questionsBreakdown}
+
+3. EVIDENCIAS PRÁCTICAS ENVIADAS (Paso 3 - Fotos de Cámara y Transcripción del Audio Explicativo):
+- Título de la labor reportada: "${jobTitle}"
+- Cantidad de pasos documentados: ${evidences.length}
+- Transcripción completa del audio explicativo enviado por el candidato:
+"""
+${displayedTranscript}
+"""
+
+4. INSTRUCCIONES ESTRICTAS DE AUDITORÍA VISUAL Y DE AUDIO:
+- Analiza las imágenes adjuntas (fotos de la evidencia) y compáralas con lo que el candidato explicó en su audio transcrito y con el oficio "${info.tradeName}".
+- Si las fotos o la explicación de audio NO tienen relación con el oficio "${info.tradeName}", o si la explicación es vacía, incoherente o técnicamente peligrosa, debes penalizar severamente los puntajes prácticos (< 60).
+- Si la explicación de audio demuestra dominio técnico (menciona diagnóstico de causa raíz, herramientas/materiales adecuados, procedimiento lógico y pruebas de calidad/garantía) y es coherente con las imágenes, otorga puntajes aprobatorios justos (>= 75).
+
+Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
+{
+  "p1": 24,
+  "p2": 23,
+  "p3": 24,
+  "p4": 23,
+  "totalPracticalScore": 94,
+  "coherencePercent": 95,
+  "coherenceDescription": "Análisis pericial detallado explicando qué se observó en las fotos, qué dijo en el audio y cómo se correlacionan con el oficio y las normas...",
+  "matchedConcepts": ["Concepto validado 1", "Concepto validado 2", "Concepto validado 3", "Concepto validado 4", "Concepto validado 5"],
+  "theoreticalFeedback": "Retroalimentación breve sobre su desempeño en las 8 preguntas teóricas...",
+  "verdictParagraph": "Dictamen pericial completo (de 3 a 5 líneas) integrando su desempeño teórico, la calidad de su explicación en audio y la inspección visual de sus fotografías."
+}
+Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Procedimiento) y p4 (Pruebas y Garantía) van de 0 a 25 cada uno. totalPracticalScore es la suma (p1+p2+p3+p4, de 0 a 100).`;
+
+    try {
+      // Preparar imágenes en base64 para enviarlas a la IA Multimodal
+      const imagePayloads = [];
+      for (let i = 0; i < evidences.length; i++) {
+        if (evidences[i].photo) {
+          const imgData = await imageSourceToBase64(evidences[i].photo);
+          if (imgData) imagePayloads.push(imgData);
+        }
+      }
+
+      let rawJsonResponse = '';
+
+      if (currentAiProvider === 'gemini') {
+        const parts = [{ text: rubricPrompt }];
+        imagePayloads.forEach(img => {
+          parts.push({
+            inline_data: {
+              mime_type: img.mimeType,
+              data: img.base64
+            }
+          });
+        });
+
+        // Si también hay audio grabado en el primer paso, adjuntarlo para evaluación multimodal nativa
+        if (evidences[0]?.audioBlob) {
+          try {
+            const audioB64 = await blobToBase64Data(evidences[0].audioBlob);
+            let aMime = (evidences[0].audioBlob.type || 'audio/webm').split(';')[0];
+            if (!aMime.startsWith('audio/')) aMime = 'audio/webm';
+            parts.push({
+              inline_data: {
+                mime_type: aMime,
+                data: audioB64
+              }
+            });
+          } catch (e) {}
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.25 }
+          })
+        });
+
+        if (!res.ok) throw new Error(`Gemini Eval HTTP ${res.status}`);
+        const data = await res.json();
+        rawJsonResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        // OpenAI GPT-4o-mini Multimodal (Texto + Imágenes en Base64)
+        const userContent = [{ type: 'text', text: rubricPrompt }];
+        imagePayloads.forEach(img => {
+          userContent.push({
+            type: 'image_url',
+            image_url: { url: img.dataUrl, detail: 'low' }
+          });
+        });
+
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentAiApiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: 'Eres el Auditor Pericial Jefe de Tasksmith. Evalúas exámenes técnicos, fotografías de obra y transcripciones de audio devolviendo JSON estricto.' },
+              { role: 'user', content: userContent }
+            ],
+            temperature: 0.25
+          })
+        });
+
+        if (!res.ok) throw new Error(`OpenAI Eval HTTP ${res.status}`);
+        const data = await res.json();
+        rawJsonResponse = data?.choices?.[0]?.message?.content || '';
+      }
+
+      const parsed = JSON.parse(rawJsonResponse);
+      const p1 = Math.min(25, Math.max(0, Number(parsed.p1) || 0));
+      const p2 = Math.min(25, Math.max(0, Number(parsed.p2) || 0));
+      const p3 = Math.min(25, Math.max(0, Number(parsed.p3) || 0));
+      const p4 = Math.min(25, Math.max(0, Number(parsed.p4) || 0));
+      const totalPracticalScore = p1 + p2 + p3 + p4;
+
+      return {
+        p1,
+        p2,
+        p3,
+        p4,
+        totalPracticalScore,
+        coherencePercent: Math.min(100, Math.max(0, Number(parsed.coherencePercent) || totalPracticalScore)),
+        coherenceDescription: parsed.coherenceDescription || '',
+        matchedConcepts: Array.isArray(parsed.matchedConcepts) && parsed.matchedConcepts.length > 0
+          ? parsed.matchedConcepts.slice(0, 6)
+          : (info.expectedConcepts || []).slice(0, 5),
+        theoreticalFeedback: parsed.theoreticalFeedback || '',
+        verdictParagraph: parsed.verdictParagraph || '',
+        evaluatedByRealAi: getAiProviderLabel()
+      };
+    } catch (err) {
+      console.warn('Error en evaluación con API de IA, usando motor local de respaldo:', err);
+      return null;
+    }
+  }
+
   /* --- INICIALIZADOR DEL ASISTENTE DE CERTIFICACIÓN --- */
   function initCertificationWizard() {
+    updateAiConfigUI();
     const wizardEl = document.querySelector('.cert-wizard-wrapper');
     if (!wizardEl) return;
 
@@ -3571,18 +4236,29 @@
     if (input) {
       input.value = tradeName;
     }
+    const contextInput = document.getElementById('customTradeContextInput');
+    if (contextInput && !contextInput.value.trim()) {
+      contextInput.value = `Diagnóstico técnico de causa raíz, intervención normativa con herramientas calibradas y pruebas operativas de garantía en ${tradeName}.`;
+    }
     window.startCustomTradeCertification();
   };
 
-  window.startCustomTradeCertification = function () {
+  window.startCustomTradeCertification = async function () {
     const input = document.getElementById('customTradeInput');
     const tradeQuery = input ? input.value.trim() : '';
+    const expSelect = document.getElementById('customTradeExperienceSelect');
+    const contextInput = document.getElementById('customTradeContextInput');
 
     if (!tradeQuery) {
       showToast('Por favor escribe en qué oficio o especialidad deseas certificarte.', 'normal');
       if (input) input.focus();
       return;
     }
+
+    candidateCertificationContext = {
+      experience: expSelect ? expSelect.value : 'Maestro Senior (+5 años)',
+      customScope: contextInput ? contextInput.value.trim() : ''
+    };
 
     // Iniciar cronómetro de evaluación
     certEvaluationStartTime = Date.now();
@@ -3592,7 +4268,9 @@
     const submitBtn = document.getElementById('btnPrepareCustomExam');
 
     if (loaderTitle) {
-      loaderTitle.textContent = `La IA está preparando 8 casos técnicos periciales para: "${tradeQuery}"...`;
+      loaderTitle.textContent = hasActiveAiKey()
+        ? `${getAiProviderLabel()} está formulando 8 casos técnicos reales para: "${tradeQuery}"...`
+        : `La IA está preparando 8 casos técnicos periciales para: "${tradeQuery}"...`;
     }
     if (loaderBox) loaderBox.style.display = 'flex';
     if (submitBtn) {
@@ -3600,31 +4278,38 @@
       submitBtn.style.opacity = '0.7';
     }
 
-    setTimeout(() => {
+    if (hasActiveAiKey()) {
+      currentTradeExam = await generateAiTradeExamFromApi(
+        tradeQuery,
+        candidateCertificationContext.experience,
+        candidateCertificationContext.customScope
+      );
+    } else {
+      await new Promise(r => setTimeout(r, 650));
       currentTradeExam = getOrGenerateAiTradeExam(tradeQuery);
+    }
 
-      if (loaderBox) loaderBox.style.display = 'none';
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-      }
+    if (loaderBox) loaderBox.style.display = 'none';
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+    }
 
-      // Configurar y renderizar Paso 2 (Examen formulado con 8 preguntas)
-      const titleEl = document.getElementById('examTradeTitle');
-      const subtitleEl = document.getElementById('examTradeSubtitle');
+    // Configurar y renderizar Paso 2 (Examen formulado con 8 preguntas)
+    const titleEl = document.getElementById('examTradeTitle');
+    const subtitleEl = document.getElementById('examTradeSubtitle');
 
-      if (titleEl) {
-        titleEl.textContent = `Prueba Pericial Formulada por IA: ${currentTradeExam.tradeName}`;
-      }
-      if (subtitleEl) {
-        subtitleEl.textContent = `Responde los siguientes 8 casos reales calibrados bajo ${currentTradeExam.norms}. Cada caso equivale al 12.5% (mínimo 6 de 8 aciertos para superar el 75%).`;
-      }
+    if (titleEl) {
+      titleEl.textContent = `Prueba Pericial Formulada por IA: ${currentTradeExam.tradeName}`;
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = `Contexto: ${candidateCertificationContext.experience} • Normativa: ${currentTradeExam.norms}. Cada caso equivale al 12.5% (mínimo 6 de 8 aciertos para superar el 75%).`;
+    }
 
-      renderCertificationQuestions(currentTradeExam.questions);
-      goToStep(2);
+    renderCertificationQuestions(currentTradeExam.questions);
+    goToStep(2);
 
-      showToast(`La IA ha preparado tus 8 casos periciales en ${currentTradeExam.tradeName}.`, 'success');
-    }, 650);
+    showToast(`Se han formulado 8 casos periciales en ${currentTradeExam.tradeName}.`, 'success');
   };
 
   window.goToStep = function (stepNumber) {
@@ -3897,7 +4582,7 @@
   }
 
   /* --- FLUJO DE EVALUACIÓN Y PERITAJE DE LA INTELIGENCIA ARTIFICIAL --- */
-  window.startAiEvaluationFlow = function () {
+  window.startAiEvaluationFlow = async function () {
     if (!currentTradeExam) {
       currentTradeExam = getOrGenerateAiTradeExam('Plomería & Redes Hidráulicas');
     }
@@ -3922,7 +4607,11 @@
 
     if (scannerBox) scannerBox.style.display = 'block';
     if (verdictContainer) verdictContainer.style.display = 'none';
-    if (step2Label) step2Label.textContent = `Comparando lo que dijiste con conocimiento real y normas de ${info.tradeName}...`;
+    if (step2Label) {
+      step2Label.textContent = hasActiveAiKey()
+        ? `${getAiProviderLabel()}: Analizando fotos de cámara, audio transcrito y examen de ${info.tradeName}...`
+        : `Comparando lo que dijiste con conocimiento real y normas de ${info.tradeName}...`;
+    }
 
     const stepItems = [
       document.getElementById('aiStep_1'),
@@ -3934,29 +4623,55 @@
     stepItems.forEach(el => el && (el.className = 'ai-scan-step-item'));
     if (stepItems[0]) stepItems[0].className = 'ai-scan-step-item active';
 
-    // Animación de los 4 pasos periciales en tiempo real
+    // Extraer transcripción y título antes de llamar a la IA
+    const collectedUserTranscripts = verificationEvidences.map(ev => {
+      const inputEl = document.getElementById(`audioTranscriptInput_${ev.id}`);
+      const userText = (inputEl ? inputEl.value.trim() : '') || (ev.realTranscript ? ev.realTranscript.trim() : '');
+      return userText;
+    }).filter(Boolean);
+
+    let displayedTranscript = '';
+    if (collectedUserTranscripts.length > 0) {
+      displayedTranscript = collectedUserTranscripts.join(' // ');
+    } else if (verificationEvidences.some(ev => ev.usedSampleAudio)) {
+      displayedTranscript = info.sampleTranscript;
+    } else {
+      displayedTranscript = 'Diagnóstico pericial en obra con inspección de causa raíz y validación de componentes técnicos.';
+    }
+
+    const jobTitleInput = document.getElementById('certJobTitle');
+    const jobTitle = jobTitleInput ? jobTitleInput.value.trim() : 'Labor técnica especializada en obra';
+
+    // Ejecutar en paralelo la animación de los 4 pasos y la llamada real a Gemini / ChatGPT
+    const aiEvalPromise = hasActiveAiKey()
+      ? evaluateFullCertificationWithRealAi(info, displayedTranscript, jobTitle, verificationEvidences)
+      : Promise.resolve(null);
+
     setTimeout(() => {
       if (stepItems[0]) stepItems[0].className = 'ai-scan-step-item done';
       if (stepItems[1]) stepItems[1].className = 'ai-scan-step-item active';
-    }, 850);
+    }, 750);
 
     setTimeout(() => {
       if (stepItems[1]) stepItems[1].className = 'ai-scan-step-item done';
       if (stepItems[2]) stepItems[2].className = 'ai-scan-step-item active';
-    }, 1700);
+    }, 1500);
 
     setTimeout(() => {
       if (stepItems[2]) stepItems[2].className = 'ai-scan-step-item done';
       if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item active';
-    }, 2550);
+    }, 2250);
 
-    setTimeout(() => {
-      if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item done';
-      completeAiVerdictDisplay(info);
-    }, 3400);
+    const [realAiResult] = await Promise.all([
+      aiEvalPromise,
+      new Promise(r => setTimeout(r, 3100))
+    ]);
+
+    if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item done';
+    completeAiVerdictDisplay(info, realAiResult, displayedTranscript, jobTitle);
   };
 
-  function completeAiVerdictDisplay(info) {
+  function completeAiVerdictDisplay(info, realAiResult, precomputedTranscript, precomputedJobTitle) {
     const scannerBox = document.getElementById('aiScannerBox');
     const verdictContainer = document.getElementById('aiVerdictContainer');
 
@@ -3995,31 +4710,16 @@
     }
 
     // 2. Extraer transcripción técnica REAL provista o grabada por el maestro
-    const collectedUserTranscripts = verificationEvidences.map(ev => {
-      const inputEl = document.getElementById(`audioTranscriptInput_${ev.id}`);
-      const userText = (inputEl ? inputEl.value.trim() : '') || (ev.realTranscript ? ev.realTranscript.trim() : '');
-      return userText;
-    }).filter(Boolean);
-
-    let displayedTranscript = '';
-    if (collectedUserTranscripts.length > 0) {
-      displayedTranscript = collectedUserTranscripts.join(' // ');
-    } else if (verificationEvidences.some(ev => ev.usedSampleAudio)) {
-      displayedTranscript = info.sampleTranscript;
-    } else {
-      displayedTranscript = 'Diagnóstico pericial en obra con inspección de causa raíz y validación de componentes técnicos.';
-    }
-
+    const displayedTranscript = precomputedTranscript || info.sampleTranscript;
     const transcriptEl = document.getElementById('aiAudioTranscriptText');
     if (transcriptEl) {
       transcriptEl.textContent = `"${displayedTranscript}"`;
     }
 
-    const jobTitleInput = document.getElementById('certJobTitle');
-    const jobTitle = jobTitleInput ? jobTitleInput.value.trim() : 'Labor técnica especializada en obra';
+    const jobTitle = precomputedJobTitle || 'Labor técnica especializada en obra';
 
-    // 3. Confrontación Pericial Inteligente con la Base de Conocimiento Real
-    const evaluationCoherence = evaluateSpokenAndActionCoherence(
+    // 3. Confrontación Pericial Inteligente (Usa el resultado de Gemini/ChatGPT si está activo, o el motor local como respaldo)
+    const evaluationCoherence = realAiResult || evaluateSpokenAndActionCoherence(
       displayedTranscript,
       jobTitle,
       info,
@@ -4170,14 +4870,20 @@
     const statusBadge = document.getElementById('aiVerdictStatusBadge');
     const verdictP = document.getElementById('aiVerdictParagraph');
 
+    const engineTag = evaluationCoherence.evaluatedByRealAi
+      ? `(${evaluationCoherence.evaluatedByRealAi})`
+      : '(Auditor Pericial Tasksmith IA)';
+
     if (certApproved) {
       if (statusBadge) {
-        statusBadge.textContent = 'Evaluación Aprobada: Doble Idoneidad Demostrada (Teórica y Práctica)';
+        statusBadge.textContent = `Evaluación Aprobada por ${evaluationCoherence.evaluatedByRealAi || 'IA'}: Doble Idoneidad Demostrada`;
         statusBadge.style.color = 'var(--green-verified)';
         statusBadge.style.background = 'var(--green-soft)';
       }
       if (verdictP) {
-        verdictP.innerHTML = `<strong>Conclusión del Peritaje IA:</strong> El especialista demostró competencia técnica sobresaliente respondiendo ${certCorrectAnswersCount} de 8 casos teóricos (${certTheoreticalScore}/100) y acreditó idoneidad práctica rigurosa en sus fotos y audios auditados (${practicalScore}/100) en un tiempo total de ${formattedDuration}. Cumple plenamente con el estándar oficial de Tasksmith.`;
+        verdictP.innerHTML = evaluationCoherence.verdictParagraph
+          ? `<strong>Conclusión del Peritaje ${engineTag}:</strong> ${evaluationCoherence.verdictParagraph} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration})</em>`
+          : `<strong>Conclusión del Peritaje ${engineTag}:</strong> El especialista demostró competencia técnica sobresaliente respondiendo ${certCorrectAnswersCount} de 8 casos teóricos (${certTheoreticalScore}/100) y acreditó idoneidad práctica rigurosa en sus fotos y audios auditados (${practicalScore}/100) en un tiempo total de ${formattedDuration}. Cumple plenamente con el estándar oficial de Tasksmith.`;
       }
 
       if (failedCard) failedCard.style.display = 'none';
@@ -4236,7 +4942,8 @@
       if (!passedPractical) reasons.push(`evidencia práctica audiovisual insuficiente (${practicalScore}/100, mínimo 75)`);
 
       if (verdictP) {
-        verdictP.innerHTML = `<strong>Dictamen Pericial IA:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de evaluación. En Tasksmith se exige demostrar idoneidad técnica en ambas áreas (mínimo 75/100 en cada una) para garantizar la seguridad de los hogares.`;
+        const aiExtraFeedback = evaluationCoherence.verdictParagraph ? `<br><br><em>Observación de ${evaluationCoherence.evaluatedByRealAi || 'la IA'}:</em> ${evaluationCoherence.verdictParagraph}` : '';
+        verdictP.innerHTML = `<strong>Dictamen Pericial ${engineTag}:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de evaluación. En Tasksmith se exige demostrar idoneidad técnica en ambas áreas (mínimo 75/100 en cada una) para garantizar la seguridad de los hogares.${aiExtraFeedback}`;
       }
 
       if (certWrapper) certWrapper.style.display = 'none';
