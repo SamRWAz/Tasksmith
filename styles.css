@@ -3558,3 +3558,25 @@ img {
     outline-offset: -2px;
   }
 }
+
+/* ================= INSIGNIAS: BORDE DEL MISMO TONO QUE EL TEXTO ================= */
+/* Antes todas las insignias tenían borde verde, aunque fueran rojas o azules */
+.live-badge {
+  border-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.live-badge[data-status="error"] {
+  color: #B91C1C;
+  background: #FEF2F2;
+  border-color: #F5B5B5;
+}
+
+/* Puntajes del resultado: el número y su insignia bajan de línea si no caben */
+.score-row {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.time-metric-icon-wrap {
+  color: var(--blue-primary);
+}

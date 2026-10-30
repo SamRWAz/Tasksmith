@@ -636,7 +636,7 @@
               <!-- Criterio Pericial: Métrica de Tiempo Total de Evaluación -->
               <div class="evaluation-time-metric-box" style="margin-bottom: 22px;">
                 <div style="display: flex; align-items: center; gap: 14px;">
-                  <div class="time-metric-icon-wrap">⏱️</div>
+                  <div class="time-metric-icon-wrap" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9.5 2.5h5M12 2.5V5"/></svg></div>
                   <div>
                     <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); font-weight: 700;">
                       Criterio Pericial de Evaluación • Tiempo Total del Proceso
@@ -651,7 +651,7 @@
                 </div>
                 <div style="text-align: right;">
                   <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); font-weight: 700; font-size: 0.85rem;" id="evaluationTimeStandardBadge">
-                    ⏱️ Tiempo Registrado
+                    Tiempo registrado
                   </span>
                 </div>
               </div>
@@ -663,7 +663,7 @@
                   <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">
                     1. Prueba Teórica (8 Casos IA)
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
+                  <div class="score-row" style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
                     <span style="font-size: 2.2rem; font-weight: 800; color: var(--blue-primary);" id="revealedTheoScore">--/100</span>
                     <span class="live-badge" id="revealedTheoBadge" style="background: var(--green-soft); color: var(--green-verified);">-- aciertos</span>
                   </div>
@@ -677,7 +677,7 @@
                   <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">
                     2. Prueba Práctica Audiovisual
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
+                  <div class="score-row" style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
                     <span style="font-size: 2.2rem; font-weight: 800; color: var(--green-verified);" id="revealedPractScore">--/100</span>
                     <span class="live-badge" id="revealedPractBadge" style="background: var(--green-soft); color: var(--green-verified);">Idoneidad IA</span>
                   </div>
@@ -691,7 +691,7 @@
                   <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--blue-primary); font-weight: 700;">
                     Calificación Global Oficial
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
+                  <div class="score-row" style="display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px;">
                     <span style="font-size: 2.2rem; font-weight: 800; color: var(--ink-primary);" id="revealedOverallScore">--/100</span>
                     <span class="live-badge" id="revealedOverallBadge" style="background: var(--green-soft); color: var(--green-verified);">Verificación Integral</span>
                   </div>
@@ -804,7 +804,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
                   </div>
                   <div>
-                    <span class="live-badge" style="background: #fee2e2; color: #dc2626; font-weight: 700;">
+                    <span class="live-badge" data-status="error">
                       Certificación No Otorgada
                     </span>
                     <h3 style="font-size: 1.4rem; color: var(--ink-primary); margin: 4px 0 0;">

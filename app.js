@@ -3893,12 +3893,14 @@
       const active = configuredAiProviders();
       if (active.length) {
         statusBadge.textContent = `✅ IA activa: ${active.map(p => AI_PROVIDERS[p].label).join(' → ')}`;
-        statusBadge.style.background = 'var(--green-soft)';
-        statusBadge.style.color = 'var(--green-verified)';
+        statusBadge.dataset.status = 'done';
+        statusBadge.style.color = '';
+        statusBadge.style.background = '';
       } else {
         statusBadge.textContent = 'Sin IA: agrega al menos una API Key gratuita';
-        statusBadge.style.background = '#fee2e2';
-        statusBadge.style.color = '#dc2626';
+        statusBadge.dataset.status = 'error';
+        statusBadge.style.color = '';
+        statusBadge.style.background = '';
       }
     }
   }
@@ -4429,6 +4431,8 @@ Responde únicamente con el JSON pedido, en español.`;
   /* --- INICIALIZADOR DEL ASISTENTE DE CERTIFICACIÓN --- */
   function initCertificationWizard() {
     updateAiConfigUI();
+    layoutCertStepperRail(currentCertStep);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => layoutCertStepperRail(currentCertStep));
     const wizardEl = document.querySelector('.cert-wizard-wrapper');
     if (!wizardEl) return;
 
@@ -4520,16 +4524,29 @@ Responde únicamente con el JSON pedido, en español.`;
     showToast(`Se han formulado 8 casos periciales en ${currentTradeExam.tradeName}.`, 'success');
   };
 
+  /* El riel del paso a paso se mide desde el centro del círculo 1 hasta el centro del 4,
+     para que la línea de progreso termine justo en el círculo del paso actual (antes se pasaba). */
+  function layoutCertStepperRail(stepNumber) {
+    const stepper = document.querySelector('.cert-stepper');
+    const track = stepper && stepper.querySelector('.cert-stepper-track');
+    const progress = document.getElementById('certProgressTrack');
+    const circles = stepper ? stepper.querySelectorAll('.cert-step-circle') : [];
+    if (!stepper || circles.length < 2) return;
+    const base = stepper.getBoundingClientRect().left;
+    const centers = Array.from(circles).map(c => { const r = c.getBoundingClientRect(); return r.left + r.width / 2 - base; });
+    const first = centers[0];
+    const last = centers[centers.length - 1];
+    const current = centers[Math.max(0, Math.min(centers.length - 1, (stepNumber || 1) - 1))];
+    if (track) { track.style.left = `${first}px`; track.style.right = 'auto'; track.style.width = `${last - first}px`; }
+    if (progress) { progress.style.left = `${first}px`; progress.style.width = `${current - first}px`; }
+  }
+  window.addEventListener('resize', () => { if (typeof currentCertStep !== 'undefined') layoutCertStepperRail(currentCertStep); });
+
   window.goToStep = function (stepNumber) {
     currentCertStep = stepNumber;
     
     // Actualizar progreso del stepper
-    const progressTrack = document.getElementById('certProgressTrack');
-    if (progressTrack) {
-      const pct = ((stepNumber - 1) / 3) * 100;
-      // El riel va del centro del círculo 1 al centro del 4, así que se descuenta el margen de cada lado
-      progressTrack.style.width = `calc((100% - 2 * var(--rail-inset, 48px)) * ${pct / 100})`;
-    }
+    layoutCertStepperRail(stepNumber);
 
     for (let i = 1; i <= 4; i++) {
       const node = document.getElementById(`stepNode_${i}`);
@@ -4912,7 +4929,7 @@ Responde únicamente con el JSON pedido, en español.`;
 
     const timeBadgeEl = document.getElementById('evaluationTimeStandardBadge');
     if (timeBadgeEl) {
-      timeBadgeEl.textContent = `⏱️ Tiempo Registrado: ${formattedDuration}`;
+      timeBadgeEl.textContent = `Tiempo registrado: ${formattedDuration}`;
     }
 
     const certTimeDisplayEl = document.getElementById('certTimeDisplay');
@@ -4980,8 +4997,9 @@ Responde únicamente con el JSON pedido, en español.`;
     const coherenceBadge = document.getElementById('practicalCoherenceBadge');
     if (coherenceBadge) {
       coherenceBadge.textContent = `${evaluationCoherence.coherencePercent}% Coherencia Práctica`;
-      coherenceBadge.style.color = evaluationCoherence.coherencePercent >= 75 ? 'var(--green-verified)' : '#dc2626';
-      coherenceBadge.style.background = evaluationCoherence.coherencePercent >= 75 ? 'var(--green-soft)' : '#fee2e2';
+      coherenceBadge.dataset.status = evaluationCoherence.coherencePercent >= 75 ? 'done' : 'error';
+      coherenceBadge.style.background = '';
+      coherenceBadge.style.color = '';
     }
 
     const coherenceDesc = document.getElementById('practicalCoherenceDescription');
@@ -5000,11 +5018,15 @@ Responde únicamente con el JSON pedido, en español.`;
     const revTheoBadge = document.getElementById('revealedTheoBadge');
     const revTheoDesc = document.getElementById('revealedTheoDesc');
 
-    if (revTheoScore) revTheoScore.textContent = `${certTheoreticalScore}/100`;
+    if (revTheoScore) {
+      revTheoScore.textContent = `${certTheoreticalScore}/100`;
+      revTheoScore.style.color = passedTheoretical ? 'var(--green-verified)' : '#B91C1C';
+    }
     if (revTheoBadge) {
       revTheoBadge.textContent = `${certCorrectAnswersCount} de 8 aciertos`;
-      revTheoBadge.style.background = passedTheoretical ? 'var(--green-soft)' : '#fee2e2';
-      revTheoBadge.style.color = passedTheoretical ? 'var(--green-verified)' : '#dc2626';
+      revTheoBadge.dataset.status = passedTheoretical ? 'done' : 'error';
+      revTheoBadge.style.background = '';
+      revTheoBadge.style.color = '';
     }
     if (revTheoDesc) {
       revTheoDesc.textContent = passedTheoretical
@@ -5016,22 +5038,30 @@ Responde únicamente con el JSON pedido, en español.`;
     const revPractScore = document.getElementById('revealedPractScore');
     const revPractBadge = document.getElementById('revealedPractBadge');
 
-    if (revPractScore) revPractScore.textContent = `${practicalScore}/100`;
+    if (revPractScore) {
+      revPractScore.textContent = `${practicalScore}/100`;
+      revPractScore.style.color = passedPractical ? 'var(--green-verified)' : '#B91C1C';
+    }
     if (revPractBadge) {
       revPractBadge.textContent = passedPractical ? 'Idoneidad Acreditada' : 'Insuficiente (<75)';
-      revPractBadge.style.background = passedPractical ? 'var(--green-soft)' : '#fee2e2';
-      revPractBadge.style.color = passedPractical ? 'var(--green-verified)' : '#dc2626';
+      revPractBadge.dataset.status = passedPractical ? 'done' : 'error';
+      revPractBadge.style.background = '';
+      revPractBadge.style.color = '';
     }
 
     // Revelar Global Oficial
     const revOverallScore = document.getElementById('revealedOverallScore');
     const revOverallBadge = document.getElementById('revealedOverallBadge');
 
-    if (revOverallScore) revOverallScore.textContent = `${overallAverageScore}/100`;
+    if (revOverallScore) {
+      revOverallScore.textContent = `${overallAverageScore}/100`;
+      revOverallScore.style.color = certApproved ? 'var(--green-verified)' : '#B91C1C';
+    }
     if (revOverallBadge) {
       revOverallBadge.textContent = certApproved ? 'Acreditación Oficial Smith' : 'Certificación Pendiente';
-      revOverallBadge.style.background = certApproved ? 'var(--green-soft)' : '#fee2e2';
-      revOverallBadge.style.color = certApproved ? 'var(--green-verified)' : '#dc2626';
+      revOverallBadge.dataset.status = certApproved ? 'done' : 'error';
+      revOverallBadge.style.background = '';
+      revOverallBadge.style.color = '';
     }
 
     // 5. MUESTRA FORMAL DE EVIDENCIAS ENTREGADAS (FOTOS Y AUDIOS AUDITADOS)
@@ -5106,8 +5136,9 @@ Responde únicamente con el JSON pedido, en español.`;
     if (certApproved) {
       if (statusBadge) {
         statusBadge.textContent = `Evaluación Aprobada por ${evaluationCoherence.evaluatedByRealAi || 'IA'}: Doble Idoneidad Demostrada`;
-        statusBadge.style.color = 'var(--green-verified)';
-        statusBadge.style.background = 'var(--green-soft)';
+        statusBadge.dataset.status = 'done';
+        statusBadge.style.color = '';
+        statusBadge.style.background = '';
       }
       if (verdictP) {
         verdictP.innerHTML = evaluationCoherence.verdictParagraph
@@ -5162,8 +5193,9 @@ Responde únicamente con el JSON pedido, en español.`;
       // REQUISITOS NO CUMPLIDOS
       if (statusBadge) {
         statusBadge.textContent = 'Certificación No Otorgada: Requisitos Mínimos No Alcanzados';
-        statusBadge.style.color = '#dc2626';
-        statusBadge.style.background = '#fee2e2';
+        statusBadge.dataset.status = 'error';
+        statusBadge.style.color = '';
+        statusBadge.style.background = '';
       }
 
       let reasons = [];
@@ -5188,8 +5220,9 @@ Responde únicamente con el JSON pedido, en español.`;
         if (failedTheoScore) failedTheoScore.textContent = `${certTheoreticalScore}/100`;
         if (failedTheoBadge) {
           failedTheoBadge.textContent = passedTheoretical ? `Aprobada (${certCorrectAnswersCount}/8)` : `Insuficiente (${certCorrectAnswersCount}/8)`;
-          failedTheoBadge.style.color = passedTheoretical ? 'var(--green-verified)' : '#dc2626';
-          failedTheoBadge.style.background = passedTheoretical ? 'var(--green-soft)' : '#fee2e2';
+          failedTheoBadge.dataset.status = passedTheoretical ? 'done' : 'error';
+          failedTheoBadge.style.background = '';
+          failedTheoBadge.style.color = '';
         }
         if (failedTheoMsg) {
           failedTheoMsg.textContent = passedTheoretical
@@ -5204,8 +5237,9 @@ Responde únicamente con el JSON pedido, en español.`;
         if (failedPractScore) failedPractScore.textContent = `${practicalScore}/100`;
         if (failedPractBadge) {
           failedPractBadge.textContent = passedPractical ? 'Aprobada (>= 75)' : 'Insuficiente (< 75)';
-          failedPractBadge.style.color = passedPractical ? 'var(--green-verified)' : '#dc2626';
-          failedPractBadge.style.background = passedPractical ? 'var(--green-soft)' : '#fee2e2';
+          failedPractBadge.dataset.status = passedPractical ? 'done' : 'error';
+          failedPractBadge.style.background = '';
+          failedPractBadge.style.color = '';
         }
         if (failedPractMsg) {
           failedPractMsg.textContent = passedPractical
