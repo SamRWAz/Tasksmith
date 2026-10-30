@@ -949,6 +949,65 @@
                 </button>
               </div>
 
+              <!-- ================= OPINIÓN DEL CANDIDATO SOBRE EL RESULTADO ================= -->
+              <section class="cert-feedback cert-no-print" id="certFeedbackCard" aria-labelledby="certFeedbackTitle">
+                <form class="cert-feedback-form" id="certFeedbackForm" novalidate>
+                  <h3 id="certFeedbackTitle">¿Qué te pareció tu resultado?</h3>
+                  <p class="cert-feedback-intro">Tu opinión nos ayuda a revisar y mejorar la evaluación con IA. Solo toma unos segundos.</p>
+
+                  <fieldset class="cert-feedback-group">
+                    <legend>1. ¿Cómo valoras la evaluación?</legend>
+                    <div class="cert-stars" role="radiogroup" aria-label="Calificación de 1 a 5 estrellas" id="certStars">
+                    <button type="button" class="cert-star" role="radio" aria-checked="false" aria-label="1 de 5 estrellas" data-value="1" tabindex="0">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>
+                    </button>
+                    <button type="button" class="cert-star" role="radio" aria-checked="false" aria-label="2 de 5 estrellas" data-value="2" tabindex="-1">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>
+                    </button>
+                    <button type="button" class="cert-star" role="radio" aria-checked="false" aria-label="3 de 5 estrellas" data-value="3" tabindex="-1">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>
+                    </button>
+                    <button type="button" class="cert-star" role="radio" aria-checked="false" aria-label="4 de 5 estrellas" data-value="4" tabindex="-1">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>
+                    </button>
+                    <button type="button" class="cert-star" role="radio" aria-checked="false" aria-label="5 de 5 estrellas" data-value="5" tabindex="-1">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>
+                    </button>
+                    </div>
+                    <span class="cert-stars-label" id="certStarsLabel" aria-live="polite">Toca una estrella</span>
+                  </fieldset>
+
+                  <fieldset class="cert-feedback-group">
+                    <legend>2. ¿Estás de acuerdo con el resultado?</legend>
+                    <div class="cert-agree" role="radiogroup" aria-label="¿Estás de acuerdo con el resultado?">
+                      <button type="button" class="cert-agree-option" role="radio" aria-checked="false" data-value="si">Sí, estoy de acuerdo</button>
+                      <button type="button" class="cert-agree-option" role="radio" aria-checked="false" data-value="parcial">En parte</button>
+                      <button type="button" class="cert-agree-option" role="radio" aria-checked="false" data-value="no">No estoy de acuerdo</button>
+                    </div>
+                  </fieldset>
+
+                  <div class="cert-feedback-group">
+                    <label for="certFeedbackComment">3. Comentarios <span class="cert-optional">(opcional)</span></label>
+                    <textarea id="certFeedbackComment" class="form-input" rows="4" maxlength="1000" placeholder="¿Qué te gustó, qué cambiarías o qué crees que la IA evaluó mal?"></textarea>
+                    <span class="cert-char-count" id="certFeedbackCount">0 / 1000</span>
+                  </div>
+
+                  <p class="cert-feedback-error" id="certFeedbackError" role="alert"></p>
+                  <button type="submit" class="btn btn-primary" id="certFeedbackSubmit">Enviar mi opinión</button>
+                </form>
+
+                <div class="cert-feedback-thanks" id="certFeedbackThanks" hidden>
+                  <div class="status-icon-circle is-success" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                  </div>
+                  <div>
+                    <h3>¡Gracias por tu opinión!</h3>
+                    <p id="certFeedbackSummary"></p>
+                    <button type="button" class="btn btn-ghost btn-sm" id="certFeedbackEdit">Cambiar mi opinión</button>
+                  </div>
+                </div>
+              </section>
+
             </div>
 
           </div>

@@ -5283,6 +5283,7 @@ Responde únicamente con el JSON pedido, en español.`;
       engine: evaluationCoherence.evaluatedByRealAi || 'IA'
     };
     document.querySelectorAll('[data-export-cert-pdf]').forEach(btn => { btn.disabled = false; });
+    resetCertFeedback();
   }
 
   window.restartCertificationWizard = function () {
@@ -5504,6 +5505,14 @@ Responde únicamente con el JSON pedido, en español.`;
       text(r.verdictParagraph || 'Sin dictamen.', { size: 10.5, color: COLORS.ink, after: 3 });
       text('Este informe fue generado automáticamente a partir de la evaluación con inteligencia artificial de Tasksmith. Las notas prácticas y las observaciones son el criterio de la IA sobre las fotos y explicaciones enviadas.', { size: 8.5, italic: true, color: COLORS.muted });
 
+      // Opinión del candidato (si la dejó)
+      if (r.feedback) {
+        section('Opinión del candidato sobre el resultado');
+        labelValue('Valoración', `${r.feedback.rating} de 5 estrellas (${r.feedback.ratingLabel})`);
+        labelValue('¿Está de acuerdo?', r.feedback.agreement);
+        if (r.feedback.comment) text(`"${r.feedback.comment}"`, { size: 10, italic: true, color: COLORS.soft, after: 2 });
+      }
+
       // Pie de página
       const pages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pages; i++) {
@@ -5524,6 +5533,176 @@ Responde únicamente con el JSON pedido, en español.`;
       buttons.forEach(b => { b.disabled = false; });
     }
   };
+
+  /* --- OPINIÓN DEL CANDIDATO SOBRE EL RESULTADO (estrellas + acuerdo + comentario) ---
+     Se guarda en este navegador (localStorage "tasksmith_cert_feedback") y viaja dentro del informe PDF.
+     Si se configura FEEDBACK_ENDPOINT (p. ej. un Google Apps Script o Formspree gratuitos), además
+     se envía allí para que el equipo reciba todas las opiniones en un solo lugar. */
+  const FEEDBACK_ENDPOINT = '';
+  const STATE_KEY_CERT_FEEDBACK = 'tasksmith_cert_feedback';
+  const STAR_LABELS = ['', 'Muy mala', 'Mala', 'Regular', 'Buena', 'Excelente'];
+  const AGREE_LABELS = { si: 'De acuerdo con el resultado', parcial: 'De acuerdo en parte', no: 'No está de acuerdo con el resultado' };
+  let certFeedbackState = { rating: 0, agreement: '' };
+
+  function readFeedbackStore() {
+    try { return JSON.parse(localStorage.getItem(STATE_KEY_CERT_FEEDBACK) || '[]') || []; } catch (e) { return []; }
+  }
+
+  function paintStars(value, preview) {
+    document.querySelectorAll('#certStars .cert-star').forEach(star => {
+      const v = Number(star.dataset.value);
+      star.classList.toggle('is-on', v <= value);
+      star.classList.toggle('is-preview', !!preview && v <= preview);
+      star.setAttribute('aria-checked', String(v === certFeedbackState.rating));
+      star.tabIndex = v === (certFeedbackState.rating || 1) ? 0 : -1;
+    });
+    const label = document.getElementById('certStarsLabel');
+    const shown = preview || value;
+    if (label) label.textContent = shown ? `${shown} de 5 · ${STAR_LABELS[shown]}` : 'Toca una estrella';
+  }
+
+  function setRating(v) {
+    certFeedbackState.rating = v;
+    paintStars(v);
+  }
+
+  function setAgreement(value) {
+    certFeedbackState.agreement = value;
+    document.querySelectorAll('.cert-agree-option').forEach(opt => {
+      opt.setAttribute('aria-checked', String(opt.dataset.value === value));
+    });
+    const optional = document.querySelector('#certFeedbackCard .cert-optional');
+    if (optional) optional.textContent = value === 'no' ? '(obligatorio)' : '(opcional)';
+    const comment = document.getElementById('certFeedbackComment');
+    if (comment) {
+      comment.placeholder = value === 'no'
+        ? 'Cuéntanos qué crees que la IA evaluó mal y por qué.'
+        : '¿Qué te gustó, qué cambiarías o qué crees que la IA evaluó mal?';
+    }
+  }
+
+  function showFeedbackThanks(entry) {
+    const form = document.getElementById('certFeedbackForm');
+    const thanks = document.getElementById('certFeedbackThanks');
+    const summary = document.getElementById('certFeedbackSummary');
+    if (summary) {
+      summary.textContent = `Calificaste la evaluación con ${entry.rating} de 5 estrellas (${STAR_LABELS[entry.rating].toLowerCase()}) · ${AGREE_LABELS[entry.agreement]}.`;
+    }
+    if (form) form.hidden = true;
+    if (thanks) thanks.hidden = false;
+  }
+
+  function resetCertFeedback() {
+    const card = document.getElementById('certFeedbackCard');
+    if (!card) return;
+    certFeedbackState = { rating: 0, agreement: '' };
+    const form = document.getElementById('certFeedbackForm');
+    const thanks = document.getElementById('certFeedbackThanks');
+    const comment = document.getElementById('certFeedbackComment');
+    const error = document.getElementById('certFeedbackError');
+    const count = document.getElementById('certFeedbackCount');
+    if (comment) comment.value = '';
+    if (count) count.textContent = '0 / 1000';
+    if (error) error.textContent = '';
+    setAgreement('');
+    paintStars(0);
+    if (form) form.hidden = false;
+    if (thanks) thanks.hidden = true;
+  }
+
+  function initCertFeedback() {
+    const card = document.getElementById('certFeedbackCard');
+    if (!card || card.dataset.ready) return;
+    card.dataset.ready = '1';
+    const stars = Array.from(card.querySelectorAll('.cert-star'));
+    const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    stars.forEach(star => {
+      const v = Number(star.dataset.value);
+      star.addEventListener('click', () => setRating(v));
+      if (hoverCapable) {
+        star.addEventListener('mouseenter', () => paintStars(certFeedbackState.rating, v));
+      }
+      star.addEventListener('keydown', e => {
+        const next = { ArrowRight: v + 1, ArrowUp: v + 1, ArrowLeft: v - 1, ArrowDown: v - 1 }[e.key];
+        if (!next) return;
+        e.preventDefault();
+        const clamped = Math.max(1, Math.min(5, next));
+        setRating(clamped);
+        stars[clamped - 1].focus();
+      });
+    });
+    const starsBox = document.getElementById('certStars');
+    if (starsBox && hoverCapable) starsBox.addEventListener('mouseleave', () => paintStars(certFeedbackState.rating));
+
+    card.querySelectorAll('.cert-agree-option').forEach(opt => {
+      opt.addEventListener('click', () => setAgreement(opt.dataset.value));
+    });
+
+    const comment = document.getElementById('certFeedbackComment');
+    const count = document.getElementById('certFeedbackCount');
+    if (comment && count) comment.addEventListener('input', () => { count.textContent = `${comment.value.length} / 1000`; });
+
+    const edit = document.getElementById('certFeedbackEdit');
+    if (edit) edit.addEventListener('click', () => {
+      document.getElementById('certFeedbackForm').hidden = false;
+      document.getElementById('certFeedbackThanks').hidden = true;
+    });
+
+    const form = document.getElementById('certFeedbackForm');
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const error = document.getElementById('certFeedbackError');
+      const text = (comment ? comment.value : '').trim();
+      let problem = '';
+      if (!certFeedbackState.rating) problem = 'Elige de 1 a 5 estrellas.';
+      else if (!certFeedbackState.agreement) problem = 'Cuéntanos si estás de acuerdo con el resultado.';
+      else if (certFeedbackState.agreement === 'no' && text.length < 10) problem = 'Si no estás de acuerdo, escribe brevemente por qué para que podamos revisarlo.';
+      if (error) error.textContent = problem;
+      if (problem) return;
+
+      const r = lastCertificationReport || {};
+      const entry = {
+        id: `fb-${Date.now()}`,
+        date: new Date().toISOString(),
+        candidateName: r.candidateName || (currentUser ? currentUser.name : ''),
+        candidateEmail: r.candidateEmail || (currentUser ? currentUser.email : ''),
+        tradeName: r.tradeName || '',
+        certificateId: r.certificateId || null,
+        approved: !!r.approved,
+        overallScore: r.overallScore,
+        theoreticalScore: r.theoretical ? r.theoretical.score : null,
+        practicalScore: r.practical ? r.practical.score : null,
+        engine: r.engine || '',
+        rating: certFeedbackState.rating,
+        agreement: certFeedbackState.agreement,
+        comment: text
+      };
+
+      const store = readFeedbackStore();
+      const existing = r.feedbackId ? store.findIndex(x => x.id === r.feedbackId) : -1;
+      if (existing >= 0) { entry.id = r.feedbackId; store[existing] = entry; } else { store.push(entry); }
+      try { localStorage.setItem(STATE_KEY_CERT_FEEDBACK, JSON.stringify(store.slice(-200))); } catch (err) {}
+      if (lastCertificationReport) {
+        lastCertificationReport.feedbackId = entry.id;
+        lastCertificationReport.feedback = { rating: entry.rating, ratingLabel: STAR_LABELS[entry.rating], agreement: AGREE_LABELS[entry.agreement], comment: entry.comment };
+      }
+
+      if (FEEDBACK_ENDPOINT) {
+        try {
+          await fetch(FEEDBACK_ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(entry) });
+        } catch (err) { console.warn('No se pudo enviar la opinión al servidor; quedó guardada en este navegador.', err); }
+      }
+
+      showFeedbackThanks(entry);
+      showToast('¡Gracias! Recibimos tu opinión sobre el resultado.', 'success');
+    });
+
+    paintStars(0);
+  }
+
+  document.addEventListener('DOMContentLoaded', initCertFeedback);
+  if (document.readyState !== 'loading') initCertFeedback();
 
   window.printCertificate = function () {
     window.print();
