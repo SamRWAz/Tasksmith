@@ -987,20 +987,17 @@
     let photoDataUrl = null;
 
     if (video && cameraStream && video.videoWidth > 0 && canvas) {
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
+      // Se limita el lado mayor a 1600 px: suficiente detalle para la IA sin exceder el tamaño de la petición
+      const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      photoDataUrl = canvas.toDataURL('image/jpeg', 0.88);
     } else {
-      // Fallback realistic craft photo capture
-      const sampleTradeImages = [
-        'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'
-      ];
-      const imgIdx = (activeCameraEvidenceId - 1) % sampleTradeImages.length;
-      photoDataUrl = sampleTradeImages[imgIdx];
+      // Antes aquí se adjuntaba una foto de stock en silencio y la IA evaluaba esa imagen en lugar de la real.
+      showToast('La cámara todavía no entrega imagen. Espera a ver el video en vivo o sube la foto desde tu galería.', 'error');
+      return;
     }
 
     setEvidencePhoto(activeCameraEvidenceId, photoDataUrl);
@@ -1022,16 +1019,40 @@
     if (input) input.click();
   };
 
-  window.handlePhotoInputChange = function (id, input) {
+  window.handlePhotoInputChange = async function (id, input) {
     const file = input.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        setEvidencePhoto(id, evt.target.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (!/^image\//.test(file.type)) {
+      showToast('El archivo seleccionado no es una imagen.', 'error');
+      return;
+    }
+    try {
+      // Las fotos de celular pesan 3-12 MB; se reducen para que la IA las reciba completas
+      const dataUrl = await downscaleImageFile(file, 1600, 0.88);
+      setEvidencePhoto(id, dataUrl);
+    } catch (err) {
+      console.warn('No se pudo procesar la imagen:', err);
+      showToast('No se pudo leer esa imagen. Prueba con otra foto (JPG o PNG).', 'error');
     }
   };
+
+  function downscaleImageFile(file, maxSide, quality) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+      img.src = url;
+    });
+  }
 
   function setEvidencePhoto(id, src) {
     const ev = verificationEvidences.find(item => item.id === id);
@@ -1091,79 +1112,18 @@
     setEvidencePhoto(id, pick);
   };
 
-  /* --- CORRECCIÓN FONÉTICA Y MEJORA DE TRANSCRIPCIÓN TÉCNICA --- */
-  function enhanceTechnicalTranscription(rawText, tradeExam) {
+  /* --- NORMALIZACIÓN MÍNIMA DE LA TRANSCRIPCIÓN ---
+     Antes este paso reemplazaba palabras por frases "más técnicas" (ej. "sifón" → "sifón registrable",
+     "barniz" → "sellador de poliuretano 2K", "tester" → "multímetro digital"). Eso inventaba cosas que el
+     maestro nunca dijo, inflaba la nota y además repetía el reemplazo en cada pasada. Ahora solo se
+     limpian espacios y se escriben en mayúscula siglas técnicas; nunca se agregan palabras. */
+  function enhanceTechnicalTranscription(rawText) {
     if (!rawText || typeof rawText !== 'string') return rawText || '';
-    let text = rawText.trim();
-
-    const phoneticCorrections = [
-      // Plomería
-      { regex: /\b(termo\s*fusi[oó]n|termofucion|termofusion)\b/gi, rep: 'termofusión' },
-      { regex: /\b(sif[oó]n|sifones)\b/gi, rep: 'sifón registrable' },
-      { regex: /\b(ariete|golpe\s*ariete)\b/gi, rep: 'golpe de ariete' },
-      { regex: /\b(man[oó]metro|manometros)\b/gi, rep: 'manómetro de presión' },
-      { regex: /\b(hidrost[aá]tica)\b/gi, rep: 'prueba hidrostática' },
-      { regex: /\b(tefl[oó]n|cinta\s*teflon)\b/gi, rep: 'teflón de alta densidad' },
-      { regex: /\b(estanqueidad|estanquidad)\b/gi, rep: 'estanqueidad hermética' },
-      { regex: /\b(cpvc|pvc|ppr)\b/gi, rep: match => match.toUpperCase() },
-      { regex: /\b(ntc\s*1500)\b/gi, rep: 'norma NTC 1500' },
-      
-      // Electricidad
-      { regex: /\b(reti\s*e|retie)\b/gi, rep: 'norma RETIE' },
-      { regex: /\b(breke|breyker|breiker|breaker|breakers)\b/gi, rep: 'breaker termomagnético' },
-      { regex: /\b(mult[ií]metro|tester)\b/gi, rep: 'multímetro digital' },
-      { regex: /\b(polo\s*a\s*tierra|polo\s*tierra)\b/gi, rep: 'polo a tierra equipotencial' },
-      { regex: /\b(calibre\s*12|calibre\s*14|calibre\s*10)\b/gi, rep: match => `${match.toUpperCase()} AWG` },
-      { regex: /\b(gfci|dps)\b/gi, rep: match => match.toUpperCase() },
-      { regex: /\b(voltiamperim[eé]trica)\b/gi, rep: 'pinza voltiamperimétrica' },
-      { regex: /\b(ntc\s*2050)\b/gi, rep: 'código NTC 2050' },
-
-      // Solar
-      { regex: /\b(fotovolt[aá]ico|fotovoltayco)\b/gi, rep: 'solar fotovoltaico' },
-      { regex: /\b(mppt)\b/gi, rep: 'controlador MPPT' },
-      { regex: /\b(voc|v\s*o\s*c)\b/gi, rep: 'voltaje en circuito abierto (Voc)' },
-      { regex: /\b(isc|i\s*s\s*c)\b/gi, rep: 'corriente de cortocircuito (Isc)' },
-      { regex: /\b(mc4|conectores\s*mc4)\b/gi, rep: 'conectores MC4 estancos' },
-      { regex: /\b(epdm)\b/gi, rep: 'sellado EPDM impermeable' },
-
-      // Carpintería
-      { regex: /\b(caja\s*y\s*espiga)\b/gi, rep: 'ensamble de caja y espiga' },
-      { regex: /\b(alabeo|alaveo)\b/gi, rep: 'alabeo por higroscopicidad' },
-      { regex: /\b(poliuretano|barniz)\b/gi, rep: 'sellador de poliuretano 2K' },
-      { regex: /\b(adhesivo\s*d3|d3)\b/gi, rep: 'adhesivo D3 antihumedad' },
-
-      // Mecánica
-      { regex: /\b(obd\s*2|obd2|o\s*b\s*d)\b/gi, rep: 'diagnóstico OBD2' },
-      { regex: /\b(torqu[ií]metro)\b/gi, rep: 'torquímetro calibrado' },
-      { regex: /\b(p0301|p0300|check\s*engine)\b/gi, rep: match => match.toUpperCase() },
-      { regex: /\b(dot\s*4|dot4)\b/gi, rep: 'líquido de frenos DOT 4' },
-
-      // Refrigeración
-      { regex: /\b(r410a|r410|r32|r134a)\b/gi, rep: match => match.toUpperCase() },
-      { regex: /\b(vacu[oó]metro)\b/gi, rep: 'vacuómetro digital (<500 micrones)' },
-      { regex: /\b(salto\s*t[eé]rmico)\b/gi, rep: 'salto térmico (°ΔT)' },
-      { regex: /\b(nitr[oó]geno\s*seco)\b/gi, rep: 'nitrógeno seco libre de oxígeno' },
-
-      // Soldadura
-      { regex: /\b(tig|mig|mag|smaw)\b/gi, rep: match => match.toUpperCase() },
-      { regex: /\b(arg[oó]n)\b/gi, rep: 'gas de protección argón al 99.9%' },
-      { regex: /\b(e7018|e6011|e6013)\b/gi, rep: match => match.toUpperCase() },
-
-      // Cerrajería
-      { regex: /\b(biom[eé]trica|biometrica)\b/gi, rep: 'cerradura biométrica digital' },
-      { regex: /\b(anti\s*bumping|antibumping)\b/gi, rep: 'cilindro anti-bumping' },
-
-      // Panadería
-      { regex: /\b(masa\s*madre)\b/gi, rep: 'masa madre natural activa' },
-      { regex: /\b(aut[oó]lisis)\b/gi, rep: 'autólisis enzimática' },
-      { regex: /\b(gre[nñ]a)\b/gi, rep: 'apertura de greña' }
-    ];
-
-    phoneticCorrections.forEach(item => {
-      text = text.replace(item.regex, item.rep);
-    });
-
-    return text;
+    const acronyms = /\b(retie|ntc|pvc|cpvc|ppr|gfci|dps|awg|mppt|mc4|epdm|obd2|tig|mig|mag|smaw|r410a|r32|r134a)\b/gi;
+    return rawText
+      .replace(/\s+/g, ' ')
+      .replace(acronyms, m => m.toUpperCase())
+      .trim();
   }
 
   /* --- AUDIO EXPLICATIVO (ROBUSTO CON WEBSPEECH API, AUTO-RESTART Y MEDIDOR EN VIVO) --- */
@@ -1370,22 +1330,38 @@
 
       // Aplicar mejora técnica a lo transcrito
       const currentRaw = (transcriptInput ? transcriptInput.value.trim() : '') || (ev.realTranscript ? ev.realTranscript.trim() : '');
-      const enhanced = enhanceTechnicalTranscription(currentRaw, currentTradeExam);
+      const enhanced = enhanceTechnicalTranscription(currentRaw);
       ev.realTranscript = enhanced;
+      ev.transcriptSource = enhanced ? 'navegador' : null;
       if (transcriptInput) {
         transcriptInput.value = enhanced;
       }
 
       if (liveTag) {
-        liveTag.textContent = 'Audio transcrito y optimizado (editable)';
-        liveTag.style.color = 'var(--green-verified)';
+        liveTag.textContent = hasActiveAiKey()
+          ? 'Dictado preliminar del navegador. Esperando transcripción con IA...'
+          : 'Dictado del navegador (puede tener errores, revísalo y corrígelo)';
+        liveTag.style.color = 'var(--ink-muted)';
       }
 
-      const durSec = Math.max(ev.recordSeconds, 6);
-      const durStr = `0:${durSec < 10 ? '0' : ''}${durSec}`;
-      finishAudioRecording(id, durStr);
+      finishAudioRecording(id, formatAudioDuration(ev.recordSeconds));
     }
   };
+
+  function formatAudioDuration(totalSeconds) {
+    const s = Math.max(0, Math.round(Number(totalSeconds) || 0));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function getAudioDurationSeconds(url) {
+    return new Promise(resolve => {
+      const probe = new Audio();
+      probe.preload = 'metadata';
+      probe.onloadedmetadata = () => resolve(isFinite(probe.duration) ? probe.duration : 0);
+      probe.onerror = () => resolve(0);
+      probe.src = url;
+    });
+  }
 
   function finishAudioRecording(id, durationStr) {
     const ev = verificationEvidences.find(item => item.id === id);
@@ -1443,7 +1419,8 @@
     ev.audioMimeType = file.type || 'audio/mp3';
     ev.audioUrl = URL.createObjectURL(file);
 
-    finishAudioRecording(id, '0:25');
+    const realSeconds = await getAudioDurationSeconds(ev.audioUrl);
+    finishAudioRecording(id, formatAudioDuration(realSeconds));
     showToast(`Archivo de audio "${file.name}" cargado. Iniciando transcripción técnica...`, 'normal');
 
     if (hasActiveAiKey()) {
@@ -1456,8 +1433,7 @@
         liveTag.style.color = 'var(--blue-primary)';
       }
       if (transcriptInput && !transcriptInput.value.trim()) {
-        transcriptInput.value = currentTradeExam ? currentTradeExam.sampleTranscript : 'Diagnóstico técnico del problema, intervención con herramienta calibrada y pruebas operativas de seguridad.';
-        ev.realTranscript = transcriptInput.value;
+        transcriptInput.placeholder = 'Sin IA conectada no se puede transcribir el archivo. Escribe aquí lo que explicas en el audio.';
       }
     }
   };
@@ -1498,14 +1474,14 @@
         }
       }
 
-      const enhanced = enhanceTechnicalTranscription(transcriptInput.value.trim(), currentTradeExam);
+      const enhanced = enhanceTechnicalTranscription(transcriptInput.value.trim());
       transcriptInput.value = enhanced;
       ev.realTranscript = enhanced;
       if (liveTag) {
-        liveTag.textContent = '✨ Terminología técnica optimizada';
+        liveTag.textContent = 'Texto limpiado (sin cambios de contenido)';
         liveTag.style.color = 'var(--green-verified)';
       }
-      showToast('Terminología técnica del audio normalizada.', 'success');
+      showToast('Texto de la explicación limpiado.', 'success');
     } else {
       showToast('Graba tu voz o sube un archivo de audio primero para transcribirlo con IA.', 'normal');
     }
@@ -1521,6 +1497,14 @@
     ev.audioUrl = null;
     ev.audioDuration = null;
     ev.recordSeconds = 0;
+    // Sin esto, al regrabar se seguía enviando a la IA el audio y el texto anteriores
+    ev.audioBlob = null;
+    ev.audioMimeType = null;
+    ev.realTranscript = '';
+    ev.transcriptSource = null;
+    ev.usedSampleAudio = false;
+    const oldTranscriptInput = document.getElementById(`audioTranscriptInput_${id}`);
+    if (oldTranscriptInput) oldTranscriptInput.value = '';
 
     const recorderBox = document.getElementById(`audioRecorderBox_${id}`);
     const playbackBox = document.getElementById(`audioPlaybackContainer_${id}`);
@@ -1693,12 +1677,6 @@
             </div>
           </div>
 
-          <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: var(--ink-muted);">Para probar rápido:</span>
-            <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSamplePhoto(${newId})">
-              Foto de ejemplo
-            </button>
-          </div>
         </div>
 
         <!-- COLUMNA DERECHA: AUDIO EXPLICATIVO GENERAL -->
@@ -1781,15 +1759,12 @@
                 </button>
               </div>
             </div>
-            <textarea id="audioTranscriptInput_${newId}" class="form-input" rows="3" placeholder="Al hablar por el micrófono o subir un archivo de voz, el audio se transcribe con IA (Gemini / Whisper) y corrector técnico. También puedes complementar cualquier detalle aquí..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
+            <textarea id="audioTranscriptInput_${newId}" class="form-input" rows="3" placeholder="Al grabar o subir tu audio, la IA lo transcribe tal cual lo dijiste. Revisa el texto y corrige lo que haya quedado mal escuchado." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
           </div>
 
           <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
             <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.78rem; padding: 4px 10px;" onclick="triggerAudioFileInput(${newId})">
               📁 Subir archivo de audio (.mp3/.wav/.m4a)
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(${newId})">
-              Audio de ejemplo
             </button>
           </div>
         </div>
@@ -3837,15 +3812,75 @@
     }
   }
 
-  /* --- TRANSCRIPCIÓN DE AUDIO SÚPER ROBUSTA CON IA (GEMINI AUDIO NATIVO / OPENAI WHISPER) --- */
+  /* --- CONVERSIÓN DE AUDIO A WAV (16 kHz mono) ---
+     Chrome y Android graban en audio/webm (opus), formato que Gemini no acepta. La petición fallaba y la
+     app caía en silencio al texto del dictado del navegador. Convertir a WAV lo hace compatible siempre. */
+  async function audioBlobToWav16k(blob) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) throw new Error('Este navegador no permite procesar audio');
+    const arrayBuf = await blob.arrayBuffer();
+    const ctx = new AudioCtx();
+    let decoded;
+    try {
+      decoded = await new Promise((resolve, reject) => {
+        const p = ctx.decodeAudioData(arrayBuf.slice(0), resolve, reject);
+        if (p && p.then) p.then(resolve, reject);
+      });
+    } finally {
+      try { ctx.close(); } catch (e) {}
+    }
+    const targetRate = 16000;
+    const length = Math.max(1, Math.ceil(decoded.duration * targetRate));
+    const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const offline = new OfflineCtx(1, length, targetRate);
+    const src = offline.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offline.destination);
+    src.start(0);
+    const rendered = await offline.startRendering();
+    const samples = rendered.getChannelData(0);
+
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+    writeStr(0, 'RIFF'); view.setUint32(4, 36 + samples.length * 2, true); writeStr(8, 'WAVE');
+    writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+    view.setUint32(24, targetRate, true); view.setUint32(28, targetRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+    writeStr(36, 'data'); view.setUint32(40, samples.length * 2, true);
+    let off = 44;
+    for (let i = 0; i < samples.length; i++, off += 2) {
+      const v = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(off, v < 0 ? v * 0x8000 : v * 0x7FFF, true);
+    }
+    return { blob: new Blob([buffer], { type: 'audio/wav' }), seconds: decoded.duration };
+  }
+
+  // Devuelve el audio listo para Gemini (WAV) reutilizando la conversión si ya se hizo
+  async function getGeminiReadyAudio(ev) {
+    if (!ev || !ev.audioBlob) return null;
+    if (ev.wavCache && ev.wavCache.source === ev.audioBlob) return ev.wavCache;
+    const type = (ev.audioBlob.type || '').split(';')[0];
+    const nativeOk = ['audio/wav', 'audio/x-wav', 'audio/mp3', 'audio/mpeg', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/aiff'];
+    let result;
+    if (nativeOk.includes(type)) {
+      result = { mimeType: type === 'audio/mpeg' ? 'audio/mp3' : (type === 'audio/x-wav' ? 'audio/wav' : type), base64: await blobToBase64Data(ev.audioBlob) };
+    } else {
+      const wav = await audioBlobToWav16k(ev.audioBlob);
+      result = { mimeType: 'audio/wav', base64: await blobToBase64Data(wav.blob) };
+    }
+    result.source = ev.audioBlob;
+    ev.wavCache = result;
+    return result;
+  }
+
+  /* --- TRANSCRIPCIÓN LITERAL DEL AUDIO CON IA (GEMINI / OPENAI WHISPER) --- */
   async function transcribeEvidenceBlobWithAi(id, audioBlob) {
     const ev = verificationEvidences.find(item => item.id === id);
     if (!ev || !audioBlob || !hasActiveAiKey()) return;
 
     const liveTag = document.getElementById(`speechLiveTag_${id}`);
     const transcriptInput = document.getElementById(`audioTranscriptInput_${id}`);
-    const tradeName = currentTradeExam ? currentTradeExam.tradeName : (document.getElementById('verificationTradeSelect')?.value || 'Oficio Técnico');
-    const contextScope = candidateCertificationContext.customScope || `Diagnóstico, herramientas, normativa y pruebas de calidad en ${tradeName}`;
+    const tradeName = currentTradeExam ? currentTradeExam.tradeName : 'oficio técnico';
 
     if (liveTag) {
       liveTag.textContent = `⏳ Transcribiendo audio con ${getAiProviderLabel()}...`;
@@ -3856,38 +3891,36 @@
       let transcribedText = '';
 
       if (currentAiProvider === 'openai') {
-        // OpenAI Whisper API (whisper-1) con prompt técnico de contexto del oficio
         const formData = new FormData();
-        const ext = (audioBlob.type || '').includes('mp4') ? 'mp4' : ((audioBlob.type || '').includes('wav') ? 'wav' : 'webm');
+        const type = (audioBlob.type || '');
+        const ext = type.includes('mp4') || type.includes('m4a') ? 'm4a' : (type.includes('wav') ? 'wav' : (type.includes('mpeg') || type.includes('mp3') ? 'mp3' : (type.includes('ogg') ? 'ogg' : 'webm')));
         formData.append('file', audioBlob, `evidencia_paso_${id}.${ext}`);
         formData.append('model', 'whisper-1');
         formData.append('language', 'es');
-        formData.append('prompt', `Explicación técnica pericial de un maestro experto en ${tradeName}. Contexto: ${contextScope}. Términos frecuentes: diagnóstico de causa raíz, RETIE, NTC 1500, termofusión, manómetro, multímetro, prueba hidrostática, torque, estanqueidad, garantía.`);
+        formData.append('temperature', '0');
+        // Solo se da el nombre del oficio. Antes se daba una lista fija de términos (RETIE, NTC 1500,
+        // termofusión...) y Whisper tendía a "escucharlos" aunque el maestro no los dijera.
+        formData.append('prompt', `Explicación en español de un trabajo de ${tradeName}.`);
 
         const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${currentAiApiKey}`
-          },
+          headers: { 'Authorization': `Bearer ${currentAiApiKey}` },
           body: formData
         });
-
         if (!res.ok) {
-          throw new Error(`Whisper HTTP ${res.status}`);
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `Whisper HTTP ${res.status}`);
         }
         const data = await res.json();
         transcribedText = (data.text || '').trim();
       } else {
-        // Google Gemini 2.5 Flash — Lectura de Audio Nativa Multimodal
-        const base64Audio = await blobToBase64Data(audioBlob);
-        let mimeType = (audioBlob.type || 'audio/webm').split(';')[0];
-        if (!mimeType.startsWith('audio/')) mimeType = 'audio/webm';
-
-        const browserDraft = transcriptInput ? transcriptInput.value.trim() : '';
-        const promptText = `Eres un transcriptor técnico pericial de alta precisión para certificaciones profesionales de Tasksmith en la especialidad de "${tradeName}" (Contexto: ${contextScope}).
-Escucha atentamente este archivo de audio grabado por el maestro y devuelve ÚNICAMENTE la transcripción exacta, clara, completa y con la ortografía técnica correcta (ej. siglas de normas, herramientas y materiales bien escritos).
-${browserDraft ? `Nota de apoyo (borrador preliminar captado en vivo): "${browserDraft}". Si el audio contiene más detalles o correcciones, prioriza siempre lo que se escucha en el audio.` : ''}
-No agregues introducciones ni comillas, devuelve solo el texto transcrito.`;
+        const audio = await getGeminiReadyAudio(ev);
+        const promptText = `Transcribe palabra por palabra lo que se dice en este audio en español.
+Reglas estrictas:
+- Escribe solo lo que realmente se escucha. No corrijas, no completes, no resumas y no agregues términos técnicos que no se pronuncien.
+- Si una parte no se entiende, escribe [inaudible] en ese lugar.
+- Si en el audio no hay voz humana hablando, responde exactamente: SIN_VOZ
+- Devuelve solo la transcripción, sin comillas ni comentarios.`;
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
         const res = await fetch(url, {
@@ -3897,42 +3930,53 @@ No agregues introducciones ni comillas, devuelve solo el texto transcrito.`;
             contents: [{
               parts: [
                 { text: promptText },
-                { inline_data: { mime_type: mimeType, data: base64Audio } }
+                { inline_data: { mime_type: audio.mimeType, data: audio.base64 } }
               ]
-            }]
+            }],
+            generationConfig: { temperature: 0 }
           })
         });
-
         if (!res.ok) {
-          throw new Error(`Gemini Audio HTTP ${res.status}`);
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `Gemini Audio HTTP ${res.status}`);
         }
         const data = await res.json();
-        transcribedText = (data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+        transcribedText = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
       }
 
-      if (transcribedText) {
-        const finalPolished = enhanceTechnicalTranscription(transcribedText, currentTradeExam);
-        ev.realTranscript = finalPolished;
-        if (transcriptInput) {
-          transcriptInput.value = finalPolished;
-        }
+      if (/^SIN_VOZ\.?$/i.test(transcribedText) || !transcribedText) {
+        ev.realTranscript = '';
+        ev.transcriptSource = 'ia';
+        if (transcriptInput) transcriptInput.value = '';
         if (liveTag) {
-          liveTag.textContent = `✅ Audio transcrito con alta precisión (${getAiProviderLabel()})`;
-          liveTag.style.color = 'var(--green-verified)';
+          liveTag.textContent = 'La IA no detectó voz en este audio. Vuelve a grabar más cerca del micrófono.';
+          liveTag.style.color = '#dc2626';
         }
-        showToast(`Transcripción de audio completada con ${getAiProviderLabel()}.`, 'success');
+        showToast('No se detectó voz en el audio. Graba de nuevo.', 'error');
+        return;
       }
-    } catch (err) {
-      console.warn('Fallback en transcripción por IA:', err);
+
+      const finalText = enhanceTechnicalTranscription(transcribedText);
+      ev.realTranscript = finalText;
+      ev.transcriptSource = 'ia';
+      if (transcriptInput) transcriptInput.value = finalText;
       if (liveTag) {
-        liveTag.textContent = 'Voz transcrita y normalizada localmente (editable)';
+        liveTag.textContent = `✅ Transcrito por ${getAiProviderLabel()} (revisa y corrige si algo quedó mal)`;
         liveTag.style.color = 'var(--green-verified)';
+      }
+      showToast(`Transcripción de audio completada con ${getAiProviderLabel()}.`, 'success');
+    } catch (err) {
+      console.warn('Error en transcripción por IA:', err);
+      ev.transcriptSource = ev.realTranscript ? 'navegador' : null;
+      if (liveTag) {
+        liveTag.textContent = `⚠️ La IA no pudo transcribir el audio (${err.message || 'error'}). El texto actual viene del dictado del navegador: revísalo.`;
+        liveTag.style.color = '#b45309';
       }
     }
   }
 
   async function refineTranscriptTextWithAi(rawText, tradeName) {
-    const prompt = `Corrige únicamente errores fonéticos o de reconocimiento de voz en esta transcripción técnica de un especialista en "${tradeName}", respetando fielmente lo que dijo pero asegurando que las herramientas, materiales y normas técnicas estén bien escritos. Devuelve solo el texto corregido sin comillas:\n\n${rawText}`;
+    const prompt = `Esta es la transcripción automática de lo que dijo un especialista en "${tradeName}". Corrige solo errores evidentes de ortografía o de reconocimiento de voz (palabras mal escuchadas). No agregues información, no cambies el sentido, no reemplaces palabras por términos más técnicos y no completes ideas. Si no hay nada que corregir, devuélvela igual. Devuelve solo el texto, sin comillas:\n\n${rawText}`;
     if (currentAiProvider === 'gemini') {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
       const res = await fetch(url, {
@@ -4035,12 +4079,18 @@ Importante:
       }
 
       const parsed = JSON.parse(rawJsonText);
-      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length >= 4) {
+      // Solo se aceptan preguntas bien formadas: 4 opciones y un índice de respuesta válido.
+      // Antes una pregunta con "correct" fuera de rango no la podía acertar nadie.
+      const validQuestions = (parsed && Array.isArray(parsed.questions) ? parsed.questions : []).filter(q =>
+        q && typeof q.title === 'string' && Array.isArray(q.options) && q.options.length === 4 &&
+        Number.isInteger(Number(q.correct)) && Number(q.correct) >= 0 && Number(q.correct) <= 3
+      ).map(q => ({ ...q, correct: Number(q.correct) }));
+      if (validQuestions.length >= 8) {
         return {
           ...fallbackExam,
           tradeName: parsed.tradeName || fallbackExam.tradeName,
           norms: parsed.norms || fallbackExam.norms,
-          questions: parsed.questions.slice(0, 8),
+          questions: validQuestions.slice(0, 8),
           sampleTranscript: parsed.sampleTranscript || fallbackExam.sampleTranscript,
           expectedConcepts: Array.isArray(parsed.expectedConcepts) ? parsed.expectedConcepts : fallbackExam.expectedConcepts
         };
@@ -4052,98 +4102,136 @@ Importante:
     return fallbackExam;
   }
 
-  /* --- CALIFICACIÓN INTEGRAL MULTIMODAL (IMÁGENES + AUDIO/TRANSCRIPCIÓN + EXAMEN TEÓRICO) CON GEMINI / CHATGPT --- */
-  async function evaluateFullCertificationWithRealAi(info, displayedTranscript, jobTitle, evidences) {
-    if (!hasActiveAiKey()) return null;
+  /* --- CALIFICACIÓN INTEGRAL MULTIMODAL (FOTOS + AUDIO + EXAMEN TEÓRICO) CON GEMINI / CHATGPT ---
+     Cambios clave frente a la versión anterior:
+     1. Cada foto se envía junto a la explicación de SU paso (antes iban todas sueltas y solo el audio del paso 1).
+     2. La IA debe describir primero qué ve en cada foto y qué dijo el maestro, y solo después calificar.
+     3. Ya no hay un JSON de ejemplo con notas altas (24/25, 94/100) que la IA copiaba.
+     4. Rúbrica con niveles definidos y reglas duras que el código vuelve a aplicar.
+     5. Si la IA falla, se informa el error. Antes se usaba en silencio un "motor local" que solo
+        contaba fotos y caracteres y aprobaba casi cualquier cosa. */
+  function getEvidenceTranscript(ev) {
+    const inputEl = document.getElementById(`audioTranscriptInput_${ev.id}`);
+    return ((inputEl ? inputEl.value : '') || ev.realTranscript || '').trim();
+  }
 
-    // Resumen detallado de las 8 preguntas teóricas y qué respondió el candidato
+  const AI_EVAL_SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+      evidencias: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            paso: { type: 'INTEGER' },
+            descripcionFoto: { type: 'STRING' },
+            fotoCorrespondeAlOficio: { type: 'BOOLEAN' },
+            resumenExplicacion: { type: 'STRING' },
+            explicacionCoincideConFoto: { type: 'BOOLEAN' },
+            observaciones: { type: 'STRING' }
+          },
+          required: ['paso', 'descripcionFoto', 'fotoCorrespondeAlOficio', 'resumenExplicacion', 'explicacionCoincideConFoto', 'observaciones'],
+          propertyOrdering: ['paso', 'descripcionFoto', 'fotoCorrespondeAlOficio', 'resumenExplicacion', 'explicacionCoincideConFoto', 'observaciones']
+        }
+      },
+      justificacionDiagnostico: { type: 'STRING' },
+      p1: { type: 'INTEGER' },
+      justificacionHerramientas: { type: 'STRING' },
+      p2: { type: 'INTEGER' },
+      justificacionProcedimiento: { type: 'STRING' },
+      p3: { type: 'INTEGER' },
+      justificacionPruebas: { type: 'STRING' },
+      p4: { type: 'INTEGER' },
+      conceptosDemostrados: { type: 'ARRAY', items: { type: 'STRING' } },
+      conceptosFaltantes: { type: 'ARRAY', items: { type: 'STRING' } },
+      coherencePercent: { type: 'INTEGER' },
+      coherenceDescription: { type: 'STRING' },
+      theoreticalFeedback: { type: 'STRING' },
+      verdictParagraph: { type: 'STRING' }
+    },
+    required: ['evidencias', 'justificacionDiagnostico', 'p1', 'justificacionHerramientas', 'p2', 'justificacionProcedimiento', 'p3', 'justificacionPruebas', 'p4', 'conceptosDemostrados', 'conceptosFaltantes', 'coherencePercent', 'coherenceDescription', 'theoreticalFeedback', 'verdictParagraph'],
+    propertyOrdering: ['evidencias', 'justificacionDiagnostico', 'p1', 'justificacionHerramientas', 'p2', 'justificacionProcedimiento', 'p3', 'justificacionPruebas', 'p4', 'conceptosDemostrados', 'conceptosFaltantes', 'coherencePercent', 'coherenceDescription', 'theoreticalFeedback', 'verdictParagraph']
+  };
+
+  async function evaluateFullCertificationWithRealAi(info, jobTitle, evidences) {
+    if (!hasActiveAiKey()) {
+      return { error: 'No hay una API Key de IA configurada. Configúrala en el paso 1 para poder evaluar.' };
+    }
+
     const questionsBreakdown = (info.questions || []).map((q, idx) => {
       const userChoiceIdx = certUserAnswers[idx];
       const userChoiceText = userChoiceIdx !== undefined && q.options[userChoiceIdx] ? q.options[userChoiceIdx] : 'No respondida';
-      const correctText = q.options[q.correct];
       const isRight = userChoiceIdx === q.correct;
-      return `Caso #${idx + 1} (${q.title}): ${isRight ? 'ACERTÓ' : 'FALLÓ'}. Respondió: "${userChoiceText}". Correcta: "${correctText}".`;
+      return `Caso ${idx + 1} (${q.title}): ${isRight ? 'ACERTÓ' : 'FALLÓ'}. Respondió: "${userChoiceText}". Correcta: "${q.options[q.correct]}".`;
     }).join('\n');
 
-    const rubricPrompt = `Eres el Juez y Auditor Pericial de Certificación de Tasksmith.
-Debes calificar integralmente al candidato que busca certificarse como Maestro Smith.
+    const sendsAudio = currentAiProvider === 'gemini';
+    const rubricPrompt = `Eres un evaluador técnico estricto e imparcial de Tasksmith. Vas a revisar las evidencias prácticas de una persona que quiere certificarse en el oficio "${info.tradeName}".
+Tu trabajo es verificar, no animar. Solo cuenta lo que se VE en las fotos o lo que la persona DICE. No supongas trabajo que no se muestra ni conocimientos que no se mencionan. Si tienes dudas, califica bajo.
 
-1. CONTEXTO DE CERTIFICACIÓN DEL CANDIDATO:
-- Oficio / Especialidad a certificar: "${info.tradeName}"
-- Normativa de referencia: "${info.norms}"
-- Nivel de experiencia declarado: "${candidateCertificationContext.experience}"
-- Enfoque o alcance específico que busca certificar: "${candidateCertificationContext.customScope || 'Competencia integral en diagnóstico, ejecución y garantía en ' + info.tradeName}"
-
-2. RESULTADO EN EL EXAMEN TEÓRICO (Paso 2):
-- Puntaje teórico alcanzado: ${certTheoreticalScore}/100 (${certCorrectAnswersCount} de ${(info.questions || []).length} casos acertados)
-- Desglose de respuestas del candidato:
+CONTEXTO
+- Oficio a certificar: "${info.tradeName}"
+- Normativa de referencia: "${info.norms || 'la aplicable al oficio'}"
+- Experiencia declarada: "${candidateCertificationContext.experience}"
+- Alcance declarado: "${candidateCertificationContext.customScope || 'competencia general en el oficio'}"
+- Título del trabajo reportado: "${jobTitle}"
+- Examen teórico (ya calificado por el sistema, NO lo uses para subir la nota práctica): ${certCorrectAnswersCount} de ${(info.questions || []).length} correctas.
 ${questionsBreakdown}
 
-3. EVIDENCIAS PRÁCTICAS ENVIADAS (Paso 3 - Fotos de Cámara y Transcripción del Audio Explicativo):
-- Título de la labor reportada: "${jobTitle}"
-- Cantidad de pasos documentados: ${evidences.length}
-- Transcripción completa del audio explicativo enviado por el candidato:
-"""
-${displayedTranscript}
-"""
+EVIDENCIAS
+Más abajo vienen ${evidences.length} paso(s). Cada paso trae: la transcripción de la explicación de la persona, su FOTO${sendsAudio ? ' y, si existe, el AUDIO original' : ''}.
+${sendsAudio ? 'Cuando haya audio, escúchalo: es la fuente principal. La transcripción automática puede tener errores.' : ''}
 
-4. INSTRUCCIONES ESTRICTAS DE AUDITORÍA VISUAL Y DE AUDIO:
-- Analiza las imágenes adjuntas (fotos de la evidencia) y compáralas con lo que el candidato explicó en su audio transcrito y con el oficio "${info.tradeName}".
-- Si las fotos o la explicación de audio NO tienen relación con el oficio "${info.tradeName}", o si la explicación es vacía, incoherente o técnicamente peligrosa, debes penalizar severamente los puntajes prácticos (< 60).
-- Si la explicación de audio demuestra dominio técnico (menciona diagnóstico de causa raíz, herramientas/materiales adecuados, procedimiento lógico y pruebas de calidad/garantía) y es coherente con las imágenes, otorga puntajes aprobatorios justos (>= 75).
-
-Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
-{
-  "p1": 24,
-  "p2": 23,
-  "p3": 24,
-  "p4": 23,
-  "totalPracticalScore": 94,
-  "coherencePercent": 95,
-  "coherenceDescription": "Análisis pericial detallado explicando qué se observó en las fotos, qué dijo en el audio y cómo se correlacionan con el oficio y las normas...",
-  "matchedConcepts": ["Concepto validado 1", "Concepto validado 2", "Concepto validado 3", "Concepto validado 4", "Concepto validado 5"],
-  "theoreticalFeedback": "Retroalimentación breve sobre su desempeño en las 8 preguntas teóricas...",
-  "verdictParagraph": "Dictamen pericial completo (de 3 a 5 líneas) integrando su desempeño teórico, la calidad de su explicación en audio y la inspección visual de sus fotografías."
-}
-Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Procedimiento) y p4 (Pruebas y Garantía) van de 0 a 25 cada uno. totalPracticalScore es la suma (p1+p2+p3+p4, de 0 a 100).`;
+QUÉ DEBES HACER, EN ESTE ORDEN
+1. Para cada paso, en "evidencias":
+   - descripcionFoto: describe de forma literal y concreta lo que aparece en la foto (objetos, materiales, herramientas, lugar, estado del trabajo). No interpretes a favor de la persona.
+   - fotoCorrespondeAlOficio: true solo si la foto muestra claramente un trabajo, herramienta, material o instalación propios de "${info.tradeName}". Selfies, mascotas, pantallas, capturas, paisajes, documentos, comida (salvo que el oficio sea de cocina) u objetos sin relación → false.
+   - resumenExplicacion: qué dijo realmente la persona en ese paso. Si no dijo nada útil, escríbelo.
+   - explicacionCoincideConFoto: true solo si lo que dice describe lo que se ve en esa foto.
+   - observaciones: errores técnicos, riesgos de seguridad o información que falta.
+2. Califica 4 pilares de 0 a 25 y justifica cada uno citando qué se vio o qué se dijo:
+   p1 Diagnóstico (identificó el problema y su causa), p2 Herramientas y materiales, p3 Procedimiento (pasos lógicos y seguros), p4 Pruebas y garantía (verificó el resultado).
+   Escala para cada pilar:
+   0-5 = no hay evidencia de ese pilar.
+   6-12 = se menciona de forma vaga o genérica, sin detalles verificables.
+   13-18 = correcto pero incompleto, o la foto no lo respalda.
+   19-22 = claro, específico y respaldado por la foto.
+   23-25 = excelente: detalles técnicos precisos, coherentes con la foto y con la normativa.
+3. Reglas obligatorias:
+   - Si ninguna foto corresponde al oficio, cada pilar vale como máximo 5.
+   - Si una o más fotos no corresponden al oficio, cada pilar vale como máximo 17.
+   - Si la explicación está vacía, es genérica o no habla del trabajo, cada pilar vale como máximo 8.
+   - Frases genéricas como "hice un diagnóstico", "usé herramientas adecuadas" o "dejé todo garantizado", sin detalles concretos, no valen más de 12.
+4. conceptosDemostrados: solo conceptos técnicos que la persona realmente mencionó o que se ven en las fotos. conceptosFaltantes: lo importante del oficio que no demostró.
+5. coherencePercent (0-100): qué tanto coincide lo que dice con lo que muestran las fotos.
+6. verdictParagraph: dictamen de 3 a 5 líneas, honesto y específico, que mencione lo que se vio y lo que faltó.
+Responde únicamente con el JSON pedido, en español.`;
 
     try {
-      // Preparar imágenes en base64 para enviarlas a la IA Multimodal
-      const imagePayloads = [];
+      const stepPayloads = [];
       for (let i = 0; i < evidences.length; i++) {
-        if (evidences[i].photo) {
-          const imgData = await imageSourceToBase64(evidences[i].photo);
-          if (imgData) imagePayloads.push(imgData);
+        const ev = evidences[i];
+        const image = ev.photo ? await imageSourceToBase64(ev.photo) : null;
+        let audio = null;
+        if (sendsAudio && ev.audioBlob) {
+          try { audio = await getGeminiReadyAudio(ev); } catch (e) { console.warn('No se pudo convertir el audio del paso', i + 1, e); }
         }
+        stepPayloads.push({ n: i + 1, transcript: getEvidenceTranscript(ev), image, audio });
       }
 
       let rawJsonResponse = '';
 
       if (currentAiProvider === 'gemini') {
         const parts = [{ text: rubricPrompt }];
-        imagePayloads.forEach(img => {
-          parts.push({
-            inline_data: {
-              mime_type: img.mimeType,
-              data: img.base64
-            }
-          });
+        stepPayloads.forEach(step => {
+          parts.push({ text: `\n=== PASO ${step.n} ===\nTranscripción de la explicación del paso ${step.n}: """${step.transcript || '(sin explicación escrita)'}"""\nFoto del paso ${step.n}:` });
+          if (step.image) parts.push({ inline_data: { mime_type: step.image.mimeType, data: step.image.base64 } });
+          else parts.push({ text: '(Este paso no tiene foto)' });
+          if (step.audio) {
+            parts.push({ text: `Audio original del paso ${step.n}:` });
+            parts.push({ inline_data: { mime_type: step.audio.mimeType, data: step.audio.base64 } });
+          }
         });
-
-        // Si también hay audio grabado en el primer paso, adjuntarlo para evaluación multimodal nativa
-        if (evidences[0]?.audioBlob) {
-          try {
-            const audioB64 = await blobToBase64Data(evidences[0].audioBlob);
-            let aMime = (evidences[0].audioBlob.type || 'audio/webm').split(';')[0];
-            if (!aMime.startsWith('audio/')) aMime = 'audio/webm';
-            parts.push({
-              inline_data: {
-                mime_type: aMime,
-                data: audioB64
-              }
-            });
-          } catch (e) {}
-        }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
         const res = await fetch(url, {
@@ -4151,21 +4239,26 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.25 }
+            generationConfig: { responseMimeType: 'application/json', responseSchema: AI_EVAL_SCHEMA, temperature: 0 }
           })
         });
-
-        if (!res.ok) throw new Error(`Gemini Eval HTTP ${res.status}`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `Gemini HTTP ${res.status}`);
+        }
         const data = await res.json();
-        rawJsonResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        rawJsonResponse = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+        if (!rawJsonResponse) {
+          const reason = data?.promptFeedback?.blockReason || data?.candidates?.[0]?.finishReason || 'respuesta vacía';
+          throw new Error(`Gemini no devolvió resultado (${reason})`);
+        }
       } else {
-        // OpenAI GPT-4o-mini Multimodal (Texto + Imágenes en Base64)
-        const userContent = [{ type: 'text', text: rubricPrompt }];
-        imagePayloads.forEach(img => {
-          userContent.push({
-            type: 'image_url',
-            image_url: { url: img.dataUrl, detail: 'low' }
-          });
+        const schemaHint = `\nFormato JSON exacto (mismas claves): {"evidencias":[{"paso":1,"descripcionFoto":"","fotoCorrespondeAlOficio":false,"resumenExplicacion":"","explicacionCoincideConFoto":false,"observaciones":""}],"justificacionDiagnostico":"","p1":0,"justificacionHerramientas":"","p2":0,"justificacionProcedimiento":"","p3":0,"justificacionPruebas":"","p4":0,"conceptosDemostrados":[],"conceptosFaltantes":[],"coherencePercent":0,"coherenceDescription":"","theoreticalFeedback":"","verdictParagraph":""}\nLos valores de ese formato son solo marcadores: debes reemplazarlos por tu evaluación real.`;
+        const userContent = [{ type: 'text', text: rubricPrompt + schemaHint }];
+        stepPayloads.forEach(step => {
+          userContent.push({ type: 'text', text: `=== PASO ${step.n} ===\nTranscripción de la explicación del paso ${step.n}: """${step.transcript || '(sin explicación escrita)'}"""\nFoto del paso ${step.n}:` });
+          if (step.image) userContent.push({ type: 'image_url', image_url: { url: step.image.dataUrl, detail: 'high' } });
+          else userContent.push({ type: 'text', text: '(Este paso no tiene foto)' });
         });
 
         const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -4175,47 +4268,101 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
             'Authorization': `Bearer ${currentAiApiKey}`
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o',
             response_format: { type: 'json_object' },
             messages: [
-              { role: 'system', content: 'Eres el Auditor Pericial Jefe de Tasksmith. Evalúas exámenes técnicos, fotografías de obra y transcripciones de audio devolviendo JSON estricto.' },
+              { role: 'system', content: 'Eres un evaluador técnico estricto. Respondes solo con JSON válido.' },
               { role: 'user', content: userContent }
             ],
-            temperature: 0.25
+            temperature: 0
           })
         });
-
-        if (!res.ok) throw new Error(`OpenAI Eval HTTP ${res.status}`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `OpenAI HTTP ${res.status}`);
+        }
         const data = await res.json();
         rawJsonResponse = data?.choices?.[0]?.message?.content || '';
       }
 
-      const parsed = JSON.parse(rawJsonResponse);
-      const p1 = Math.min(25, Math.max(0, Number(parsed.p1) || 0));
-      const p2 = Math.min(25, Math.max(0, Number(parsed.p2) || 0));
-      const p3 = Math.min(25, Math.max(0, Number(parsed.p3) || 0));
-      const p4 = Math.min(25, Math.max(0, Number(parsed.p4) || 0));
-      const totalPracticalScore = p1 + p2 + p3 + p4;
-
-      return {
-        p1,
-        p2,
-        p3,
-        p4,
-        totalPracticalScore,
-        coherencePercent: Math.min(100, Math.max(0, Number(parsed.coherencePercent) || totalPracticalScore)),
-        coherenceDescription: parsed.coherenceDescription || '',
-        matchedConcepts: Array.isArray(parsed.matchedConcepts) && parsed.matchedConcepts.length > 0
-          ? parsed.matchedConcepts.slice(0, 6)
-          : (info.expectedConcepts || []).slice(0, 5),
-        theoreticalFeedback: parsed.theoreticalFeedback || '',
-        verdictParagraph: parsed.verdictParagraph || '',
-        evaluatedByRealAi: getAiProviderLabel()
-      };
+      let parsed;
+      try {
+        parsed = JSON.parse(rawJsonResponse.replace(/^```(?:json)?\s*|\s*```$/g, ''));
+      } catch (e) {
+        throw new Error('La IA respondió en un formato no válido');
+      }
+      return applyEvaluationGuardrails(parsed, evidences, stepPayloads);
     } catch (err) {
-      console.warn('Error en evaluación con API de IA, usando motor local de respaldo:', err);
-      return null;
+      console.warn('Error en evaluación con IA:', err);
+      return { error: err.message || 'Error desconocido al contactar la IA' };
     }
+  }
+
+  // Vuelve a aplicar en código las reglas duras, por si la IA no las respetó
+  function applyEvaluationGuardrails(parsed, evidences, stepPayloads) {
+    const clampPillar = v => Math.min(25, Math.max(0, Math.round(Number(v) || 0)));
+    let p = [clampPillar(parsed.p1), clampPillar(parsed.p2), clampPillar(parsed.p3), clampPillar(parsed.p4)];
+
+    const analysis = (Array.isArray(parsed.evidencias) ? parsed.evidencias : []).slice(0, evidences.length);
+    const evidenceAnalysis = evidences.map((ev, idx) => {
+      const a = analysis.find(x => Number(x.paso) === idx + 1) || analysis[idx] || {};
+      return {
+        paso: idx + 1,
+        descripcionFoto: a.descripcionFoto || 'La IA no devolvió descripción para esta foto.',
+        fotoCorrespondeAlOficio: a.fotoCorrespondeAlOficio === true,
+        resumenExplicacion: a.resumenExplicacion || '',
+        explicacionCoincideConFoto: a.explicacionCoincideConFoto === true,
+        observaciones: a.observaciones || '',
+        transcript: stepPayloads[idx]?.transcript || ''
+      };
+    });
+
+    const guardNotes = [];
+    const relevant = evidenceAnalysis.filter(e => e.fotoCorrespondeAlOficio).length;
+    const mismatched = evidenceAnalysis.filter(e => !e.explicacionCoincideConFoto).length;
+    const hasExplanation = stepPayloads.some(s => (s.transcript || '').length >= 20 || s.audio);
+    let cap = 25;
+    if (relevant === 0) {
+      cap = Math.min(cap, 5);
+      guardNotes.push('Ninguna foto corresponde al oficio.');
+    } else if (relevant < evidenceAnalysis.length) {
+      cap = Math.min(cap, 17);
+      guardNotes.push(`${evidenceAnalysis.length - relevant} foto(s) no corresponden al oficio.`);
+    }
+    if (!hasExplanation) {
+      cap = Math.min(cap, 8);
+      guardNotes.push('No hay una explicación del trabajo.');
+    }
+    if (mismatched > evidenceAnalysis.length / 2) {
+      cap = Math.min(cap, 17);
+      guardNotes.push('En la mayoría de pasos lo explicado no coincide con lo que muestra la foto.');
+    }
+    p = p.map(v => Math.min(v, cap));
+    const totalPracticalScore = p[0] + p[1] + p[2] + p[3];
+
+    let coherencePercent = Math.min(100, Math.max(0, Math.round(Number(parsed.coherencePercent) || 0)));
+    const matchRatio = evidenceAnalysis.length ? (evidenceAnalysis.length - mismatched) / evidenceAnalysis.length : 0;
+    coherencePercent = Math.min(coherencePercent, Math.round(matchRatio * 100));
+
+    return {
+      p1: p[0], p2: p[1], p3: p[2], p4: p[3],
+      totalPracticalScore,
+      pillarNotes: {
+        p1: parsed.justificacionDiagnostico || '',
+        p2: parsed.justificacionHerramientas || '',
+        p3: parsed.justificacionProcedimiento || '',
+        p4: parsed.justificacionPruebas || ''
+      },
+      coherencePercent,
+      coherenceDescription: parsed.coherenceDescription || '',
+      matchedConcepts: Array.isArray(parsed.conceptosDemostrados) ? parsed.conceptosDemostrados.slice(0, 8) : [],
+      missingConcepts: Array.isArray(parsed.conceptosFaltantes) ? parsed.conceptosFaltantes.slice(0, 8) : [],
+      theoreticalFeedback: parsed.theoreticalFeedback || '',
+      verdictParagraph: parsed.verdictParagraph || '',
+      evidenceAnalysis,
+      guardNotes,
+      evaluatedByRealAi: getAiProviderLabel()
+    };
   }
 
   /* --- INICIALIZADOR DEL ASISTENTE DE CERTIFICACIÓN --- */
@@ -4584,94 +4731,92 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
   /* --- FLUJO DE EVALUACIÓN Y PERITAJE DE LA INTELIGENCIA ARTIFICIAL --- */
   window.startAiEvaluationFlow = async function () {
     if (!currentTradeExam) {
-      currentTradeExam = getOrGenerateAiTradeExam('Plomería & Redes Hidráulicas');
+      showToast('Primero completa el paso 1 y el examen teórico.', 'error');
+      goToStep(1);
+      return;
     }
     const info = currentTradeExam;
 
-    // Registrar hora final de evaluación para el cronómetro
+    // Antes, si faltaba la foto o el audio, se rellenaban con una foto de stock y un texto "ideal"
+    // y la IA calificaba eso. Ahora se exige evidencia real en cada paso.
+    const problems = [];
+    verificationEvidences.forEach((ev, idx) => {
+      const n = idx + 1;
+      if (!ev.photo) problems.push(`el paso ${n} no tiene foto`);
+      if (!ev.audioBlob && getEvidenceTranscript(ev).length < 20) problems.push(`el paso ${n} no tiene audio ni explicación escrita`);
+    });
+    if (problems.length) {
+      showToast(`Falta evidencia: ${problems.join('; ')}.`, 'error');
+      return;
+    }
+    if (!hasActiveAiKey()) {
+      showToast('Para evaluar con IA necesitas configurar una API Key de Gemini u OpenAI.', 'error');
+      goToStep(1);
+      const drawer = document.getElementById('aiApiKeyDrawer');
+      if (drawer) drawer.style.display = 'block';
+      return;
+    }
+    if (verificationEvidences.some(ev => ev.isRecording)) {
+      showToast('Termina la grabación de audio antes de enviar.', 'error');
+      return;
+    }
+
     certEvaluationEndTime = Date.now();
-
-    // Asegurar que exista al menos una foto y audio para procesar
-    if (!verificationEvidences[0]?.photo) {
-      window.loadSamplePhoto(verificationEvidences[0].id);
-    }
-    if (!verificationEvidences[0]?.audioDuration) {
-      window.loadSampleAudio(verificationEvidences[0].id);
-    }
-
     goToStep(4);
 
     const scannerBox = document.getElementById('aiScannerBox');
     const verdictContainer = document.getElementById('aiVerdictContainer');
+    const errorBox = document.getElementById('aiEvalErrorBox');
     const step2Label = document.getElementById('aiStep2Label');
 
     if (scannerBox) scannerBox.style.display = 'block';
     if (verdictContainer) verdictContainer.style.display = 'none';
+    if (errorBox) errorBox.style.display = 'none';
     if (step2Label) {
-      step2Label.textContent = hasActiveAiKey()
-        ? `${getAiProviderLabel()}: Analizando fotos de cámara, audio transcrito y examen de ${info.tradeName}...`
-        : `Comparando lo que dijiste con conocimiento real y normas de ${info.tradeName}...`;
+      step2Label.textContent = `${getAiProviderLabel()}: revisando cada foto con su explicación en ${info.tradeName}...`;
     }
 
-    const stepItems = [
-      document.getElementById('aiStep_1'),
-      document.getElementById('aiStep_2'),
-      document.getElementById('aiStep_3'),
-      document.getElementById('aiStep_4')
-    ];
-
+    const stepItems = [1, 2, 3, 4].map(n => document.getElementById(`aiStep_${n}`));
     stepItems.forEach(el => el && (el.className = 'ai-scan-step-item'));
     if (stepItems[0]) stepItems[0].className = 'ai-scan-step-item active';
 
-    // Extraer transcripción y título antes de llamar a la IA
-    const collectedUserTranscripts = verificationEvidences.map(ev => {
-      const inputEl = document.getElementById(`audioTranscriptInput_${ev.id}`);
-      const userText = (inputEl ? inputEl.value.trim() : '') || (ev.realTranscript ? ev.realTranscript.trim() : '');
-      return userText;
-    }).filter(Boolean);
+    const jobTitleInput = document.getElementById('certJobTitle');
+    const jobTitle = (jobTitleInput && jobTitleInput.value.trim()) || `Trabajo de ${info.tradeName}`;
 
-    let displayedTranscript = '';
-    if (collectedUserTranscripts.length > 0) {
-      displayedTranscript = collectedUserTranscripts.join(' // ');
-    } else if (verificationEvidences.some(ev => ev.usedSampleAudio)) {
-      displayedTranscript = info.sampleTranscript;
-    } else {
-      displayedTranscript = 'Diagnóstico pericial en obra con inspección de causa raíz y validación de componentes técnicos.';
+    // La animación avanza mientras la IA trabaja, pero el último paso solo se marca cuando hay respuesta
+    const timers = [
+      setTimeout(() => { stepItems[0] && (stepItems[0].className = 'ai-scan-step-item done'); stepItems[1] && (stepItems[1].className = 'ai-scan-step-item active'); }, 900),
+      setTimeout(() => { stepItems[1] && (stepItems[1].className = 'ai-scan-step-item done'); stepItems[2] && (stepItems[2].className = 'ai-scan-step-item active'); }, 2200),
+      setTimeout(() => { stepItems[2] && (stepItems[2].className = 'ai-scan-step-item done'); stepItems[3] && (stepItems[3].className = 'ai-scan-step-item active'); }, 3600)
+    ];
+
+    const result = await evaluateFullCertificationWithRealAi(info, jobTitle, verificationEvidences);
+    timers.forEach(clearTimeout);
+
+    if (!result || result.error) {
+      if (scannerBox) scannerBox.style.display = 'none';
+      if (errorBox) {
+        const msg = document.getElementById('aiEvalErrorMsg');
+        if (msg) msg.textContent = (result && result.error) || 'La IA no respondió.';
+        errorBox.style.display = 'block';
+      }
+      showToast('No se pudo completar la evaluación con IA. No se emitió ningún resultado.', 'error');
+      return;
     }
 
-    const jobTitleInput = document.getElementById('certJobTitle');
-    const jobTitle = jobTitleInput ? jobTitleInput.value.trim() : 'Labor técnica especializada en obra';
-
-    // Ejecutar en paralelo la animación de los 4 pasos y la llamada real a Gemini / ChatGPT
-    const aiEvalPromise = hasActiveAiKey()
-      ? evaluateFullCertificationWithRealAi(info, displayedTranscript, jobTitle, verificationEvidences)
-      : Promise.resolve(null);
-
-    setTimeout(() => {
-      if (stepItems[0]) stepItems[0].className = 'ai-scan-step-item done';
-      if (stepItems[1]) stepItems[1].className = 'ai-scan-step-item active';
-    }, 750);
-
-    setTimeout(() => {
-      if (stepItems[1]) stepItems[1].className = 'ai-scan-step-item done';
-      if (stepItems[2]) stepItems[2].className = 'ai-scan-step-item active';
-    }, 1500);
-
-    setTimeout(() => {
-      if (stepItems[2]) stepItems[2].className = 'ai-scan-step-item done';
-      if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item active';
-    }, 2250);
-
-    const [realAiResult] = await Promise.all([
-      aiEvalPromise,
-      new Promise(r => setTimeout(r, 3100))
-    ]);
-
-    if (stepItems[3]) stepItems[3].className = 'ai-scan-step-item done';
-    completeAiVerdictDisplay(info, realAiResult, displayedTranscript, jobTitle);
+    stepItems.forEach(el => el && (el.className = 'ai-scan-step-item done'));
+    completeAiVerdictDisplay(info, result, jobTitle);
   };
 
-  function completeAiVerdictDisplay(info, realAiResult, precomputedTranscript, precomputedJobTitle) {
+  let lastCertificationReport = null;
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function completeAiVerdictDisplay(info, evaluationCoherence, jobTitle) {
     const scannerBox = document.getElementById('aiScannerBox');
     const verdictContainer = document.getElementById('aiVerdictContainer');
 
@@ -4683,20 +4828,24 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
 
     // 1. CRITERIO OBLIGATORIO: CÁLCULO Y VISUALIZACIÓN DEL TIEMPO TOTAL DE EVALUACIÓN
     if (!certEvaluationEndTime) certEvaluationEndTime = Date.now();
-    if (!certEvaluationStartTime) certEvaluationStartTime = certEvaluationEndTime - 340000; // fallback aprox 5m 40s
-
-    const elapsedMs = Math.max(1000, certEvaluationEndTime - certEvaluationStartTime);
+    // Antes, sin hora de inicio se inventaban 5 min 40 s; ahora se indica que no se registró
+    const hasStart = !!certEvaluationStartTime;
+    const elapsedMs = hasStart ? Math.max(1000, certEvaluationEndTime - certEvaluationStartTime) : 0;
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
     const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000);
-    const formattedDuration = `${elapsedMinutes} min ${elapsedSeconds < 10 ? '0' : ''}${elapsedSeconds} seg`;
+    const formattedDuration = hasStart ? `${elapsedMinutes} min ${elapsedSeconds < 10 ? '0' : ''}${elapsedSeconds} seg` : 'No registrado';
 
     const finalDurationEl = document.getElementById('evaluationFinalDuration');
     if (finalDurationEl) finalDurationEl.textContent = formattedDuration;
 
     const speedAssessmentEl = document.getElementById('evaluationSpeedAssessment');
     if (speedAssessmentEl) {
-      const paceWord = elapsedMinutes <= 15 ? 'Ágil, certero y profesional' : 'Pausado, meticuloso y exhaustivo';
-      speedAssessmentEl.innerHTML = `Ritmo de resolución pericial: <strong>${paceWord}</strong> (${formattedDuration} cronometrados, dentro del estándar pericial de 5 a 25 min).`;
+      if (!hasStart) {
+        speedAssessmentEl.textContent = 'No se registró la hora de inicio de esta evaluación.';
+      } else {
+        const paceWord = elapsedMinutes < 5 ? 'Más rápido que el rango habitual' : (elapsedMinutes <= 25 ? 'Dentro del rango habitual' : 'Más lento que el rango habitual');
+        speedAssessmentEl.innerHTML = `Ritmo: <strong>${paceWord}</strong> (${formattedDuration} cronometrados; rango habitual de 5 a 25 min).`;
+      }
     }
 
     const timeBadgeEl = document.getElementById('evaluationTimeStandardBadge');
@@ -4709,22 +4858,14 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
       certTimeDisplayEl.textContent = `Tiempo de Evaluación: ${formattedDuration}`;
     }
 
-    // 2. Extraer transcripción técnica REAL provista o grabada por el maestro
-    const displayedTranscript = precomputedTranscript || info.sampleTranscript;
+    // 2. Transcripción real de cada paso (lo que la IA evaluó)
+    const displayedTranscript = evaluationCoherence.evidenceAnalysis
+      .map(e => `Paso ${e.paso}: ${e.transcript || '(sin texto)'}`)
+      .join('  •  ');
     const transcriptEl = document.getElementById('aiAudioTranscriptText');
     if (transcriptEl) {
-      transcriptEl.textContent = `"${displayedTranscript}"`;
+      transcriptEl.textContent = displayedTranscript;
     }
-
-    const jobTitle = precomputedJobTitle || 'Labor técnica especializada en obra';
-
-    // 3. Confrontación Pericial Inteligente (Usa el resultado de Gemini/ChatGPT si está activo, o el motor local como respaldo)
-    const evaluationCoherence = realAiResult || evaluateSpokenAndActionCoherence(
-      displayedTranscript,
-      jobTitle,
-      info,
-      verificationEvidences
-    );
 
     const practicalScore = evaluationCoherence.totalPracticalScore;
 
@@ -4739,6 +4880,14 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
     if (c2) c2.textContent = `${evaluationCoherence.p2}/25`;
     if (c3) c3.textContent = `${evaluationCoherence.p3}/25`;
     if (c4) c4.textContent = `${evaluationCoherence.p4}/25`;
+    // Las leyendas bajo cada pilar eran fijas ("Preciso y certero") aunque la nota fuera 5/25
+    [c1, c2, c3, c4].forEach((el, i) => {
+      const caption = el && el.nextElementSibling;
+      if (!caption) return;
+      const v = evaluationCoherence[`p${i + 1}`];
+      caption.textContent = v >= 19 ? 'Bien demostrado' : (v >= 13 ? 'Incompleto' : 'Sin evidencia suficiente');
+      caption.style.color = v >= 19 ? 'var(--green-verified)' : (v >= 13 ? '#b45309' : '#dc2626');
+    });
     if (overall) {
       overall.textContent = `${practicalScore} / 100`;
       overall.style.color = practicalScore >= 75 ? 'var(--green-verified)' : '#dc2626';
@@ -4747,9 +4896,22 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
     // Conceptos confrontados con conocimiento real
     const conceptsCloud = document.getElementById('aiConceptsCloud');
     if (conceptsCloud) {
-      conceptsCloud.innerHTML = evaluationCoherence.matchedConcepts.map(c => `
-        <span class="ai-concept-chip">${c}</span>
-      `).join('');
+      conceptsCloud.innerHTML = evaluationCoherence.matchedConcepts.length
+        ? evaluationCoherence.matchedConcepts.map(c => `<span class="ai-concept-chip">${escapeHtml(c)}</span>`).join('')
+        : '<span style="font-size: 0.85rem; color: var(--ink-muted);">La IA no identificó conceptos técnicos demostrados.</span>';
+    }
+
+    const pillarNotesEl = document.getElementById('aiPillarNotes');
+    if (pillarNotesEl) {
+      const labels = { p1: 'Diagnóstico', p2: 'Herramientas y materiales', p3: 'Procedimiento', p4: 'Pruebas y garantía' };
+      const notes = Object.keys(labels)
+        .filter(k => evaluationCoherence.pillarNotes && evaluationCoherence.pillarNotes[k])
+        .map(k => `<li><strong>${labels[k]} (${evaluationCoherence[k]}/25):</strong> ${escapeHtml(evaluationCoherence.pillarNotes[k])}</li>`);
+      const guard = (evaluationCoherence.guardNotes || []).map(n => `<li style="color: #b91c1c;"><strong>Regla aplicada:</strong> ${escapeHtml(n)}</li>`);
+      const missing = (evaluationCoherence.missingConcepts || []).length
+        ? `<li><strong>Le faltó demostrar:</strong> ${evaluationCoherence.missingConcepts.map(escapeHtml).join(', ')}</li>` : '';
+      pillarNotesEl.innerHTML = notes.concat(guard).join('') + missing;
+      pillarNotesEl.style.display = pillarNotesEl.innerHTML ? 'block' : 'none';
     }
 
     // Coherencia práctica (Lo que dijo vs Lo que hizo)
@@ -4824,39 +4986,44 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
     const auditedGallery = document.getElementById('auditedEvidenceGallery');
     if (auditedGallery) {
       auditedGallery.innerHTML = verificationEvidences.map((ev, idx) => {
-        const photoSrc = ev.photo || 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80';
-        const dur = ev.audioDuration || '0:22';
-        const audioTranscript = ev.realTranscript || (ev.usedSampleAudio ? info.sampleTranscript : 'Explicación del procedimiento pericial y pruebas en obra.');
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        const deviceSensorLabel = isMobile ? 'Cámara Celular Trasera' : 'Sensor HD Óptico';
+        const photoSrc = ev.photo || '';
+        const dur = ev.audioDuration || 'Sin audio';
+        const analysis = evaluationCoherence.evidenceAnalysis[idx] || {};
+        const audioTranscript = analysis.transcript || 'Sin explicación.';
+        const stampOk = analysis.fotoCorrespondeAlOficio;
+        const deviceSensorLabel = stampOk ? 'Corresponde al oficio' : 'No corresponde al oficio';
 
         return `
           <div style="background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
             <div style="position: relative; height: 180px; background: #1a1a24; overflow: hidden;">
               <img src="${photoSrc}" alt="Evidencia ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
-              <span class="ai-stamp-badge">
-                VERIFICADO IA: FOTO DE OBRA
+              <span class="ai-stamp-badge" style="${stampOk ? '' : 'background: #dc2626; color: #fff;'}">
+                ${stampOk ? 'IA: FOTO DEL OFICIO' : 'IA: NO CORRESPONDE'}
               </span>
               <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem;">
-                📷 ${deviceSensorLabel} • Paso #${idx + 1}
+                ${deviceSensorLabel} • Paso #${idx + 1}
               </div>
             </div>
             <div style="padding: 14px;">
+              <p style="font-size: 0.78rem; color: var(--ink-secondary); margin: 0 0 10px; line-height: 1.4;">
+                <strong>Lo que la IA ve en la foto:</strong> ${escapeHtml(analysis.descripcionFoto || '')}
+              </p>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <strong style="font-size: 0.86rem; color: var(--ink-primary);">Audio Explicativo #${idx + 1}</strong>
-                <span class="live-badge" style="background: var(--green-soft); color: var(--green-verified); font-size: 0.76rem;">${dur}</span>
+                <strong style="font-size: 0.86rem; color: var(--ink-primary);">Explicación #${idx + 1}</strong>
+                <span class="live-badge" style="background: ${analysis.explicacionCoincideConFoto ? 'var(--green-soft)' : '#fee2e2'}; color: ${analysis.explicacionCoincideConFoto ? 'var(--green-verified)' : '#dc2626'}; font-size: 0.76rem;">${analysis.explicacionCoincideConFoto ? 'Coincide con la foto' : 'No coincide con la foto'}</span>
               </div>
-              <div class="audio-playback-row" style="background: var(--bg-card-subtle); padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 8px;">
+              ${ev.audioUrl ? `<div class="audio-playback-row" style="background: var(--bg-card-subtle); padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 8px;">
                 <button type="button" class="audio-play-trigger" onclick="togglePlayEvidenceAudio(${ev.id})" style="width: 32px; height: 32px; font-size: 0.85rem;">
                   ▶
                 </button>
                 <div style="font-size: 0.8rem; color: var(--ink-muted); flex: 1; margin-left: 8px;">
-                  Reproducir audio auditado
+                  Reproducir audio (${dur})
                 </div>
-              </div>
+              </div>` : ''}
               <p style="font-size: 0.78rem; color: var(--ink-secondary); margin: 0; line-height: 1.35; font-style: italic;">
-                "${audioTranscript.length > 120 ? audioTranscript.substring(0, 120) + '...' : audioTranscript}"
+                "${escapeHtml(audioTranscript.length > 160 ? audioTranscript.substring(0, 160) + '...' : audioTranscript)}"
               </p>
+              ${analysis.observaciones ? `<p style="font-size: 0.76rem; color: var(--ink-muted); margin: 8px 0 0; line-height: 1.35;"><strong>Observaciones:</strong> ${escapeHtml(analysis.observaciones)}</p>` : ''}
             </div>
           </div>
         `;
@@ -4882,7 +5049,7 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
       }
       if (verdictP) {
         verdictP.innerHTML = evaluationCoherence.verdictParagraph
-          ? `<strong>Conclusión del Peritaje ${engineTag}:</strong> ${evaluationCoherence.verdictParagraph} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration})</em>`
+          ? `<strong>Conclusión del Peritaje ${engineTag}:</strong> ${escapeHtml(evaluationCoherence.verdictParagraph)} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration})</em>`
           : `<strong>Conclusión del Peritaje ${engineTag}:</strong> El especialista demostró competencia técnica sobresaliente respondiendo ${certCorrectAnswersCount} de 8 casos teóricos (${certTheoreticalScore}/100) y acreditó idoneidad práctica rigurosa en sus fotos y audios auditados (${practicalScore}/100) en un tiempo total de ${formattedDuration}. Cumple plenamente con el estándar oficial de Tasksmith.`;
       }
 
@@ -4942,7 +5109,7 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
       if (!passedPractical) reasons.push(`evidencia práctica audiovisual insuficiente (${practicalScore}/100, mínimo 75)`);
 
       if (verdictP) {
-        const aiExtraFeedback = evaluationCoherence.verdictParagraph ? `<br><br><em>Observación de ${evaluationCoherence.evaluatedByRealAi || 'la IA'}:</em> ${evaluationCoherence.verdictParagraph}` : '';
+        const aiExtraFeedback = evaluationCoherence.verdictParagraph ? `<br><br><em>Observación de ${evaluationCoherence.evaluatedByRealAi || 'la IA'}:</em> ${escapeHtml(evaluationCoherence.verdictParagraph)}` : '';
         verdictP.innerHTML = `<strong>Dictamen Pericial ${engineTag}:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de evaluación. En Tasksmith se exige demostrar idoneidad técnica en ambas áreas (mínimo 75/100 en cada una) para garantizar la seguridad de los hogares.${aiExtraFeedback}`;
       }
 
@@ -4993,6 +5160,67 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
 
       showToast('Evaluación concluida sin certificación: No se superó el 75% en ambas pruebas obligatorias.', 'normal');
     }
+
+    // 7. Fecha real de emisión y expediente para exportar en PDF
+    const issueDate = new Date();
+    const issueDateText = issueDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    const certIssueDateEl = document.getElementById('certIssueDate');
+    if (certIssueDateEl) certIssueDateEl.textContent = issueDateText;
+
+    const certHashEl = document.getElementById('certHashId');
+    lastCertificationReport = {
+      candidateName: currentUser ? currentUser.name : 'Candidato',
+      candidateEmail: currentUser ? currentUser.email : '',
+      tradeName: info.tradeName,
+      norms: info.norms || '',
+      experience: candidateCertificationContext.experience,
+      scope: candidateCertificationContext.customScope,
+      jobTitle,
+      issueDate,
+      issueDateText,
+      certificateId: certApproved && certHashEl ? certHashEl.textContent : null,
+      approved: certApproved,
+      durationText: formattedDuration,
+      theoretical: {
+        score: certTheoreticalScore,
+        correct: certCorrectAnswersCount,
+        total: (info.questions || []).length,
+        passed: passedTheoretical,
+        feedback: evaluationCoherence.theoreticalFeedback || '',
+        questions: (info.questions || []).map((q, idx) => ({
+          title: q.title,
+          scenario: q.scenario || '',
+          chosen: certUserAnswers[idx] !== undefined ? q.options[certUserAnswers[idx]] : 'No respondida',
+          correctAnswer: q.options[q.correct],
+          isRight: certUserAnswers[idx] === q.correct,
+          explanation: q.explanation || ''
+        }))
+      },
+      practical: {
+        score: practicalScore,
+        passed: passedPractical,
+        pillars: [
+          { name: 'Diagnóstico', score: evaluationCoherence.p1, note: evaluationCoherence.pillarNotes?.p1 || '' },
+          { name: 'Herramientas y materiales', score: evaluationCoherence.p2, note: evaluationCoherence.pillarNotes?.p2 || '' },
+          { name: 'Procedimiento', score: evaluationCoherence.p3, note: evaluationCoherence.pillarNotes?.p3 || '' },
+          { name: 'Pruebas y garantía', score: evaluationCoherence.p4, note: evaluationCoherence.pillarNotes?.p4 || '' }
+        ],
+        coherencePercent: evaluationCoherence.coherencePercent,
+        coherenceDescription: evaluationCoherence.coherenceDescription,
+        matchedConcepts: evaluationCoherence.matchedConcepts || [],
+        missingConcepts: evaluationCoherence.missingConcepts || [],
+        guardNotes: evaluationCoherence.guardNotes || []
+      },
+      evidences: verificationEvidences.map((ev, idx) => ({
+        ...(evaluationCoherence.evidenceAnalysis[idx] || {}),
+        photo: ev.photo,
+        audioDuration: ev.audioDuration || null
+      })),
+      overallScore: overallAverageScore,
+      verdictParagraph: evaluationCoherence.verdictParagraph || '',
+      engine: evaluationCoherence.evaluatedByRealAi || 'IA'
+    };
+    document.querySelectorAll('[data-export-cert-pdf]').forEach(btn => { btn.disabled = false; });
   }
 
   window.restartCertificationWizard = function () {
@@ -5009,6 +5237,230 @@ Nota sobre puntajes: p1 (Diagnóstico), p2 (Herramientas y Materiales), p3 (Proc
       input.focus();
     }
     showToast('Inicia una nueva certificación técnica con cualquier oficio.', 'normal');
+  };
+
+  /* --- EXPORTAR RESULTADOS DE CERTIFICACIÓN EN PDF (jsPDF) --- */
+  function loadImageAsDataUrl(src) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth; c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          resolve({ dataUrl: c.toDataURL('image/png'), w: img.naturalWidth, h: img.naturalHeight });
+        } catch (e) { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  function getImageSize(dataUrl) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+  }
+
+  // Helvetica de jsPDF solo trae caracteres latinos básicos: se quitan emojis y símbolos raros
+  function pdfSafe(str) {
+    return String(str == null ? '' : str)
+      .replace(/[≤]/g, '<=').replace(/[≥]/g, '>=').replace(/[→]/g, '->')
+      .replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+      .replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•€]/g, '')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+  }
+
+  window.exportCertificationReportPdf = async function () {
+    const r = lastCertificationReport;
+    if (!r) {
+      showToast('Primero completa la evaluación para poder exportar los resultados.', 'error');
+      return;
+    }
+    const JsPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!JsPDF) {
+      showToast('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e inténtalo de nuevo.', 'error');
+      return;
+    }
+
+    const buttons = document.querySelectorAll('[data-export-cert-pdf]');
+    buttons.forEach(b => { b.disabled = true; });
+
+    try {
+      const doc = new JsPDF({ unit: 'mm', format: 'a4' });
+      const PW = doc.internal.pageSize.getWidth();
+      const PH = doc.internal.pageSize.getHeight();
+      const M = 16;
+      const CW = PW - M * 2;
+      const COLORS = {
+        ink: [44, 34, 26], soft: [90, 74, 61], muted: [138, 122, 109], blue: [37, 88, 134],
+        green: [37, 124, 62], red: [185, 28, 28], line: [228, 220, 208], panel: [246, 242, 235]
+      };
+      let y = M;
+
+      const setColor = c => doc.setTextColor(c[0], c[1], c[2]);
+      const ensure = h => { if (y + h > PH - 16) { doc.addPage(); y = M; } };
+      const text = (str, opts = {}) => {
+        const size = opts.size || 10;
+        const x = opts.x != null ? opts.x : M;
+        const width = opts.width || CW;
+        const lh = size * 0.42 + (opts.leading || 1.2);
+        doc.setFont('helvetica', opts.bold ? 'bold' : (opts.italic ? 'italic' : 'normal'));
+        doc.setFontSize(size);
+        setColor(opts.color || COLORS.ink);
+        const lines = doc.splitTextToSize(pdfSafe(str), width);
+        lines.forEach(line => {
+          ensure(lh);
+          doc.text(line, x, y + size * 0.35);
+          y += lh;
+        });
+        y += opts.after != null ? opts.after : 1.5;
+      };
+      const section = title => {
+        ensure(16);
+        y += 4;
+        doc.setDrawColor(COLORS.line[0], COLORS.line[1], COLORS.line[2]);
+        doc.setLineWidth(0.3);
+        doc.line(M, y, PW - M, y);
+        y += 5;
+        text(title, { size: 13, bold: true, color: COLORS.blue, after: 2 });
+      };
+      const labelValue = (label, value) => {
+        if (!value) return;
+        text(`${label}: ${value}`, { size: 10, color: COLORS.soft, after: 0.8 });
+      };
+
+      // Encabezado
+      const logo = await loadImageAsDataUrl('assets/logo.png');
+      if (logo) doc.addImage(logo.dataUrl, 'PNG', M, y, 12, 12 * logo.h / logo.w);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); setColor(COLORS.ink);
+      doc.text('Tasksmith', M + (logo ? 15 : 0), y + 6);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); setColor(COLORS.muted);
+      doc.text('Informe de resultados de certificación', M + (logo ? 15 : 0), y + 11);
+      doc.text(pdfSafe(r.issueDateText), PW - M, y + 6, { align: 'right' });
+      y += 20;
+
+      // Resultado general
+      const statusColor = r.approved ? COLORS.green : COLORS.red;
+      ensure(34);
+      doc.setFillColor(COLORS.panel[0], COLORS.panel[1], COLORS.panel[2]);
+      doc.roundedRect(M, y, CW, 30, 3, 3, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); setColor(COLORS.muted);
+      doc.text('RESULTADO', M + 6, y + 7);
+      doc.setFontSize(15); setColor(statusColor);
+      doc.text(r.approved ? 'Certificación aprobada' : 'Certificación no otorgada', M + 6, y + 15);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); setColor(COLORS.soft);
+      doc.text(pdfSafe(`${r.tradeName}`), M + 6, y + 22);
+      if (r.certificateId) doc.text(pdfSafe(`Código: ${r.certificateId}`), M + 6, y + 27);
+      const cols = [
+        ['General', `${r.overallScore}/100`],
+        ['Teórica', `${r.theoretical.score}/100`],
+        ['Práctica', `${r.practical.score}/100`]
+      ];
+      cols.forEach((c, i) => {
+        const cx = PW - M - 6 - (2 - i) * 24;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); setColor(COLORS.muted);
+        doc.text(pdfSafe(c[0]), cx, y + 10, { align: 'right' });
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); setColor(COLORS.ink);
+        doc.text(c[1], cx, y + 18, { align: 'right' });
+      });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); setColor(COLORS.muted);
+      doc.text('Mínimo para aprobar: 75/100 en teórica y en práctica', PW - M - 6, y + 26, { align: 'right' });
+      y += 36;
+
+      // Datos
+      section('Datos de la evaluación');
+      labelValue('Candidato', r.candidateName);
+      labelValue('Correo', r.candidateEmail);
+      labelValue('Oficio', r.tradeName);
+      labelValue('Normativa de referencia', r.norms);
+      labelValue('Experiencia declarada', r.experience);
+      labelValue('Alcance declarado', r.scope);
+      labelValue('Trabajo reportado', r.jobTitle);
+      labelValue('Tiempo total de la evaluación', r.durationText);
+      labelValue('Evaluado con', r.engine);
+
+      // Teórica
+      section(`Prueba teórica: ${r.theoretical.score}/100 (${r.theoretical.correct} de ${r.theoretical.total} correctas)`);
+      if (r.theoretical.feedback) text(r.theoretical.feedback, { size: 10, color: COLORS.soft, after: 3 });
+      r.theoretical.questions.forEach((q, idx) => {
+        ensure(18);
+        text(`${idx + 1}. ${q.title.replace(/^\d+\.\s*/, '')}`, { size: 10.5, bold: true, after: 0.5 });
+        text(q.isRight ? 'Correcta' : 'Incorrecta', { size: 9, bold: true, color: q.isRight ? COLORS.green : COLORS.red, after: 0.5 });
+        text(`Respondió: ${q.chosen}`, { size: 9.5, color: COLORS.soft, after: 0.5 });
+        if (!q.isRight) text(`Respuesta correcta: ${q.correctAnswer}`, { size: 9.5, color: COLORS.soft, after: 0.5 });
+        if (q.explanation) text(q.explanation, { size: 9, italic: true, color: COLORS.muted, after: 3 });
+        else y += 2;
+      });
+
+      // Práctica
+      section(`Prueba práctica: ${r.practical.score}/100`);
+      r.practical.pillars.forEach(p => {
+        ensure(12);
+        text(`${p.name}: ${p.score}/25`, { size: 10.5, bold: true, after: 0.5 });
+        if (p.note) text(p.note, { size: 9.5, color: COLORS.soft, after: 2.5 });
+      });
+      labelValue('Coherencia entre lo dicho y las fotos', `${r.practical.coherencePercent}%`);
+      if (r.practical.coherenceDescription) text(r.practical.coherenceDescription, { size: 9.5, color: COLORS.soft, after: 2 });
+      if (r.practical.matchedConcepts.length) labelValue('Conceptos demostrados', r.practical.matchedConcepts.join(', '));
+      if (r.practical.missingConcepts.length) labelValue('Le faltó demostrar', r.practical.missingConcepts.join(', '));
+      r.practical.guardNotes.forEach(n => text(`Regla aplicada: ${n}`, { size: 9.5, bold: true, color: COLORS.red, after: 1 }));
+
+      // Evidencias
+      section('Evidencias revisadas');
+      for (const ev of r.evidences) {
+        const imgW = 56;
+        let imgH = 0;
+        let size = null;
+        if (ev.photo && ev.photo.startsWith('data:image/')) size = await getImageSize(ev.photo);
+        if (size) imgH = Math.min(70, imgW * size.h / size.w);
+        ensure(Math.max(imgH, 30) + 6);
+        const top = y;
+        text(`Paso ${ev.paso}`, { size: 11, bold: true, after: 1 });
+        const textX = size ? M + imgW + 6 : M;
+        const textW = size ? CW - imgW - 6 : CW;
+        if (size) {
+          try { doc.addImage(ev.photo, 'JPEG', M, y, imgW, imgH); } catch (e) { /* imagen no compatible */ }
+        }
+        const startY = y;
+        text(`Lo que la IA ve: ${ev.descripcionFoto || '-'}`, { size: 9.5, x: textX, width: textW, after: 1 });
+        text(`¿La foto corresponde al oficio? ${ev.fotoCorrespondeAlOficio ? 'Sí' : 'No'}`, { size: 9.5, bold: true, x: textX, width: textW, color: ev.fotoCorrespondeAlOficio ? COLORS.green : COLORS.red, after: 1 });
+        text(`Explicación${ev.audioDuration ? ` (audio de ${ev.audioDuration})` : ''}: "${ev.transcript || 'Sin explicación'}"`, { size: 9.5, italic: true, x: textX, width: textW, color: COLORS.soft, after: 1 });
+        text(`¿Coincide con la foto? ${ev.explicacionCoincideConFoto ? 'Sí' : 'No'}`, { size: 9.5, bold: true, x: textX, width: textW, color: ev.explicacionCoincideConFoto ? COLORS.green : COLORS.red, after: 1 });
+        if (ev.observaciones) text(`Observaciones: ${ev.observaciones}`, { size: 9.5, x: textX, width: textW, color: COLORS.soft, after: 1 });
+        if (size && y < startY + imgH) y = startY + imgH;
+        y += 5;
+        if (y < top) y = top;
+      }
+
+      // Dictamen
+      section('Dictamen');
+      text(r.verdictParagraph || 'Sin dictamen.', { size: 10.5, color: COLORS.ink, after: 3 });
+      text('Este informe fue generado automáticamente a partir de la evaluación con inteligencia artificial de Tasksmith. Las notas prácticas y las observaciones son el criterio de la IA sobre las fotos y explicaciones enviadas.', { size: 8.5, italic: true, color: COLORS.muted });
+
+      // Pie de página
+      const pages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); setColor(COLORS.muted);
+        doc.text(pdfSafe(`Tasksmith · Informe de certificación · ${r.tradeName}`), M, PH - 8);
+        doc.text(`Página ${i} de ${pages}`, PW - M, PH - 8, { align: 'right' });
+      }
+
+      const slug = s => pdfSafe(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+      const dateSlug = `${r.issueDate.getFullYear()}-${String(r.issueDate.getMonth() + 1).padStart(2, '0')}-${String(r.issueDate.getDate()).padStart(2, '0')}`;
+      doc.save(`tasksmith-certificacion-${slug(r.tradeName)}-${slug(r.candidateName)}-${dateSlug}.pdf`);
+      showToast('Informe de resultados descargado en PDF.', 'success');
+    } catch (err) {
+      console.error('Error generando el PDF:', err);
+      showToast('No se pudo generar el PDF. Inténtalo de nuevo.', 'error');
+    } finally {
+      buttons.forEach(b => { b.disabled = false; });
+    }
   };
 
   window.printCertificate = function () {

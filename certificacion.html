@@ -442,12 +442,6 @@
                         </div>
                       </div>
 
-                      <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.78rem; color: var(--ink-muted);">Para probar rápido:</span>
-                        <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSamplePhoto(1)">
-                          Foto de ejemplo
-                        </button>
-                      </div>
                     </div>
 
                     <!-- AUDIO EXPLICATIVO GENERAL CON RECONOCIMIENTO ROBUSTO Y COMPARACIÓN -->
@@ -545,15 +539,12 @@
                             </button>
                           </div>
                         </div>
-                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al hablar por el micrófono o subir un archivo de voz, el audio se transcribe con IA (Gemini / Whisper) y corrector técnico. También puedes complementar cualquier detalle aquí..." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
+                        <textarea id="audioTranscriptInput_1" class="form-input" rows="3" placeholder="Al grabar o subir tu audio, la IA lo transcribe tal cual lo dijiste. Revisa el texto y corrige lo que haya quedado mal escuchado." style="font-size: 0.86rem; line-height: 1.45;"></textarea>
                       </div>
 
                       <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                         <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.78rem; padding: 4px 10px;" onclick="triggerAudioFileInput(1)">
                           📁 Subir archivo de audio (.mp3/.wav/.m4a)
-                        </button>
-                        <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; padding: 4px 8px;" onclick="loadSampleAudio(1)">
-                          Audio de ejemplo
                         </button>
                       </div>
                     </div>
@@ -620,6 +611,18 @@
                     <span>Verificando doble idoneidad (teoría + práctica) para emisión de dictamen...</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- ERROR DE CONEXIÓN CON LA IA: no se emite ningún resultado -->
+            <div class="ai-eval-error-box" id="aiEvalErrorBox" style="display: none;">
+              <h3>No se pudo completar la evaluación</h3>
+              <p>La IA no respondió correctamente, así que no se calificó nada ni se emitió certificado. Tus respuestas y evidencias siguen guardadas.</p>
+              <p class="ai-eval-error-detail">Detalle: <span id="aiEvalErrorMsg"></span></p>
+              <div class="ai-eval-error-actions">
+                <button type="button" class="btn btn-primary" onclick="startAiEvaluationFlow()">Reintentar evaluación</button>
+                <button type="button" class="btn btn-outline" onclick="goToStep(3)">Volver a mis evidencias</button>
+                <button type="button" class="btn btn-ghost" onclick="goToStep(1); toggleAiApiKeyDrawer()">Revisar API Key</button>
               </div>
             </div>
 
@@ -787,6 +790,7 @@
                 <p style="font-size: 0.92rem; color: var(--ink-secondary); margin-top: 14px; line-height: 1.5;" id="aiVerdictParagraph">
                   <strong>Conclusión del Peritaje:</strong> El especialista demuestra competencia técnica idónea para resolver emergencias y labores de envergadura en el oficio, aplicando criterios de seguridad y garantizando la satisfacción del cliente.
                 </p>
+                <ul id="aiPillarNotes" class="ai-pillar-notes" style="display: none;"></ul>
               </div>
 
               <!-- ================= TARJETA DE EVALUACIÓN NO APROBADA (DOBLE CONDICIÓN) ================= -->
@@ -842,6 +846,9 @@
                 </div>
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline" onclick="exportCertificationReportPdf()" data-export-cert-pdf>
+                    Descargar resultados (PDF)
+                  </button>
                   <button type="button" class="btn btn-ghost" onclick="restartCertificationWizard()">
                     Reiniciar Todo el Proceso
                   </button>
@@ -924,8 +931,11 @@
 
               <!-- Botones de Acción Posterior al Certificado -->
               <div class="cert-no-print" id="certPostActions" style="display: flex; gap: 14px; justify-content: center; margin-top: 28px; flex-wrap: wrap;">
-                <button type="button" class="btn btn-primary btn-lg" onclick="printCertificate()">
-                  Imprimir o Guardar en PDF
+                <button type="button" class="btn btn-primary btn-lg" onclick="exportCertificationReportPdf()" data-export-cert-pdf>
+                  Descargar resultados (PDF)
+                </button>
+                <button type="button" class="btn btn-outline btn-lg" onclick="printCertificate()">
+                  Imprimir certificado
                 </button>
                 <button type="button" class="btn btn-outline btn-lg" onclick="openUserProfileModal()">
                   Ver mi Perfil de Smith con el Distintivo
@@ -1106,6 +1116,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
   <script src="app.js"></script>
 </body>
 </html>

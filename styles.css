@@ -2881,3 +2881,65 @@ img {
     font-size: 0.72rem;
   }
 }
+
+/* ================= CERTIFICACIÓN · ERRORES DE IA Y JUSTIFICACIÓN DE NOTAS ================= */
+.ai-eval-error-box {
+  max-width: 640px;
+  margin: 24px auto;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid #fecaca;
+  box-shadow: var(--shadow-card);
+}
+
+.ai-eval-error-box h3 {
+  font-size: 1.3rem;
+  color: var(--ink-primary);
+  margin-bottom: 8px;
+}
+
+.ai-eval-error-box p {
+  font-size: 0.92rem;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.ai-eval-error-detail {
+  font-size: 0.82rem !important;
+  color: #b91c1c !important;
+  background: #fef2f2;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  word-break: break-word;
+}
+
+.ai-eval-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ai-pillar-notes {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-soft);
+  display: grid;
+  gap: 8px;
+}
+
+.ai-pillar-notes li {
+  font-size: 0.86rem;
+  color: var(--ink-secondary);
+  line-height: 1.45;
+}
+
+[data-export-cert-pdf]:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
