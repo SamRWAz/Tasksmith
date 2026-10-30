@@ -3642,12 +3642,38 @@
     customScope: ''
   };
 
+  /* --- MODELO DE GEMINI ---
+     Google retiró gemini-2.5-flash para claves nuevas ("no longer available to new users").
+     Se usa gemini-3.8-flash y, si una clave no tiene acceso, se prueba el siguiente modelo estable.
+     Gemini 3 recomienda no bajar la temperatura de 1.0 (puede repetir texto o rendir peor), por eso
+     las peticiones ya no la fijan; el rigor lo dan las instrucciones, el esquema JSON y las reglas en código. */
+  const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash'];
+  let activeGeminiModel = GEMINI_MODELS[0];
+
+  async function geminiFetch(options) {
+    const candidates = [activeGeminiModel, ...GEMINI_MODELS.filter(m => m !== activeGeminiModel)];
+    let lastRes = null;
+    for (const model of candidates) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
+      const res = await fetch(url, options);
+      if (res.ok) {
+        activeGeminiModel = model;
+        return res;
+      }
+      lastRes = res;
+      const errText = await res.clone().text().catch(() => '');
+      const modelUnavailable = res.status === 404 || /no longer available|not found|is not supported|deprecated/i.test(errText);
+      if (!modelUnavailable) return res;
+    }
+    return lastRes;
+  }
+
   function hasActiveAiKey() {
     return !!(currentAiApiKey && currentAiApiKey.trim().length > 10);
   }
 
   function getAiProviderLabel() {
-    return currentAiProvider === 'openai' ? 'OpenAI ChatGPT (GPT-4o + Whisper)' : 'Google Gemini 2.5 Flash';
+    return currentAiProvider === 'openai' ? 'OpenAI ChatGPT (GPT-4o + Whisper)' : `Google Gemini (${activeGeminiModel})`;
   }
 
   function updateAiConfigUI() {
@@ -3743,8 +3769,7 @@
 
   async function testAiConnection() {
     if (currentAiProvider === 'gemini') {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-      const res = await fetch(url, {
+      const res = await geminiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3922,8 +3947,7 @@ Reglas estrictas:
 - Si en el audio no hay voz humana hablando, responde exactamente: SIN_VOZ
 - Devuelve solo la transcripción, sin comillas ni comentarios.`;
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-        const res = await fetch(url, {
+        const res = await geminiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -3933,7 +3957,7 @@ Reglas estrictas:
                 { inline_data: { mime_type: audio.mimeType, data: audio.base64 } }
               ]
             }],
-            generationConfig: { temperature: 0 }
+            generationConfig: {}
           })
         });
         if (!res.ok) {
@@ -3978,8 +4002,7 @@ Reglas estrictas:
   async function refineTranscriptTextWithAi(rawText, tradeName) {
     const prompt = `Esta es la transcripción automática de lo que dijo un especialista en "${tradeName}". Corrige solo errores evidentes de ortografía o de reconocimiento de voz (palabras mal escuchadas). No agregues información, no cambies el sentido, no reemplaces palabras por términos más técnicos y no completes ideas. Si no hay nada que corregir, devuélvela igual. Devuelve solo el texto, sin comillas:\n\n${rawText}`;
     if (currentAiProvider === 'gemini') {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-      const res = await fetch(url, {
+      const res = await geminiFetch({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -4044,13 +4067,12 @@ Importante:
     try {
       let rawJsonText = '';
       if (currentAiProvider === 'gemini') {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-        const res = await fetch(url, {
+        const res = await geminiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.4 }
+            generationConfig: { responseMimeType: 'application/json' }
           })
         });
         if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
@@ -4233,13 +4255,12 @@ Responde únicamente con el JSON pedido, en español.`;
           }
         });
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-        const res = await fetch(url, {
+        const res = await geminiFetch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts }],
-            generationConfig: { responseMimeType: 'application/json', responseSchema: AI_EVAL_SCHEMA, temperature: 0 }
+            generationConfig: { responseMimeType: 'application/json', responseSchema: AI_EVAL_SCHEMA }
           })
         });
         if (!res.ok) {
