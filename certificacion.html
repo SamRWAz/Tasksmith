@@ -82,48 +82,60 @@
                   </span>
                 </div>
                 <p style="font-size: 0.82rem; color: var(--ink-muted); margin: 2px 0 0;">
-                  Soporta <strong>Google Gemini (3.8 Flash)</strong> y <strong>OpenAI ChatGPT (GPT-4o + Whisper)</strong> para transcribir audios reales, analizar fotos de cámara y calificar toda la prueba.
+                  Usa varios modelos de IA <strong>gratuitos</strong> en cadena (Google Gemini → Groq → OpenRouter). Si uno está saturado o sin cupo, pasa solo al siguiente.
                 </p>
               </div>
             </div>
             <button type="button" class="btn btn-outline btn-sm" onclick="toggleAiApiKeyDrawer()" id="btnToggleAiConfig">
-              ⚙️ Configurar API Key (Gemini / ChatGPT)
+              ⚙️ Configurar claves de IA
             </button>
           </div>
 
-          <!-- Panel Desplegable de Configuración de API Key -->
+          <!-- Panel Desplegable de Configuración de claves (cadena de modelos gratuitos) -->
           <div id="aiApiKeyDrawer" style="display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-soft);">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; align-items: end;">
-              <div>
-                <label class="form-label" for="aiProviderSelect" style="font-size: 0.85rem; font-weight: 700;">1. Proveedor de Inteligencia Artificial</label>
-                <select id="aiProviderSelect" class="form-select" onchange="handleAiProviderChange()">
-                  <option value="gemini">Google Gemini (gemini-3.8-flash) — Recomendado (Audio + Fotos + Gratis)</option>
-                  <option value="openai">OpenAI ChatGPT (gpt-4o-mini + Whisper Audio)</option>
-                </select>
+            <p style="font-size: 0.85rem; color: var(--ink-secondary); margin: 0 0 12px; line-height: 1.5;">
+              Entre más claves agregues, más difícil es que la evaluación falle: la app usa primero el mejor modelo y, si no responde, pasa al siguiente. Todas se crean gratis en un minuto.
+            </p>
+            <div class="ai-key-grid">
+              <div class="ai-key-row">
+                <div class="ai-key-row-head">
+                  <label class="form-label" for="aiKeyInput_gemini">1. Google Gemini</label>
+                  <span class="ai-key-status" id="aiKeyStatus_gemini"></span>
+                </div>
+                <input type="password" id="aiKeyInput_gemini" class="form-input" placeholder="AIza..." autocomplete="off">
+                <p class="ai-key-help">Audio + fotos. 4 modelos gratuitos. Clave gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a>. <em>Opcional: ya hay una clave de prueba</em></p>
               </div>
-
-              <div>
-                <label class="form-label" for="aiApiKeyInput" style="font-size: 0.85rem; font-weight: 700;">2. Tu API Key (<span id="aiKeyProviderLabel">Google AI Studio</span>)</label>
-                <input type="password" id="aiApiKeyInput" class="form-input" placeholder="Pega aquí tu API Key (Ej: AIzaSy... o sk-...)" autocomplete="off">
+              <div class="ai-key-row">
+                <div class="ai-key-row-head">
+                  <label class="form-label" for="aiKeyInput_groq">2. Groq</label>
+                  <span class="ai-key-status" id="aiKeyStatus_groq"></span>
+                </div>
+                <input type="password" id="aiKeyInput_groq" class="form-input" placeholder="gsk_..." autocomplete="off">
+                <p class="ai-key-help">Whisper para audio + Qwen para fotos. Gratis. Clave gratis en <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>. <em>Recomendada como respaldo</em></p>
               </div>
-
-              <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn btn-primary" onclick="saveAndTestAiApiKey()" id="btnSaveAiKey" style="flex: 1;">
-                  Guardar y Conectar IA
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="clearAiApiKey()" title="Borrar API Key">
-                  Limpiar
-                </button>
+              <div class="ai-key-row">
+                <div class="ai-key-row-head">
+                  <label class="form-label" for="aiKeyInput_openrouter">3. OpenRouter</label>
+                  <span class="ai-key-status" id="aiKeyStatus_openrouter"></span>
+                </div>
+                <input type="password" id="aiKeyInput_openrouter" class="form-input" placeholder="sk-or-..." autocomplete="off">
+                <p class="ai-key-help">Modelo de visión gratuito (Nemotron VL). Clave gratis en <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>. <em>Respaldo adicional</em></p>
+              </div>
+              <div class="ai-key-row">
+                <div class="ai-key-row-head">
+                  <label class="form-label" for="aiKeyInput_openai">4. OpenAI (de pago)</label>
+                  <span class="ai-key-status" id="aiKeyStatus_openai"></span>
+                </div>
+                <input type="password" id="aiKeyInput_openai" class="form-input" placeholder="sk-..." autocomplete="off">
+                <p class="ai-key-help">Solo si quieres usar tu cuenta paga de ChatGPT. Clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>. <em>Opcional, no es gratis</em></p>
               </div>
             </div>
-
-            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem; color: var(--ink-muted); background: var(--bg-card); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-soft);">
-              <div>
-                💡 <strong>¿Cómo obtener tu API Key gratis en 30 segundos?</strong>
-                Para <strong>Gemini</strong>: entra a <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">Google AI Studio (aistudio.google.com/app/apikey)</a> y pulsa <em>"Create API Key"</em>.
-                Para <strong>ChatGPT</strong>: entra a <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="color: var(--blue-primary); font-weight: 700; text-decoration: underline;">OpenAI Platform</a>.
+            <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <span style="font-size: 0.75rem; color: var(--green-verified); font-weight: 600;">🔒 Las claves se guardan solo en tu navegador</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="clearAiApiKey()">Borrar claves</button>
+                <button type="button" class="btn btn-primary" onclick="saveAndTestAiApiKey()" id="btnSaveAiKey">Guardar y probar</button>
               </div>
-              <span style="font-size: 0.75rem; color: var(--green-verified); font-weight: 600;">🔒 Se guarda solo en tu navegador (localStorage)</span>
             </div>
           </div>
         </div>

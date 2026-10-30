@@ -2944,3 +2944,49 @@ img {
   opacity: 0.6;
   cursor: progress;
 }
+
+/* ================= CERTIFICACIÓN · CLAVES DE IA (CADENA DE MODELOS GRATUITOS) ================= */
+.ai-key-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.ai-key-row {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+}
+
+.ai-key-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ai-key-row-head .form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.ai-key-status {
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.ai-key-help {
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
+  margin: 6px 0 0;
+}
+
+.ai-key-help a {
+  color: var(--blue-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}

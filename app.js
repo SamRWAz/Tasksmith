@@ -3630,90 +3630,251 @@
 
   function pickIconForTrade(title) { return ''; }
 
-  /* --- CONFIGURACIÓN DE API KEY (GOOGLE GEMINI / OPENAI CHATGPT) Y MOTOR DE IA REAL --- */
-  const STATE_KEY_AI_PROVIDER = 'tasksmith_ai_provider';
-  const STATE_KEY_AI_KEY = 'tasksmith_ai_apikey';
+  /* =====================================================================
+     MOTOR DE IA MULTIPROVEEDOR (SOLO MODELOS GRATUITOS POR DEFECTO)
+     Cada tarea (transcribir audio, crear el examen, evaluar fotos) recorre una cadena de proveedores
+     y modelos en orden de calidad. Si uno está saturado, sin cupo gratuito, retirado o sin clave,
+     pasa automáticamente al siguiente.
+       1. Google Gemini  → audio + fotos + JSON. 4 modelos con capa gratuita.
+       2. Groq           → Whisper para audio; Qwen 3.8 (visión) y GPT-OSS 120B para texto. Capa gratuita.
+       3. OpenRouter     → Nemotron 3.5 Super VL (visión) en su versión :free.
+       4. OpenAI         → solo si el usuario pone su propia clave (es de pago, no está activo por defecto).
+     Cada proveedor necesita su propia API Key gratuita; se guardan solo en este navegador.
+     ===================================================================== */
+  const STATE_KEY_AI_KEYS = 'tasksmith_ai_keys';
+  const STATE_KEY_AI_KEY_LEGACY = 'tasksmith_ai_apikey';
   const DEFAULT_GEMINI_API_KEY = atob('QUl6YVN5QVFFMXdsNDJhUzNSTE9VUzJ6cHpOeXMzWk1nS1hkUlNN');
 
-  let currentAiProvider = localStorage.getItem(STATE_KEY_AI_PROVIDER) || 'gemini';
-  let currentAiApiKey = localStorage.getItem(STATE_KEY_AI_KEY) || DEFAULT_GEMINI_API_KEY;
-  let candidateCertificationContext = {
-    experience: 'Maestro Senior (Más de 5 años de experiencia en terreno)',
-    customScope: ''
-  };
-
-  /* --- MODELOS DE GEMINI (CADENA DE RESPALDO GRATUITA) ---
-     Todos estos modelos tienen capa gratuita en la API de Gemini y aceptan audio, imágenes y JSON
-     estructurado, así que funcionan con la misma API Key sin pagar.
-     Orden: del más capaz al más liviano. Si uno está retirado, saturado o se agotó su cupo gratuito,
-     se pasa automáticamente al siguiente.
-     Gemini 3 recomienda no bajar la temperatura de 1.0, por eso las peticiones no la fijan. */
   const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
-  const retiredGeminiModels = new Set(); // modelos que esta clave no puede usar (no se vuelven a intentar en la sesión)
-  let activeGeminiModel = GEMINI_MODELS[0];
 
-  async function geminiFetch(options) {
-    let lastRes = null;
-    for (const model of GEMINI_MODELS) {
-      if (retiredGeminiModels.has(model)) continue;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        let res;
-        try {
-          res = await fetch(url, options);
-        } catch (netErr) {
-          // Sin conexión: no tiene sentido probar otros modelos
-          throw new Error('No hay conexión a internet o Google no respondió. Revisa tu conexión e inténtalo de nuevo.');
-        }
-        if (res.ok) {
-          activeGeminiModel = model;
-          return res;
-        }
-        lastRes = res;
-        const errText = await res.clone().text().catch(() => '');
-        if (res.status === 400 && /api key|API_KEY/i.test(errText)) return res; // clave inválida: ningún modelo va a funcionar
-        if (res.status === 404 || /no longer available|not found|is not supported|deprecated/i.test(errText)) {
-          retiredGeminiModels.add(model);
-          break; // modelo retirado o sin acceso: siguiente modelo
-        }
-        if (res.status === 429 || /quota|rate limit|exhausted/i.test(errText)) break; // cupo gratuito agotado en este modelo: siguiente
-        const overloaded = res.status === 503 || res.status === 500 || /high demand|overloaded|unavailable|try again later|internal/i.test(errText);
-        if (!overloaded) return res; // error de la petición en sí (p. ej. archivo inválido): otro modelo no lo arregla
-        if (attempt === 0) await new Promise(r => setTimeout(r, 1500)); // saturación temporal: un reintento y luego siguiente modelo
-      }
+  const AI_PROVIDERS = {
+    gemini: {
+      label: 'Google Gemini', free: true, keyHint: 'AIza...', keyUrl: 'https://aistudio.google.com/app/apikey',
+      models: { text: GEMINI_MODELS, json: GEMINI_MODELS, vision: GEMINI_MODELS, stt: GEMINI_MODELS },
+      maxImages: 16, audio: true
+    },
+    groq: {
+      label: 'Groq', free: true, keyHint: 'gsk_...', keyUrl: 'https://console.groq.com/keys',
+      base: 'https://api.groq.com/openai/v1',
+      models: { text: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'], json: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'], vision: ['qwen/qwen3.8-27b'], stt: ['whisper-large-v3', 'whisper-large-v3-turbo'] },
+      maxImages: 3, audio: false
+    },
+    openrouter: {
+      label: 'OpenRouter', free: true, keyHint: 'sk-or-...', keyUrl: 'https://openrouter.ai/keys',
+      base: 'https://openrouter.ai/api/v1',
+      models: { text: ['nvidia/nemotron-3.5-super-vl:free'], json: ['nvidia/nemotron-3.5-super-vl:free'], vision: ['nvidia/nemotron-3.5-super-vl:free'], stt: [] },
+      maxImages: 8, audio: false
+    },
+    openai: {
+      label: 'OpenAI (de pago)', free: false, keyHint: 'sk-...', keyUrl: 'https://platform.openai.com/api-keys',
+      base: 'https://api.openai.com/v1',
+      models: { text: ['gpt-4o-mini'], json: ['gpt-4o-mini'], vision: ['gpt-4o'], stt: ['whisper-1'] },
+      maxImages: 10, audio: false
     }
-    return lastRes;
+  };
+  const AI_PROVIDER_ORDER = ['gemini', 'groq', 'openrouter', 'openai'];
+
+  function loadAiKeys() {
+    let keys = {};
+    try { keys = JSON.parse(localStorage.getItem(STATE_KEY_AI_KEYS) || '{}') || {}; } catch (e) { keys = {}; }
+    // Migración desde la versión anterior (una sola clave)
+    const legacy = localStorage.getItem(STATE_KEY_AI_KEY_LEGACY);
+    if (legacy && !Object.keys(keys).length) {
+      const k = legacy.trim();
+      const p = k.startsWith('sk-or-') ? 'openrouter' : (k.startsWith('gsk_') ? 'groq' : (k.startsWith('sk-') ? 'openai' : 'gemini'));
+      keys[p] = k;
+    }
+    if (!keys.gemini && DEFAULT_GEMINI_API_KEY) keys.gemini = DEFAULT_GEMINI_API_KEY;
+    return keys;
+  }
+
+  let aiKeys = loadAiKeys();
+  let lastAiUsed = null; // { provider, model }
+  const unavailableAiModels = new Set(); // "proveedor:modelo" retirados o sin acceso en esta sesión
+  const aiModelCooldown = new Map(); // "proveedor:modelo" → hasta cuándo saltarlo (saturado o sin cupo), para no esperar en cada llamada
+
+  function saveAiKeys() {
+    localStorage.setItem(STATE_KEY_AI_KEYS, JSON.stringify(aiKeys));
+    localStorage.removeItem(STATE_KEY_AI_KEY_LEGACY);
+  }
+
+  function configuredAiProviders() {
+    return AI_PROVIDER_ORDER.filter(p => (aiKeys[p] || '').trim().length > 10);
   }
 
   function hasActiveAiKey() {
-    return !!(currentAiApiKey && currentAiApiKey.trim().length > 10);
+    return configuredAiProviders().length > 0;
   }
 
   function getAiProviderLabel() {
-    return currentAiProvider === 'openai' ? 'OpenAI ChatGPT (GPT-4o + Whisper)' : `Google Gemini (${activeGeminiModel})`;
+    if (lastAiUsed) return `${AI_PROVIDERS[lastAiUsed.provider].label} · ${lastAiUsed.model}`;
+    const names = configuredAiProviders().map(p => AI_PROVIDERS[p].label);
+    return names.length ? `IA (${names.join(' → ')})` : 'IA';
   }
 
-  function updateAiConfigUI() {
-    const providerSelect = document.getElementById('aiProviderSelect');
-    const keyInput = document.getElementById('aiApiKeyInput');
-    const statusBadge = document.getElementById('aiEngineStatusBadge');
-    const providerLabel = document.getElementById('aiKeyProviderLabel');
+  class AiError extends Error {
+    constructor(kind, message) { super(message); this.kind = kind; }
+  }
 
-    if (providerSelect) providerSelect.value = currentAiProvider;
-    if (keyInput && currentAiApiKey) keyInput.value = currentAiApiKey;
-    if (providerLabel) {
-      providerLabel.textContent = currentAiProvider === 'openai' ? 'OpenAI Platform (sk-...)' : 'Google AI Studio (AIzaSy...)';
+  function classifyAiFailure(status, text) {
+    const t = text || '';
+    if (/no longer available|not found|does not exist|decommissioned|deprecated|is not supported|no endpoints found/i.test(t) || status === 404) return 'model';
+    if (status === 401 || status === 403 || /api[_ ]?key|invalid.*key|unauthorized|authentication/i.test(t)) return 'auth';
+    if (status === 429 || /quota|rate.?limit|exhausted|too many requests/i.test(t)) return 'quota';
+    if (status >= 500 || /high demand|overloaded|unavailable|try again later|capacity/i.test(t)) return 'overload';
+    return 'bad';
+  }
+
+  async function aiHttp(url, init) {
+    let res;
+    try {
+      res = await fetch(url, init);
+    } catch (e) {
+      throw new AiError('network', 'No hay conexión a internet o el servicio no respondió.');
+    }
+    if (res.ok) return res;
+    const raw = await res.text().catch(() => '');
+    let msg = raw;
+    try { const j = JSON.parse(raw); msg = j?.error?.message || j?.message || raw; } catch (e) {}
+    throw new AiError(classifyAiFailure(res.status, msg), `${res.status} ${String(msg).slice(0, 300)}`);
+  }
+
+  // Partes genéricas: {type:'text', text} | {type:'image', mimeType, base64, dataUrl} | {type:'audio', mimeType, base64}
+  async function callGemini(model, task, req) {
+    const key = aiKeys.gemini;
+    if (task === 'stt') {
+      req = { parts: [{ type: 'text', text: req.prompt }, { type: 'audio', mimeType: req.audio.mimeType, base64: req.audio.base64 }] };
+    }
+    const parts = req.parts.map(p => p.type === 'text' ? { text: p.text } : { inline_data: { mime_type: p.mimeType, data: p.base64 } });
+    const generationConfig = {};
+    if (req.json) {
+      generationConfig.responseMimeType = 'application/json';
+      if (req.schema) generationConfig.responseSchema = req.schema;
+    }
+    const contents = [{ role: 'user', parts }];
+    const body = { contents, generationConfig };
+    if (req.system) body.systemInstruction = { parts: [{ text: req.system }] };
+    const res = await aiHttp(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    const text = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+    if (!text) throw new AiError('bad', `Respuesta vacía (${data?.promptFeedback?.blockReason || data?.candidates?.[0]?.finishReason || 'sin motivo'})`);
+    return text;
+  }
+
+  async function callOpenAiCompatible(providerId, model, task, req) {
+    const prov = AI_PROVIDERS[providerId];
+    const headers = { 'Authorization': `Bearer ${aiKeys[providerId]}` };
+    if (providerId === 'openrouter') {
+      headers['HTTP-Referer'] = location.origin && location.origin !== 'null' ? location.origin : 'https://tasksmith-eight.vercel.app';
+      headers['X-Title'] = 'Tasksmith';
     }
 
+    if (task === 'stt') {
+      const form = new FormData();
+      const type = req.blob.type || '';
+      const ext = /mp4|m4a/.test(type) ? 'm4a' : (/wav/.test(type) ? 'wav' : (/mpeg|mp3/.test(type) ? 'mp3' : (/ogg/.test(type) ? 'ogg' : 'webm')));
+      form.append('file', req.blob, `audio.${ext}`);
+      form.append('model', model);
+      form.append('language', 'es');
+      form.append('temperature', '0');
+      if (req.hint) form.append('prompt', req.hint);
+      const res = await aiHttp(`${prov.base}/audio/transcriptions`, { method: 'POST', headers, body: form });
+      const data = await res.json();
+      return (data.text || '').trim();
+    }
+
+    const images = req.parts.filter(p => p.type === 'image');
+    if (images.length > prov.maxImages) {
+      throw new AiError('bad', `${prov.label} acepta máximo ${prov.maxImages} fotos por evaluación`);
+    }
+    const content = req.parts
+      .filter(p => p.type !== 'audio')
+      .map(p => p.type === 'text'
+        ? { type: 'text', text: p.text }
+        : { type: 'image_url', image_url: providerId === 'openai' ? { url: p.dataUrl, detail: 'high' } : { url: p.dataUrl } });
+    const messages = [];
+    if (req.system) messages.push({ role: 'system', content: req.system });
+    messages.push({ role: 'user', content: images.length ? content : content.map(c => c.text).join('\n') });
+    const body = { model, messages };
+    if (req.json) body.response_format = { type: 'json_object' };
+
+    const res = await aiHttp(`${prov.base}/chat/completions`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    const text = (data?.choices?.[0]?.message?.content || '').trim();
+    if (!text) throw new AiError('bad', 'Respuesta vacía');
+    return text;
+  }
+
+  /* Ejecuta una tarea recorriendo la cadena. `buildRequest(cap)` arma la petición según lo que
+     soporte el proveedor (cap.audio: si acepta audio; cap.provider). Devuelve { text, provider, model }. */
+  async function runAiTask(task, buildRequest, opts = {}) {
+    const providers = (opts.only || configuredAiProviders()).filter(p => (AI_PROVIDERS[p].models[task] || []).length);
+    if (!providers.length) throw new AiError('auth', 'No hay ninguna API Key configurada para esta tarea.');
+    const failures = [];
+    for (const providerId of providers) {
+      const prov = AI_PROVIDERS[providerId];
+      let req;
+      try {
+        req = await buildRequest({ provider: providerId, audio: prov.audio, maxImages: prov.maxImages });
+      } catch (e) {
+        failures.push(`${prov.label}: ${e.message}`);
+        continue;
+      }
+      let skipProvider = false;
+      for (const model of prov.models[task]) {
+        if (skipProvider) break;
+        if (unavailableAiModels.has(`${providerId}:${model}`)) continue;
+        if ((aiModelCooldown.get(`${providerId}:${model}`) || 0) > Date.now()) { failures.push(`${model}: saturado hace poco`); continue; }
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const text = providerId === 'gemini'
+              ? await callGemini(model, task, req)
+              : await callOpenAiCompatible(providerId, model, task, req);
+            if (opts.validate) opts.validate(text); // p. ej. que el JSON se pueda leer
+            lastAiUsed = { provider: providerId, model };
+            return { text, provider: providerId, model };
+          } catch (err) {
+            const kind = err.kind || (err instanceof SyntaxError ? 'bad' : 'bad');
+            console.warn(`[IA] ${providerId}/${model} falló (${kind}):`, err.message);
+            if (kind === 'network') throw err;
+            if (kind === 'auth') { failures.push(`${prov.label}: clave inválida o sin permiso`); skipProvider = true; break; }
+            if (kind === 'model') { unavailableAiModels.add(`${providerId}:${model}`); failures.push(`${model}: no disponible`); break; }
+            if (kind === 'quota') { aiModelCooldown.set(`${providerId}:${model}`, Date.now() + 120000); failures.push(`${model}: sin cupo gratuito por ahora`); break; }
+            if (kind === 'overload' && attempt === 0) { await new Promise(r => setTimeout(r, 1500)); continue; }
+            if (kind === 'overload') { aiModelCooldown.set(`${providerId}:${model}`, Date.now() + 60000); failures.push(`${model}: saturado`); break; }
+            failures.push(`${model}: ${err.message}`);
+            break; // respuesta inválida o petición rechazada: siguiente modelo
+          }
+        }
+      }
+    }
+    const busy = failures.some(f => /saturado|cupo/.test(f));
+    aiModelCooldown.clear(); // si todo falló, el próximo intento (botón Reintentar) vuelve a probar todos
+    throw new AiError(busy ? 'overload' : 'bad',
+      `${busy ? 'Todos los modelos gratuitos disponibles están saturados o sin cupo en este momento. Espera uno o dos minutos y vuelve a intentar. ' : 'Ningún modelo de IA pudo completar la tarea. '}Detalle: ${failures.join(' | ')}`);
+  }
+
+  /* --- PANEL DE CONFIGURACIÓN DE CLAVES --- */
+  function updateAiConfigUI() {
+    const statusBadge = document.getElementById('aiEngineStatusBadge');
+    AI_PROVIDER_ORDER.forEach(p => {
+      const input = document.getElementById(`aiKeyInput_${p}`);
+      if (input) input.value = aiKeys[p] && !(p === 'gemini' && aiKeys[p] === DEFAULT_GEMINI_API_KEY) ? aiKeys[p] : '';
+    });
     if (statusBadge) {
-      if (hasActiveAiKey()) {
-        statusBadge.textContent = `✅ Conectado: ${getAiProviderLabel()} Activo`;
+      const active = configuredAiProviders();
+      if (active.length) {
+        statusBadge.textContent = `✅ IA activa: ${active.map(p => AI_PROVIDERS[p].label).join(' → ')}`;
         statusBadge.style.background = 'var(--green-soft)';
         statusBadge.style.color = 'var(--green-verified)';
       } else {
-        statusBadge.textContent = 'Modo Simulación Local (Configura API Key para IA Real)';
-        statusBadge.style.background = 'var(--bg-accent-soft)';
-        statusBadge.style.color = 'var(--blue-primary)';
+        statusBadge.textContent = 'Sin IA: agrega al menos una API Key gratuita';
+        statusBadge.style.background = '#fee2e2';
+        statusBadge.style.color = '#dc2626';
       }
     }
   }
@@ -3724,100 +3885,57 @@
     drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
   };
 
-  window.handleAiProviderChange = function () {
-    const providerSelect = document.getElementById('aiProviderSelect');
-    if (providerSelect) {
-      currentAiProvider = providerSelect.value;
-      localStorage.setItem(STATE_KEY_AI_PROVIDER, currentAiProvider);
-      updateAiConfigUI();
-    }
-  };
-
   window.saveAndTestAiApiKey = async function () {
-    const providerSelect = document.getElementById('aiProviderSelect');
-    const keyInput = document.getElementById('aiApiKeyInput');
     const saveBtn = document.getElementById('btnSaveAiKey');
+    AI_PROVIDER_ORDER.forEach(p => {
+      const input = document.getElementById(`aiKeyInput_${p}`);
+      if (!input) return;
+      const v = input.value.trim();
+      if (v) aiKeys[p] = v;
+      else if (p === 'gemini') aiKeys[p] = DEFAULT_GEMINI_API_KEY;
+      else delete aiKeys[p];
+    });
+    saveAiKeys();
+    unavailableAiModels.clear();
+    updateAiConfigUI();
 
-    const provider = providerSelect ? providerSelect.value : 'gemini';
-    const apiKey = keyInput ? keyInput.value.trim() : '';
-
-    if (!apiKey || apiKey.length < 10) {
-      showToast('Por favor pega una API Key válida (de Google AI Studio o de OpenAI).', 'error');
-      return;
-    }
-
-    currentAiProvider = provider;
-    currentAiApiKey = apiKey;
-    localStorage.setItem(STATE_KEY_AI_PROVIDER, currentAiProvider);
-    localStorage.setItem(STATE_KEY_AI_KEY, currentAiApiKey);
-
-    if (saveBtn) {
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Verificando conexión...';
-    }
-
-    try {
-      const ok = await testAiConnection();
-      if (ok) {
-        updateAiConfigUI();
-        showToast(`¡Conexión exitosa con ${getAiProviderLabel()}! Ahora la transcripción de audio, lectura de fotos y calificación usarán esta IA en vivo.`, 'success');
-        const drawer = document.getElementById('aiApiKeyDrawer');
-        if (drawer) drawer.style.display = 'none';
-      }
-    } catch (err) {
-      updateAiConfigUI();
-      showToast(`API Key guardada, pero hubo un detalle al verificarla: ${err.message || 'Verifica que la clave esté activa'}.`, 'normal');
-    } finally {
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Guardar y Conectar IA';
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Probando conexiones...'; }
+    const results = [];
+    for (const p of configuredAiProviders()) {
+      const statusEl = document.getElementById(`aiKeyStatus_${p}`);
+      if (statusEl) { statusEl.textContent = 'Probando...'; statusEl.style.color = 'var(--ink-muted)'; }
+      try {
+        const r = await runAiTask('text', () => ({ parts: [{ type: 'text', text: 'Responde únicamente: OK' }] }), { only: [p] });
+        if (statusEl) { statusEl.textContent = `✅ Conectado (${r.model})`; statusEl.style.color = 'var(--green-verified)'; }
+        results.push(true);
+      } catch (err) {
+        const msg = err.kind === 'auth' ? 'Clave inválida' : (err.kind === 'overload' ? 'Clave válida, pero saturado ahora' : 'No respondió');
+        if (statusEl) { statusEl.textContent = `⚠️ ${msg}`; statusEl.style.color = err.kind === 'overload' ? '#b45309' : '#dc2626'; }
+        results.push(err.kind === 'overload');
       }
     }
+    lastAiUsed = null;
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Guardar y probar'; }
+    const ok = results.filter(Boolean).length;
+    showToast(ok ? `IA lista: ${ok} proveedor(es) disponibles. Si uno falla se usa el siguiente.` : 'Ninguna clave funcionó. Revisa que estén bien copiadas.', ok ? 'success' : 'error');
   };
 
   window.clearAiApiKey = function () {
-    currentAiApiKey = '';
-    localStorage.removeItem(STATE_KEY_AI_KEY);
-    const keyInput = document.getElementById('aiApiKeyInput');
-    if (keyInput) keyInput.value = '';
+    aiKeys = { gemini: DEFAULT_GEMINI_API_KEY };
+    saveAiKeys();
+    AI_PROVIDER_ORDER.forEach(p => {
+      const s = document.getElementById(`aiKeyStatus_${p}`);
+      if (s) s.textContent = '';
+    });
     updateAiConfigUI();
-    showToast('API Key eliminada. Se usará el motor local de respaldo.', 'normal');
+    showToast('Claves borradas de este navegador.', 'normal');
   };
 
-  async function testAiConnection() {
-    if (currentAiProvider === 'gemini') {
-      const res = await geminiFetch({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Responde únicamente: OK' }] }]
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
-      }
-      return true;
-    } else {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentAiApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: 'Responde únicamente: OK' }],
-          max_tokens: 5
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
-      }
-      return true;
-    }
-  }
+  let candidateCertificationContext = {
+    experience: 'Maestro Senior (Más de 5 años de experiencia en terreno)',
+    customScope: ''
+  };
+
 
   function blobToBase64Data(blob) {
     return new Promise((resolve, reject) => {
@@ -3915,7 +4033,7 @@
     return result;
   }
 
-  /* --- TRANSCRIPCIÓN LITERAL DEL AUDIO CON IA (GEMINI / OPENAI WHISPER) --- */
+  /* --- TRANSCRIPCIÓN LITERAL DEL AUDIO CON IA (Gemini → Groq Whisper → OpenAI Whisper) --- */
   async function transcribeEvidenceBlobWithAi(id, audioBlob) {
     const ev = verificationEvidences.find(item => item.id === id);
     if (!ev || !audioBlob || !hasActiveAiKey()) return;
@@ -3925,65 +4043,23 @@
     const tradeName = currentTradeExam ? currentTradeExam.tradeName : 'oficio técnico';
 
     if (liveTag) {
-      liveTag.textContent = `⏳ Transcribiendo audio con ${getAiProviderLabel()}...`;
+      liveTag.textContent = '⏳ Transcribiendo audio con IA...';
       liveTag.style.color = 'var(--blue-primary)';
     }
 
-    try {
-      let transcribedText = '';
-
-      if (currentAiProvider === 'openai') {
-        const formData = new FormData();
-        const type = (audioBlob.type || '');
-        const ext = type.includes('mp4') || type.includes('m4a') ? 'm4a' : (type.includes('wav') ? 'wav' : (type.includes('mpeg') || type.includes('mp3') ? 'mp3' : (type.includes('ogg') ? 'ogg' : 'webm')));
-        formData.append('file', audioBlob, `evidencia_paso_${id}.${ext}`);
-        formData.append('model', 'whisper-1');
-        formData.append('language', 'es');
-        formData.append('temperature', '0');
-        // Solo se da el nombre del oficio. Antes se daba una lista fija de términos (RETIE, NTC 1500,
-        // termofusión...) y Whisper tendía a "escucharlos" aunque el maestro no los dijera.
-        formData.append('prompt', `Explicación en español de un trabajo de ${tradeName}.`);
-
-        const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${currentAiApiKey}` },
-          body: formData
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `Whisper HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        transcribedText = (data.text || '').trim();
-      } else {
-        const audio = await getGeminiReadyAudio(ev);
-        const promptText = `Transcribe palabra por palabra lo que se dice en este audio en español.
+    const geminiPrompt = `Transcribe palabra por palabra lo que se dice en este audio en español.
 Reglas estrictas:
 - Escribe solo lo que realmente se escucha. No corrijas, no completes, no resumas y no agregues términos técnicos que no se pronuncien.
 - Si una parte no se entiende, escribe [inaudible] en ese lugar.
 - Si en el audio no hay voz humana hablando, responde exactamente: SIN_VOZ
 - Devuelve solo la transcripción, sin comillas ni comentarios.`;
 
-        const res = await geminiFetch({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: promptText },
-                { inline_data: { mime_type: audio.mimeType, data: audio.base64 } }
-              ]
-            }],
-            generationConfig: {}
-          })
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `Gemini Audio HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        transcribedText = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
-      }
+    try {
+      const result = await runAiTask('stt', async cap => cap.provider === 'gemini'
+        ? { prompt: geminiPrompt, audio: await getGeminiReadyAudio(ev) }
+        // Whisper: solo se da el nombre del oficio. Una lista de términos hacía que los "escuchara" aunque no se dijeran.
+        : { blob: audioBlob, hint: `Explicación en español de un trabajo de ${tradeName}.` });
+      const transcribedText = (result.text || '').trim();
 
       if (/^SIN_VOZ\.?$/i.test(transcribedText) || !transcribedText) {
         ev.realTranscript = '';
@@ -4002,15 +4078,15 @@ Reglas estrictas:
       ev.transcriptSource = 'ia';
       if (transcriptInput) transcriptInput.value = finalText;
       if (liveTag) {
-        liveTag.textContent = `✅ Transcrito por ${getAiProviderLabel()} (revisa y corrige si algo quedó mal)`;
+        liveTag.textContent = `✅ Transcrito con ${getAiProviderLabel()} (revisa y corrige si algo quedó mal)`;
         liveTag.style.color = 'var(--green-verified)';
       }
-      showToast(`Transcripción de audio completada con ${getAiProviderLabel()}.`, 'success');
+      showToast('Transcripción de audio completada.', 'success');
     } catch (err) {
       console.warn('Error en transcripción por IA:', err);
       ev.transcriptSource = ev.realTranscript ? 'navegador' : null;
       if (liveTag) {
-        liveTag.textContent = `⚠️ La IA no pudo transcribir el audio (${err.message || 'error'}). El texto actual viene del dictado del navegador: revísalo.`;
+        liveTag.textContent = `⚠️ No se pudo transcribir con IA. ${err.kind === 'overload' ? 'Los modelos gratuitos están saturados; usa "Transcribir Audio con IA" en un minuto.' : err.message} El texto actual viene del dictado del navegador: revísalo.`;
         liveTag.style.color = '#b45309';
       }
     }
@@ -4018,31 +4094,12 @@ Reglas estrictas:
 
   async function refineTranscriptTextWithAi(rawText, tradeName) {
     const prompt = `Esta es la transcripción automática de lo que dijo un especialista en "${tradeName}". Corrige solo errores evidentes de ortografía o de reconocimiento de voz (palabras mal escuchadas). No agregues información, no cambies el sentido, no reemplaces palabras por términos más técnicos y no completes ideas. Si no hay nada que corregir, devuélvela igual. Devuelve solo el texto, sin comillas:\n\n${rawText}`;
-    if (currentAiProvider === 'gemini') {
-      const res = await geminiFetch({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return (data?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
-    } else {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentAiApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.2
-        })
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return (data?.choices?.[0]?.message?.content || '').trim();
+    try {
+      const r = await runAiTask('text', () => ({ parts: [{ type: 'text', text: prompt }] }));
+      return r.text;
+    } catch (err) {
+      console.warn('No se pudo refinar la transcripción:', err);
+      return null;
     }
   }
 
@@ -4082,40 +4139,18 @@ Importante:
 - Varía la posición de la respuesta correcta ("correct" debe ser el índice 0, 1, 2 o 3 correspondiente a la opción correcta) para evaluar genuinamente al candidato.`;
 
     try {
-      let rawJsonText = '';
-      if (currentAiProvider === 'gemini') {
-        const res = await geminiFetch({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: { responseMimeType: 'application/json' }
-          })
-        });
-        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
-        const data = await res.json();
-        rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      } else {
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentAiApiKey}`
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            response_format: { type: 'json_object' },
-            messages: [
-              { role: 'system', content: 'Eres un perito certificador técnico que responde siempre en JSON válido.' },
-              { role: 'user', content: systemPrompt }
-            ],
-            temperature: 0.4
-          })
-        });
-        if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}`);
-        const data = await res.json();
-        rawJsonText = data?.choices?.[0]?.message?.content || '';
-      }
+      const result = await runAiTask('json', () => ({
+        system: 'Eres un perito certificador técnico que responde siempre en JSON válido.',
+        parts: [{ type: 'text', text: systemPrompt }],
+        json: true
+      }), {
+        validate: txt => {
+          const j = JSON.parse(txt);
+          const ok = (Array.isArray(j.questions) ? j.questions : []).filter(q => q && Array.isArray(q.options) && q.options.length === 4 && Number(q.correct) >= 0 && Number(q.correct) <= 3).length;
+          if (ok < 8) throw new AiError('bad', `El examen generado solo trae ${ok} preguntas válidas`);
+        }
+      });
+      const rawJsonText = result.text;
 
       const parsed = JSON.parse(rawJsonText);
       // Solo se aceptan preguntas bien formadas: 4 opciones y un índice de respuesta válido.
@@ -4204,8 +4239,7 @@ Importante:
       return `Caso ${idx + 1} (${q.title}): ${isRight ? 'ACERTÓ' : 'FALLÓ'}. Respondió: "${userChoiceText}". Correcta: "${q.options[q.correct]}".`;
     }).join('\n');
 
-    const sendsAudio = currentAiProvider === 'gemini';
-    const rubricPrompt = `Eres un evaluador técnico estricto e imparcial de Tasksmith. Vas a revisar las evidencias prácticas de una persona que quiere certificarse en el oficio "${info.tradeName}".
+    const buildRubric = sendsAudio => `Eres un evaluador técnico estricto e imparcial de Tasksmith. Vas a revisar las evidencias prácticas de una persona que quiere certificarse en el oficio "${info.tradeName}".
 Tu trabajo es verificar, no animar. Solo cuenta lo que se VE en las fotos o lo que la persona DICE. No supongas trabajo que no se muestra ni conocimientos que no se mencionan. Si tienes dudas, califica bajo.
 
 CONTEXTO
@@ -4251,89 +4285,42 @@ Responde únicamente con el JSON pedido, en español.`;
       for (let i = 0; i < evidences.length; i++) {
         const ev = evidences[i];
         const image = ev.photo ? await imageSourceToBase64(ev.photo) : null;
-        let audio = null;
-        if (sendsAudio && ev.audioBlob) {
-          try { audio = await getGeminiReadyAudio(ev); } catch (e) { console.warn('No se pudo convertir el audio del paso', i + 1, e); }
-        }
-        stepPayloads.push({ n: i + 1, transcript: getEvidenceTranscript(ev), image, audio });
+        stepPayloads.push({ n: i + 1, ev, transcript: getEvidenceTranscript(ev), image, hasAudio: !!ev.audioBlob });
       }
 
-      let rawJsonResponse = '';
+      const schemaHint = `\nFormato JSON exacto (mismas claves): {"evidencias":[{"paso":1,"descripcionFoto":"","fotoCorrespondeAlOficio":false,"resumenExplicacion":"","explicacionCoincideConFoto":false,"observaciones":""}],"justificacionDiagnostico":"","p1":0,"justificacionHerramientas":"","p2":0,"justificacionProcedimiento":"","p3":0,"justificacionPruebas":"","p4":0,"conceptosDemostrados":[],"conceptosFaltantes":[],"coherencePercent":0,"coherenceDescription":"","theoreticalFeedback":"","verdictParagraph":""}\nLos valores de ese formato son solo marcadores: debes reemplazarlos por tu evaluación real.`;
 
-      if (currentAiProvider === 'gemini') {
-        const parts = [{ text: rubricPrompt }];
-        stepPayloads.forEach(step => {
-          parts.push({ text: `\n=== PASO ${step.n} ===\nTranscripción de la explicación del paso ${step.n}: """${step.transcript || '(sin explicación escrita)'}"""\nFoto del paso ${step.n}:` });
-          if (step.image) parts.push({ inline_data: { mime_type: step.image.mimeType, data: step.image.base64 } });
-          else parts.push({ text: '(Este paso no tiene foto)' });
-          if (step.audio) {
-            parts.push({ text: `Audio original del paso ${step.n}:` });
-            parts.push({ inline_data: { mime_type: step.audio.mimeType, data: step.audio.base64 } });
+      // La petición se arma según el proveedor: Gemini recibe también el audio original de cada paso;
+      // Groq / OpenRouter / OpenAI reciben foto + transcripción y el formato JSON descrito en el texto.
+      const buildRequest = async cap => {
+        const parts = [{ type: 'text', text: buildRubric(cap.audio) + (cap.provider === 'gemini' ? '' : schemaHint) }];
+        for (const step of stepPayloads) {
+          parts.push({ type: 'text', text: `\n=== PASO ${step.n} ===\nTranscripción de la explicación del paso ${step.n}: """${step.transcript || '(sin explicación escrita)'}"""\nFoto del paso ${step.n}:` });
+          if (step.image) parts.push({ type: 'image', mimeType: step.image.mimeType, base64: step.image.base64, dataUrl: step.image.dataUrl });
+          else parts.push({ type: 'text', text: '(Este paso no tiene foto)' });
+          if (cap.audio && step.ev.audioBlob) {
+            try {
+              const audio = await getGeminiReadyAudio(step.ev);
+              parts.push({ type: 'text', text: `Audio original del paso ${step.n}:` });
+              parts.push({ type: 'audio', mimeType: audio.mimeType, base64: audio.base64 });
+            } catch (e) { console.warn('No se pudo convertir el audio del paso', step.n, e); }
           }
-        });
-
-        const res = await geminiFetch({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts }],
-            generationConfig: { responseMimeType: 'application/json', responseSchema: AI_EVAL_SCHEMA }
-          })
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `Gemini HTTP ${res.status}`);
         }
-        const data = await res.json();
-        rawJsonResponse = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
-        if (!rawJsonResponse) {
-          const reason = data?.promptFeedback?.blockReason || data?.candidates?.[0]?.finishReason || 'respuesta vacía';
-          throw new Error(`Gemini no devolvió resultado (${reason})`);
-        }
-      } else {
-        const schemaHint = `\nFormato JSON exacto (mismas claves): {"evidencias":[{"paso":1,"descripcionFoto":"","fotoCorrespondeAlOficio":false,"resumenExplicacion":"","explicacionCoincideConFoto":false,"observaciones":""}],"justificacionDiagnostico":"","p1":0,"justificacionHerramientas":"","p2":0,"justificacionProcedimiento":"","p3":0,"justificacionPruebas":"","p4":0,"conceptosDemostrados":[],"conceptosFaltantes":[],"coherencePercent":0,"coherenceDescription":"","theoreticalFeedback":"","verdictParagraph":""}\nLos valores de ese formato son solo marcadores: debes reemplazarlos por tu evaluación real.`;
-        const userContent = [{ type: 'text', text: rubricPrompt + schemaHint }];
-        stepPayloads.forEach(step => {
-          userContent.push({ type: 'text', text: `=== PASO ${step.n} ===\nTranscripción de la explicación del paso ${step.n}: """${step.transcript || '(sin explicación escrita)'}"""\nFoto del paso ${step.n}:` });
-          if (step.image) userContent.push({ type: 'image_url', image_url: { url: step.image.dataUrl, detail: 'high' } });
-          else userContent.push({ type: 'text', text: '(Este paso no tiene foto)' });
-        });
+        return { parts, json: true, schema: cap.provider === 'gemini' ? AI_EVAL_SCHEMA : null };
+      };
 
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentAiApiKey}`
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            response_format: { type: 'json_object' },
-            messages: [
-              { role: 'system', content: 'Eres un evaluador técnico estricto. Respondes solo con JSON válido.' },
-              { role: 'user', content: userContent }
-            ],
-            temperature: 0
-          })
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `OpenAI HTTP ${res.status}`);
+      const cleanJson = txt => JSON.parse(String(txt).replace(/^```(?:json)?\s*|\s*```$/g, ''));
+      const result = await runAiTask('vision', buildRequest, {
+        validate: txt => {
+          const j = cleanJson(txt);
+          if (!Array.isArray(j.evidencias) || j.p1 === undefined) throw new AiError('bad', 'JSON incompleto');
         }
-        const data = await res.json();
-        rawJsonResponse = data?.choices?.[0]?.message?.content || '';
-      }
-
-      let parsed;
-      try {
-        parsed = JSON.parse(rawJsonResponse.replace(/^```(?:json)?\s*|\s*```$/g, ''));
-      } catch (e) {
-        throw new Error('La IA respondió en un formato no válido');
-      }
+      });
+      const parsed = cleanJson(result.text);
       return applyEvaluationGuardrails(parsed, evidences, stepPayloads);
     } catch (err) {
       console.warn('Error en evaluación con IA:', err);
-      const msg = err.message || 'Error desconocido al contactar la IA';
-      return { error: /high demand|overloaded|try again later|quota|exhausted/i.test(msg) ? `Todos los modelos gratuitos de Gemini están saturados o sin cupo en este momento (se intentó con todos los modelos gratuitos de Gemini disponibles). Espera uno o dos minutos y vuelve a intentar. (${msg})` : msg };
+      return { error: err.message || 'Error desconocido al contactar la IA' };
     }
   }
 
@@ -4359,7 +4346,7 @@ Responde únicamente con el JSON pedido, en español.`;
     const guardNotes = [];
     const relevant = evidenceAnalysis.filter(e => e.fotoCorrespondeAlOficio).length;
     const mismatched = evidenceAnalysis.filter(e => !e.explicacionCoincideConFoto).length;
-    const hasExplanation = stepPayloads.some(s => (s.transcript || '').length >= 20 || s.audio);
+    const hasExplanation = stepPayloads.some(s => (s.transcript || '').length >= 20 || s.hasAudio);
     let cap = 25;
     if (relevant === 0) {
       cap = Math.min(cap, 5);
