@@ -1353,14 +1353,25 @@
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  function getAudioDurationSeconds(url) {
-    return new Promise(resolve => {
+  async function getAudioDurationSeconds(url, blob) {
+    const fromMetadata = await new Promise(resolve => {
       const probe = new Audio();
       probe.preload = 'metadata';
       probe.onloadedmetadata = () => resolve(isFinite(probe.duration) ? probe.duration : 0);
       probe.onerror = () => resolve(0);
       probe.src = url;
     });
+    if (fromMetadata > 0 || !blob) return fromMetadata;
+    // Los .webm grabados en el navegador no traen duración en sus metadatos: se decodifica para medirla
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+      try { ctx.close(); } catch (e) {}
+      return decoded.duration || 0;
+    } catch (e) {
+      return 0;
+    }
   }
 
   function finishAudioRecording(id, durationStr) {
@@ -1419,7 +1430,7 @@
     ev.audioMimeType = file.type || 'audio/mp3';
     ev.audioUrl = URL.createObjectURL(file);
 
-    const realSeconds = await getAudioDurationSeconds(ev.audioUrl);
+    const realSeconds = await getAudioDurationSeconds(ev.audioUrl, file);
     finishAudioRecording(id, formatAudioDuration(realSeconds));
     showToast(`Archivo de audio "${file.name}" cargado. Iniciando transcripción técnica...`, 'normal');
 
@@ -3649,7 +3660,15 @@
   const AI_PROVIDERS = {
     gemini: {
       label: 'Google Gemini', free: true, keyHint: 'AIza...', keyUrl: 'https://aistudio.google.com/app/apikey',
-      models: { text: GEMINI_MODELS, json: GEMINI_MODELS, vision: GEMINI_MODELS, stt: GEMINI_MODELS },
+      // Orden por tarea según pruebas reales: para transcribir y texto, los modelos rápidos van primero
+      // (3.6 Flash ~2 s y 3.5 Flash-Lite ~1 s); 3.8 Flash es el más capaz pero suele estar saturado y lento,
+      // así que solo encabeza la evaluación de fotos.
+      models: {
+        text: ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-flash-lite'],
+        json: ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
+        vision: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
+        stt: ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-flash-lite']
+      },
       maxImages: 16, audio: true
     },
     groq: {
@@ -3671,6 +3690,8 @@
     }
   };
   const AI_PROVIDER_ORDER = ['gemini', 'groq', 'openrouter'];
+  // Tiempo máximo por intento: si un modelo no responde en ese tiempo se pasa al siguiente
+  const AI_TIMEOUTS = { stt: 25000, text: 25000, json: 45000, vision: 60000 };
 
   function loadAiKeys() {
     let keys = {};
@@ -3763,7 +3784,7 @@
     if (req.system) body.systemInstruction = { parts: [{ text: req.system }] };
     const res = await aiHttp(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    }, task === 'vision' ? 90000 : 45000);
+    }, AI_TIMEOUTS[task] || 30000);
     const data = await res.json();
     const text = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
     if (!text) throw new AiError('bad', `Respuesta vacía (${data?.promptFeedback?.blockReason || data?.candidates?.[0]?.finishReason || 'sin motivo'})`);
@@ -3787,7 +3808,7 @@
       form.append('language', 'es');
       form.append('temperature', '0');
       if (req.hint) form.append('prompt', req.hint);
-      const res = await aiHttp(`${prov.base}/audio/transcriptions`, { method: 'POST', headers, body: form });
+      const res = await aiHttp(`${prov.base}/audio/transcriptions`, { method: 'POST', headers, body: form }, AI_TIMEOUTS.stt);
       const data = await res.json();
       return (data.text || '').trim();
     }
@@ -3809,7 +3830,7 @@
 
     const res = await aiHttp(`${prov.base}/chat/completions`, {
       method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    }, task === 'vision' ? 90000 : 45000);
+    }, AI_TIMEOUTS[task] || 30000);
     const data = await res.json();
     const text = (data?.choices?.[0]?.message?.content || '').trim();
     if (!text) throw new AiError('bad', 'Respuesta vacía');
@@ -3838,6 +3859,7 @@
         if ((aiModelCooldown.get(`${providerId}:${model}`) || 0) > Date.now()) { failures.push(`${model}: saturado hace poco`); continue; }
         for (let attempt = 0; attempt < 2; attempt++) {
           try {
+            if (opts.onTry) opts.onTry(prov.label, model);
             const text = providerId === 'gemini'
               ? await callGemini(model, task, req)
               : await callOpenAiCompatible(providerId, model, task, req);
@@ -3851,8 +3873,8 @@
             if (kind === 'auth') { failures.push(`${prov.label}: clave inválida o sin permiso`); skipProvider = true; break; }
             if (kind === 'model') { unavailableAiModels.add(`${providerId}:${model}`); failures.push(`${model}: no disponible`); break; }
             if (kind === 'quota') { aiModelCooldown.set(`${providerId}:${model}`, Date.now() + 120000); failures.push(`${model}: sin cupo gratuito por ahora`); break; }
-            if (kind === 'overload' && attempt === 0) { await new Promise(r => setTimeout(r, 1500)); continue; }
-            if (kind === 'overload') { aiModelCooldown.set(`${providerId}:${model}`, Date.now() + 60000); failures.push(`${model}: saturado`); break; }
+            // Saturado o lento: se pasa de inmediato al siguiente modelo y este se salta por 2 minutos
+            if (kind === 'overload') { aiModelCooldown.set(`${providerId}:${model}`, Date.now() + 120000); failures.push(`${model}: saturado`); break; }
             failures.push(`${model}: ${err.message}`);
             break; // respuesta inválida o petición rechazada: siguiente modelo
           }
@@ -4072,7 +4094,11 @@ Reglas estrictas:
       const result = await runAiTask('stt', async cap => cap.provider === 'gemini'
         ? { prompt: geminiPrompt, audio: await getGeminiReadyAudio(ev) }
         // Whisper: solo se da el nombre del oficio. Una lista de términos hacía que los "escuchara" aunque no se dijeran.
-        : { blob: audioBlob, hint: `Explicación en español de un trabajo de ${tradeName}.` });
+        : { blob: audioBlob, hint: `Explicación en español de un trabajo de ${tradeName}.` }, {
+        onTry: (label, model) => {
+          if (liveTag) liveTag.textContent = `⏳ Transcribiendo audio con ${label} (${model})...`;
+        }
+      });
       const transcribedText = (result.text || '').trim();
 
       if (/^SIN_VOZ\.?$/i.test(transcribedText) || !transcribedText) {
