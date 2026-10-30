@@ -3523,3 +3523,38 @@ img {
 .cert-feedback [hidden] {
   display: none !important;
 }
+
+/* ================= MENÚ SUPERIOR EN CELULAR ================= */
+@media (max-width: 992px) {
+  .navbar {
+    grid-template-columns: auto 1fr;
+  }
+
+  .nav-actions {
+    justify-self: end;
+    justify-content: flex-end;
+  }
+
+  /* Área táctil de 44 px; el ícono queda alineado con el borde derecho del contenido */
+  .mobile-toggle {
+    width: 44px;
+    height: 44px;
+    margin-right: -12px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 150ms ease, transform 160ms ease-out;
+  }
+
+  .mobile-toggle:active {
+    transform: scale(0.94);
+    background-color: var(--bg-card-subtle);
+  }
+
+  .mobile-toggle:focus-visible {
+    outline: 2px solid var(--blue-primary);
+    outline-offset: -2px;
+  }
+}
