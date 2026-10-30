@@ -1289,7 +1289,7 @@
               ev.audioMimeType = blobType;
               ev.audioUrl = URL.createObjectURL(blob);
 
-              // Si hay API Key configurada (Gemini u OpenAI Whisper), transcribir el audio real con IA
+              // Si hay API Key configurada (Gemini o Groq Whisper), transcribir el audio real con IA
               if (hasActiveAiKey()) {
                 await transcribeEvidenceBlobWithAi(id, blob);
               }
@@ -3631,15 +3631,14 @@
   function pickIconForTrade(title) { return ''; }
 
   /* =====================================================================
-     MOTOR DE IA MULTIPROVEEDOR (SOLO MODELOS GRATUITOS POR DEFECTO)
-     Cada tarea (transcribir audio, crear el examen, evaluar fotos) recorre una cadena de proveedores
-     y modelos en orden de calidad. Si uno está saturado, sin cupo gratuito, retirado o sin clave,
-     pasa automáticamente al siguiente.
-       1. Google Gemini  → audio + fotos + JSON. 4 modelos con capa gratuita.
-       2. Groq           → Whisper para audio; Qwen 3.8 (visión) y GPT-OSS 120B para texto. Capa gratuita.
-       3. OpenRouter     → Nemotron 3.5 Super VL (visión) en su versión :free.
-       4. OpenAI         → solo si el usuario pone su propia clave (es de pago, no está activo por defecto).
-     Cada proveedor necesita su propia API Key gratuita; se guardan solo en este navegador.
+     MOTOR DE IA MULTIPROVEEDOR (SOLO MODELOS GRATUITOS Y COMPROBADOS)
+     Cada tarea recorre una cadena de proveedores y modelos en orden de calidad. Si uno está saturado,
+     sin cupo gratuito, tarda demasiado o está retirado, pasa automáticamente al siguiente.
+       1. Google Gemini → audio + fotos + JSON. 4 modelos gratuitos (probados en vivo el 29-oct-2026:
+          leen imágenes, escuchan audio y respetan el esquema JSON).
+       2. Groq          → Whisper (audio) y GPT-OSS 120B / Llama 3.3 70B (texto). Modelos de producción gratuitos.
+       3. OpenRouter    → Gemma 4 31B, Nemotron 3.5 VL y Gemma 4 26B en su versión :free (fotos + JSON).
+     Groq y OpenRouter solo se usan si su clave pasó la prueba de "Guardar y probar".
      ===================================================================== */
   const STATE_KEY_AI_KEYS = 'tasksmith_ai_keys';
   const STATE_KEY_AI_KEY_LEGACY = 'tasksmith_ai_apikey';
@@ -3656,23 +3655,22 @@
     groq: {
       label: 'Groq', free: true, keyHint: 'gsk_...', keyUrl: 'https://console.groq.com/keys',
       base: 'https://api.groq.com/openai/v1',
-      models: { text: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'], json: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'], vision: ['qwen/qwen3.8-27b'], stt: ['whisper-large-v3', 'whisper-large-v3-turbo'] },
+      models: { text: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'], json: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'], vision: [], stt: ['whisper-large-v3', 'whisper-large-v3-turbo'] },
       maxImages: 3, audio: false
     },
     openrouter: {
       label: 'OpenRouter', free: true, keyHint: 'sk-or-...', keyUrl: 'https://openrouter.ai/keys',
       base: 'https://openrouter.ai/api/v1',
-      models: { text: ['nvidia/nemotron-3.5-super-vl:free'], json: ['nvidia/nemotron-3.5-super-vl:free'], vision: ['nvidia/nemotron-3.5-super-vl:free'], stt: [] },
+      models: {
+        text: ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-26b-a4b-it:free'],
+        json: ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-26b-a4b-it:free'],
+        vision: ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3.5-super-vl:free', 'google/gemma-4-26b-a4b-it:free'],
+        stt: []
+      },
       maxImages: 8, audio: false
-    },
-    openai: {
-      label: 'OpenAI (de pago)', free: false, keyHint: 'sk-...', keyUrl: 'https://platform.openai.com/api-keys',
-      base: 'https://api.openai.com/v1',
-      models: { text: ['gpt-4o-mini'], json: ['gpt-4o-mini'], vision: ['gpt-4o'], stt: ['whisper-1'] },
-      maxImages: 10, audio: false
     }
   };
-  const AI_PROVIDER_ORDER = ['gemini', 'groq', 'openrouter', 'openai'];
+  const AI_PROVIDER_ORDER = ['gemini', 'groq', 'openrouter'];
 
   function loadAiKeys() {
     let keys = {};
@@ -3681,8 +3679,8 @@
     const legacy = localStorage.getItem(STATE_KEY_AI_KEY_LEGACY);
     if (legacy && !Object.keys(keys).length) {
       const k = legacy.trim();
-      const p = k.startsWith('sk-or-') ? 'openrouter' : (k.startsWith('gsk_') ? 'groq' : (k.startsWith('sk-') ? 'openai' : 'gemini'));
-      keys[p] = k;
+      const p = k.startsWith('sk-or-') ? 'openrouter' : (k.startsWith('gsk_') ? 'groq' : (k.startsWith('AIza') ? 'gemini' : null));
+      if (p) keys[p] = k;
     }
     if (!keys.gemini && DEFAULT_GEMINI_API_KEY) keys.gemini = DEFAULT_GEMINI_API_KEY;
     return keys;
@@ -3698,8 +3696,10 @@
     localStorage.removeItem(STATE_KEY_AI_KEY_LEGACY);
   }
 
+  // Gemini con la clave del proyecto está comprobado; Groq y OpenRouter se usan solo si su clave pasó la prueba
   function configuredAiProviders() {
-    return AI_PROVIDER_ORDER.filter(p => (aiKeys[p] || '').trim().length > 10);
+    return AI_PROVIDER_ORDER.filter(p => (aiKeys[p] || '').trim().length > 10 &&
+      (p === 'gemini' || (aiKeys.verified || []).includes(p)));
   }
 
   function hasActiveAiKey() {
@@ -3725,12 +3725,19 @@
     return 'bad';
   }
 
-  async function aiHttp(url, init) {
+  async function aiHttp(url, init, timeoutMs = 60000) {
     let res;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      res = await fetch(url, init);
+      res = await fetch(url, { ...init, signal: ctrl.signal });
     } catch (e) {
-      throw new AiError('network', 'No hay conexión a internet o el servicio no respondió.');
+      // Si tarda demasiado se trata como saturado y se pasa al siguiente modelo
+      if (e.name === 'AbortError') throw new AiError('overload', `El modelo tardó más de ${Math.round(timeoutMs / 1000)} s en responder`);
+      if (!navigator.onLine) throw new AiError('network', 'No hay conexión a internet.');
+      throw new AiError('bad', 'El servicio no respondió');
+    } finally {
+      clearTimeout(timer);
     }
     if (res.ok) return res;
     const raw = await res.text().catch(() => '');
@@ -3756,7 +3763,7 @@
     if (req.system) body.systemInstruction = { parts: [{ text: req.system }] };
     const res = await aiHttp(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    });
+    }, task === 'vision' ? 90000 : 45000);
     const data = await res.json();
     const text = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
     if (!text) throw new AiError('bad', `Respuesta vacía (${data?.promptFeedback?.blockReason || data?.candidates?.[0]?.finishReason || 'sin motivo'})`);
@@ -3793,7 +3800,7 @@
       .filter(p => p.type !== 'audio')
       .map(p => p.type === 'text'
         ? { type: 'text', text: p.text }
-        : { type: 'image_url', image_url: providerId === 'openai' ? { url: p.dataUrl, detail: 'high' } : { url: p.dataUrl } });
+        : { type: 'image_url', image_url: { url: p.dataUrl } });
     const messages = [];
     if (req.system) messages.push({ role: 'system', content: req.system });
     messages.push({ role: 'user', content: images.length ? content : content.map(c => c.text).join('\n') });
@@ -3802,7 +3809,7 @@
 
     const res = await aiHttp(`${prov.base}/chat/completions`, {
       method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    });
+    }, task === 'vision' ? 90000 : 45000);
     const data = await res.json();
     const text = (data?.choices?.[0]?.message?.content || '').trim();
     if (!text) throw new AiError('bad', 'Respuesta vacía');
@@ -3895,25 +3902,32 @@
       else if (p === 'gemini') aiKeys[p] = DEFAULT_GEMINI_API_KEY;
       else delete aiKeys[p];
     });
+    aiKeys.verified = [];
     saveAiKeys();
     unavailableAiModels.clear();
-    updateAiConfigUI();
+    aiModelCooldown.clear();
 
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Probando conexiones...'; }
     const results = [];
-    for (const p of configuredAiProviders()) {
+    const toTest = AI_PROVIDER_ORDER.filter(p => (aiKeys[p] || '').trim().length > 10);
+    for (const p of toTest) {
       const statusEl = document.getElementById(`aiKeyStatus_${p}`);
       if (statusEl) { statusEl.textContent = 'Probando...'; statusEl.style.color = 'var(--ink-muted)'; }
       try {
         const r = await runAiTask('text', () => ({ parts: [{ type: 'text', text: 'Responde únicamente: OK' }] }), { only: [p] });
         if (statusEl) { statusEl.textContent = `✅ Conectado (${r.model})`; statusEl.style.color = 'var(--green-verified)'; }
+        if (p !== 'gemini') aiKeys.verified.push(p);
         results.push(true);
       } catch (err) {
         const msg = err.kind === 'auth' ? 'Clave inválida' : (err.kind === 'overload' ? 'Clave válida, pero saturado ahora' : 'No respondió');
         if (statusEl) { statusEl.textContent = `⚠️ ${msg}`; statusEl.style.color = err.kind === 'overload' ? '#b45309' : '#dc2626'; }
+        // Clave válida pero saturada en este momento: se acepta, la cadena la intentará después
+        if (err.kind === 'overload' && p !== 'gemini') aiKeys.verified.push(p);
         results.push(err.kind === 'overload');
       }
     }
+    saveAiKeys();
+    updateAiConfigUI();
     lastAiUsed = null;
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Guardar y probar'; }
     const ok = results.filter(Boolean).length;
@@ -4033,7 +4047,7 @@
     return result;
   }
 
-  /* --- TRANSCRIPCIÓN LITERAL DEL AUDIO CON IA (Gemini → Groq Whisper → OpenAI Whisper) --- */
+  /* --- TRANSCRIPCIÓN LITERAL DEL AUDIO CON IA (Gemini → Groq Whisper) --- */
   async function transcribeEvidenceBlobWithAi(id, audioBlob) {
     const ev = verificationEvidences.find(item => item.id === id);
     if (!ev || !audioBlob || !hasActiveAiKey()) return;
@@ -4291,7 +4305,7 @@ Responde únicamente con el JSON pedido, en español.`;
       const schemaHint = `\nFormato JSON exacto (mismas claves): {"evidencias":[{"paso":1,"descripcionFoto":"","fotoCorrespondeAlOficio":false,"resumenExplicacion":"","explicacionCoincideConFoto":false,"observaciones":""}],"justificacionDiagnostico":"","p1":0,"justificacionHerramientas":"","p2":0,"justificacionProcedimiento":"","p3":0,"justificacionPruebas":"","p4":0,"conceptosDemostrados":[],"conceptosFaltantes":[],"coherencePercent":0,"coherenceDescription":"","theoreticalFeedback":"","verdictParagraph":""}\nLos valores de ese formato son solo marcadores: debes reemplazarlos por tu evaluación real.`;
 
       // La petición se arma según el proveedor: Gemini recibe también el audio original de cada paso;
-      // Groq / OpenRouter / OpenAI reciben foto + transcripción y el formato JSON descrito en el texto.
+      // Groq / OpenRouter reciben foto + transcripción y el formato JSON descrito en el texto.
       const buildRequest = async cap => {
         const parts = [{ type: 'text', text: buildRubric(cap.audio) + (cap.provider === 'gemini' ? '' : schemaHint) }];
         for (const step of stepPayloads) {
@@ -4492,7 +4506,8 @@ Responde únicamente con el JSON pedido, en español.`;
     const progressTrack = document.getElementById('certProgressTrack');
     if (progressTrack) {
       const pct = ((stepNumber - 1) / 3) * 100;
-      progressTrack.style.width = `${pct}%`;
+      // El riel va del centro del círculo 1 al centro del 4, así que se descuenta el margen de cada lado
+      progressTrack.style.width = `calc((100% - 2 * var(--rail-inset, 48px)) * ${pct / 100})`;
     }
 
     for (let i = 1; i <= 4; i++) {
@@ -4776,7 +4791,7 @@ Responde únicamente con el JSON pedido, en español.`;
       return;
     }
     if (!hasActiveAiKey()) {
-      showToast('Para evaluar con IA necesitas configurar una API Key de Gemini u OpenAI.', 'error');
+      showToast('Para evaluar con IA necesitas configurar al menos una API Key gratuita (Gemini, Groq u OpenRouter).', 'error');
       goToStep(1);
       const drawer = document.getElementById('aiApiKeyDrawer');
       if (drawer) drawer.style.display = 'block';
