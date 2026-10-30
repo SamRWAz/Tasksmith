@@ -3126,3 +3126,28 @@ img {
     justify-content: center;
   }
 }
+
+/* ================= INICIO · LLAMADO PRINCIPAL ARRIBA DE TODO ================= */
+.home-cta {
+  padding: 72px 0 56px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.home-cta-title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  text-wrap: balance;
+}
+
+@media (max-width: 640px) {
+  .home-cta {
+    padding: 48px 0 40px;
+  }
+
+  .home-cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
