@@ -12,12 +12,12 @@
   if (!root) return;
 
   var TRADES = {
-    'Plomería':          { label: 'Plomería',          desc: 'Fugas, grifos y tuberías',   color: '#2F7FC1' },
-    'Electrodomésticos': { label: 'Electrodomésticos', desc: 'Neveras y lavadoras',        color: '#3BA99C' },
-    'Carpintería':       { label: 'Carpintería',       desc: 'Puertas, closets y muebles', color: '#D9822B' },
-    'Electricidad':      { label: 'Electricidad',      desc: 'Cortos, breakers y tomas',   color: '#F2B33D' },
-    'Aseo':              { label: 'Aseo',              desc: 'Limpieza integral del hogar', color: '#5FA36A' },
-    'Pintura':           { label: 'Pintura & Drywall', desc: 'Humedades y retoques',       color: '#E2654F' }
+    'Plomería':          { label: 'Plomería',          desc: 'Fugas, grifos y tuberías',   color: '#2F7FC1', tipBg: '#266BA6', tipInk: '#FFFFFF' },
+    'Electrodomésticos': { label: 'Electrodomésticos', desc: 'Neveras y lavadoras',        color: '#3BA99C', tipBg: '#3BA99C', tipInk: '#2C221A' },
+    'Carpintería':       { label: 'Carpintería',       desc: 'Puertas, closets y muebles', color: '#D9822B', tipBg: '#D9822B', tipInk: '#2C221A' },
+    'Electricidad':      { label: 'Electricidad',      desc: 'Cortos, breakers y tomas',   color: '#F2B33D', tipBg: '#F2B33D', tipInk: '#2C221A' },
+    'Aseo':              { label: 'Aseo',              desc: 'Limpieza integral del hogar', color: '#5FA36A', tipBg: '#5FA36A', tipInk: '#2C221A' },
+    'Pintura':           { label: 'Pintura & Drywall', desc: 'Humedades y retoques',       color: '#E2654F', tipBg: '#E2654F', tipInk: '#2C221A' }
   };
 
   var chips = root.querySelectorAll('.h3d-chip');
@@ -489,7 +489,9 @@
         var info = TRADES[trade];
         tipTitle.textContent = info.label;
         tipDesc.textContent = info.desc;
-        tipDot.style.background = info.color;
+        // El fondo de la etiqueta toma el color del objeto; el texto se elige para contraste AA (>= 4.5:1)
+        tip.style.setProperty('--tip-bg', info.tipBg);
+        tip.style.setProperty('--tip-ink', info.tipInk);
         tip.classList.add('is-visible');
       } else {
         tip.classList.remove('is-visible');
