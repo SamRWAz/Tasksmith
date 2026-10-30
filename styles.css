@@ -3580,3 +3580,41 @@ img {
 .time-metric-icon-wrap {
   color: var(--blue-primary);
 }
+
+/* ================= BOTÓN DESCARGAR RESULTADOS (PDF) ================= */
+/* Verde de "verificado": se distingue del azul de las demás acciones y contrasta 5:1 con el texto blanco */
+.btn-download {
+  background: var(--green-verified);
+  color: #FFFFFF;
+  border: 1px solid var(--green-verified);
+  box-shadow: 0 6px 16px rgba(37, 124, 62, 0.22);
+  transition: transform 160ms ease-out, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.btn-download:active {
+  transform: scale(0.97);
+}
+
+.btn-download:focus-visible {
+  outline: 2px solid var(--green-verified);
+  outline-offset: 3px;
+}
+
+.btn-download svg {
+  flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-download:hover {
+    background: #1E6A34;
+    box-shadow: 0 8px 20px rgba(37, 124, 62, 0.28);
+  }
+}
+
+@media (max-width: 640px) {
+  .ai-eval-failed-card .btn,
+  #certPostActions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
