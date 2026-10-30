@@ -140,14 +140,14 @@
           <div class="card" style="max-width: 960px; margin: 0 auto; padding: 36px; box-shadow: var(--shadow-card);">
             
             <!-- Saludo de Maestro Autenticado -->
-            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-accent-soft); padding: 14px 20px; border-radius: var(--radius-md); border-left: 4px solid var(--blue-primary); margin-bottom: 24px; flex-wrap: wrap; gap: 10px;">
+            <div class="smith-greeting" style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-accent-soft); padding: 14px 20px; border-radius: var(--radius-md); border-left: 4px solid var(--blue-primary); margin-bottom: 24px; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <div>
                   <div style="font-weight: 700; color: var(--ink-primary);" id="examSmithName">Luis Rodríguez</div>
                   <div style="font-size: 0.82rem; color: var(--ink-muted);" id="examSmithTrade">Especialista en Plomería</div>
                 </div>
               </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
+              <div class="smith-greeting-actions" style="display: flex; gap: 10px; align-items: center;">
                 <span class="live-badge" style="background: var(--blue-primary); color: #fff; border: none;">Cuenta de Maestro Activa</span>
                 <a href="certificacion.html" class="btn btn-primary btn-sm">Obtener Certificado Oficial Smith con IA →</a>
               </div>
@@ -182,7 +182,7 @@
               <div class="evidence-block-card" id="evidenceBlock_1" data-evidence-id="1">
                 <div class="evidence-block-header">
                   <span class="evidence-step-badge">Paso o Evidencia #1</span>
-                  <span class="live-badge" id="badgeStepStatus_1">Pendiente</span>
+                  <span class="live-badge" data-status="pending" id="badgeStepStatus_1">Pendiente</span>
                 </div>
 
                 <!-- Cuadrícula Foto y Audio Al Lado -->
@@ -192,10 +192,9 @@
                   <div class="evidence-panel">
                     <div class="evidence-panel-header">
                       <div class="evidence-panel-title">
-                        <span class="evidence-panel-icon"></span>
                         <span>Foto del Trabajo</span>
                       </div>
-                      <span class="live-badge" id="badgePhotoStatus_1">Pendiente</span>
+                      <span class="live-badge" data-status="pending" id="badgePhotoStatus_1">Pendiente</span>
                     </div>
 
                     <!-- Input Oculto de Archivo Real con soporte directo de cámara en móviles -->
@@ -235,10 +234,9 @@
                   <div class="evidence-panel">
                     <div class="evidence-panel-header">
                       <div class="evidence-panel-title">
-                        <span class="evidence-panel-icon">️</span>
                         <span>Audio Explicativo</span>
                       </div>
-                      <span class="live-badge" id="badgeAudioStatus_1">Pendiente</span>
+                      <span class="live-badge" data-status="pending" id="badgeAudioStatus_1">Pendiente</span>
                     </div>
 
                     <!-- Grabador de Audio Interactivo -->

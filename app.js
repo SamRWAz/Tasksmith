@@ -1068,9 +1068,7 @@
     if (container) container.style.display = 'block';
 
     if (badgePhoto) {
-      badgePhoto.textContent = ' Foto Cargada';
-      badgePhoto.style.color = 'var(--green-verified)';
-      badgePhoto.style.background = 'var(--green-soft)';
+      setStatusBadge(badgePhoto, 'done', 'Foto Cargada');
     }
 
     updateEvidenceStepBadge(id);
@@ -1093,9 +1091,7 @@
     if (container) container.style.display = 'none';
 
     if (badgePhoto) {
-      badgePhoto.textContent = 'Pendiente';
-      badgePhoto.style.color = 'var(--wood-primary)';
-      badgePhoto.style.background = 'var(--bg-accent-soft)';
+      setStatusBadge(badgePhoto, 'pending', 'Pendiente');
     }
 
     updateEvidenceStepBadge(id);
@@ -1388,9 +1384,7 @@
     if (playbackBox) playbackBox.style.display = 'block';
 
     if (badgeAudio) {
-      badgeAudio.textContent = ' Audio Grabado';
-      badgeAudio.style.color = 'var(--green-verified)';
-      badgeAudio.style.background = 'var(--green-soft)';
+      setStatusBadge(badgeAudio, 'done', 'Audio Grabado');
     }
 
     if (durText) durText.textContent = durationStr;
@@ -1529,9 +1523,7 @@
     if (instrEl) instrEl.textContent = 'Toca el micrófono para comenzar a hablar';
 
     if (badgeAudio) {
-      badgeAudio.textContent = 'Pendiente';
-      badgeAudio.style.color = 'var(--wood-primary)';
-      badgeAudio.style.background = 'var(--bg-accent-soft)';
+      setStatusBadge(badgeAudio, 'pending', 'Pendiente');
     }
 
     updateEvidenceStepBadge(id);
@@ -1651,7 +1643,7 @@
       <div class="evidence-block-header">
         <span class="evidence-step-badge">Paso o Evidencia #${stepNumber}</span>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="live-badge" id="badgeStepStatus_${newId}">Pendiente</span>
+          <span class="live-badge" data-status="pending" id="badgeStepStatus_${newId}">Pendiente</span>
           <button type="button" class="btn-remove-evidence" onclick="removeEvidencePair(${newId})" title="Eliminar este paso">
             &times; Eliminar paso
           </button>
@@ -1665,7 +1657,7 @@
             <div class="evidence-panel-title">
               <span>Foto del Trabajo</span>
             </div>
-            <span class="live-badge" id="badgePhotoStatus_${newId}">Pendiente</span>
+            <span class="live-badge" data-status="pending" id="badgePhotoStatus_${newId}">Pendiente</span>
           </div>
 
           <input type="file" id="workPhotoInput_${newId}" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoInputChange(${newId}, this)">
@@ -1696,7 +1688,7 @@
             <div class="evidence-panel-title">
               <span>Audio Explicativo</span>
             </div>
-            <span class="live-badge" id="badgeAudioStatus_${newId}">Pendiente</span>
+            <span class="live-badge" data-status="pending" id="badgeAudioStatus_${newId}">Pendiente</span>
           </div>
 
           <div class="audio-recorder-box" id="audioRecorderBox_${newId}">
@@ -1817,6 +1809,15 @@
     showToast(' Paso eliminado correctamente.', 'normal');
   };
 
+  /* Insignias de estado con color semántico: pendiente (naranja), en curso (azul), completo (verde) */
+  function setStatusBadge(el, state, text) {
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.status = state;
+    el.style.color = '';
+    el.style.background = '';
+  }
+
   function getEvidenceIndex(id) {
     const idx = verificationEvidences.findIndex(item => item.id === id);
     return idx >= 0 ? idx + 1 : 1;
@@ -1828,17 +1829,11 @@
     if (!badgeStep || !ev) return;
 
     if (ev.photo && ev.audioDuration) {
-      badgeStep.textContent = ' Paso Completo';
-      badgeStep.style.color = 'var(--green-verified)';
-      badgeStep.style.background = 'var(--green-soft)';
+      setStatusBadge(badgeStep, 'done', 'Paso Completo');
     } else if (ev.photo || ev.audioDuration) {
-      badgeStep.textContent = 'Parcial';
-      badgeStep.style.color = 'var(--wood-primary)';
-      badgeStep.style.background = 'var(--bg-accent-soft)';
+      setStatusBadge(badgeStep, 'partial', 'Parcial');
     } else {
-      badgeStep.textContent = 'Pendiente';
-      badgeStep.style.color = 'var(--wood-primary)';
-      badgeStep.style.background = 'var(--bg-accent-soft)';
+      setStatusBadge(badgeStep, 'pending', 'Pendiente');
     }
   }
 

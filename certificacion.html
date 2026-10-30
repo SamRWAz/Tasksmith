@@ -403,7 +403,7 @@
                 <div class="evidence-block-card" id="evidenceBlock_1" data-evidence-id="1">
                   <div class="evidence-block-header">
                     <span class="evidence-step-badge">Paso o Evidencia #1</span>
-                    <span class="live-badge" id="badgeStepStatus_1">Pendiente</span>
+                    <span class="live-badge" data-status="pending" id="badgeStepStatus_1">Pendiente</span>
                   </div>
 
                   <div class="work-evidence-grid">
@@ -414,7 +414,7 @@
                         <div class="evidence-panel-title">
                           <span>Foto del Trabajo</span>
                         </div>
-                        <span class="live-badge" id="badgePhotoStatus_1">Pendiente</span>
+                        <span class="live-badge" data-status="pending" id="badgePhotoStatus_1">Pendiente</span>
                       </div>
 
                       <input type="file" id="workPhotoInput_1" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoInputChange(1, this)">
@@ -454,7 +454,7 @@
                         <div class="evidence-panel-title">
                           <span>Audio Explicativo</span>
                         </div>
-                        <span class="live-badge" id="badgeAudioStatus_1">Pendiente</span>
+                        <span class="live-badge" data-status="pending" id="badgeAudioStatus_1">Pendiente</span>
                       </div>
 
                       <div class="audio-recorder-box" id="audioRecorderBox_1">
@@ -800,8 +800,8 @@
               <!-- ================= TARJETA DE EVALUACIÓN NO APROBADA (DOBLE CONDICIÓN) ================= -->
               <div class="ai-eval-failed-card" id="aiEvaluationFailedCard" style="display: none; margin-top: 24px; padding: 32px; border-radius: var(--radius-lg); background: var(--bg-card); border: 2px solid #ef4444; box-shadow: var(--shadow-card);">
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                  <div style="width: 48px; height: 48px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800;">
-                    &times;
+                  <div class="status-icon-circle is-error" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
                   </div>
                   <div>
                     <span class="live-badge" style="background: #fee2e2; color: #dc2626; font-weight: 700;">
