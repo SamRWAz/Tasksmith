@@ -3642,28 +3642,45 @@
     customScope: ''
   };
 
-  /* --- MODELO DE GEMINI ---
-     Google retiró gemini-2.5-flash para claves nuevas ("no longer available to new users").
-     Se usa gemini-3.8-flash y, si una clave no tiene acceso, se prueba el siguiente modelo estable.
-     Gemini 3 recomienda no bajar la temperatura de 1.0 (puede repetir texto o rendir peor), por eso
-     las peticiones ya no la fijan; el rigor lo dan las instrucciones, el esquema JSON y las reglas en código. */
-  const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash'];
+  /* --- MODELOS DE GEMINI (CADENA DE RESPALDO GRATUITA) ---
+     Todos estos modelos tienen capa gratuita en la API de Gemini y aceptan audio, imágenes y JSON
+     estructurado, así que funcionan con la misma API Key sin pagar.
+     Orden: del más capaz al más liviano. Si uno está retirado, saturado o se agotó su cupo gratuito,
+     se pasa automáticamente al siguiente.
+     Gemini 3 recomienda no bajar la temperatura de 1.0, por eso las peticiones no la fijan. */
+  const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+  const retiredGeminiModels = new Set(); // modelos que esta clave no puede usar (no se vuelven a intentar en la sesión)
   let activeGeminiModel = GEMINI_MODELS[0];
 
   async function geminiFetch(options) {
-    const candidates = [activeGeminiModel, ...GEMINI_MODELS.filter(m => m !== activeGeminiModel)];
     let lastRes = null;
-    for (const model of candidates) {
+    for (const model of GEMINI_MODELS) {
+      if (retiredGeminiModels.has(model)) continue;
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(currentAiApiKey)}`;
-      const res = await fetch(url, options);
-      if (res.ok) {
-        activeGeminiModel = model;
-        return res;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        let res;
+        try {
+          res = await fetch(url, options);
+        } catch (netErr) {
+          // Sin conexión: no tiene sentido probar otros modelos
+          throw new Error('No hay conexión a internet o Google no respondió. Revisa tu conexión e inténtalo de nuevo.');
+        }
+        if (res.ok) {
+          activeGeminiModel = model;
+          return res;
+        }
+        lastRes = res;
+        const errText = await res.clone().text().catch(() => '');
+        if (res.status === 400 && /api key|API_KEY/i.test(errText)) return res; // clave inválida: ningún modelo va a funcionar
+        if (res.status === 404 || /no longer available|not found|is not supported|deprecated/i.test(errText)) {
+          retiredGeminiModels.add(model);
+          break; // modelo retirado o sin acceso: siguiente modelo
+        }
+        if (res.status === 429 || /quota|rate limit|exhausted/i.test(errText)) break; // cupo gratuito agotado en este modelo: siguiente
+        const overloaded = res.status === 503 || res.status === 500 || /high demand|overloaded|unavailable|try again later|internal/i.test(errText);
+        if (!overloaded) return res; // error de la petición en sí (p. ej. archivo inválido): otro modelo no lo arregla
+        if (attempt === 0) await new Promise(r => setTimeout(r, 1500)); // saturación temporal: un reintento y luego siguiente modelo
       }
-      lastRes = res;
-      const errText = await res.clone().text().catch(() => '');
-      const modelUnavailable = res.status === 404 || /no longer available|not found|is not supported|deprecated/i.test(errText);
-      if (!modelUnavailable) return res;
     }
     return lastRes;
   }
@@ -4315,7 +4332,8 @@ Responde únicamente con el JSON pedido, en español.`;
       return applyEvaluationGuardrails(parsed, evidences, stepPayloads);
     } catch (err) {
       console.warn('Error en evaluación con IA:', err);
-      return { error: err.message || 'Error desconocido al contactar la IA' };
+      const msg = err.message || 'Error desconocido al contactar la IA';
+      return { error: /high demand|overloaded|try again later|quota|exhausted/i.test(msg) ? `Todos los modelos gratuitos de Gemini están saturados o sin cupo en este momento (se intentó con todos los modelos gratuitos de Gemini disponibles). Espera uno o dos minutos y vuelve a intentar. (${msg})` : msg };
     }
   }
 
