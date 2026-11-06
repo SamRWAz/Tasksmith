@@ -12,8 +12,29 @@
   const STATE_KEY_CERT = 'tasksmith_certified_smiths';
 
   let currentUser = JSON.parse(localStorage.getItem(STATE_KEY_USER)) || null;
+  if (!currentUser || currentUser.role !== 'smith') {
+    currentUser = {
+      email: 'luis@tasksmith.co',
+      password: '123',
+      name: 'Luis Rodríguez',
+      phone: '312 456 7890',
+      role: 'smith',
+      trade: 'Programación en HTML',
+      certified: false,
+      rate: '70000',
+      zone: 'Colombia',
+      portfolio: []
+    };
+    try { localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser)); } catch (e) {}
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Por ahora redirigir cualquier otra pantalla directamente a certificacion.html
+    const path = (window.location.pathname || '').toLowerCase();
+    if (!path.includes('certificacion') && !document.getElementById('certPane_1')) {
+      window.location.replace('certificacion.html');
+      return;
+    }
     initNavbar();
     initAuthUI();
     initAudioSimulator();
@@ -1655,7 +1676,7 @@
         <div class="evidence-panel">
           <div class="evidence-panel-header">
             <div class="evidence-panel-title">
-              <span>Foto del Trabajo</span>
+              <span>Foto del Código / Trabajo HTML</span>
             </div>
             <span class="live-badge" data-status="pending" id="badgePhotoStatus_${newId}">Pendiente</span>
           </div>
@@ -1709,9 +1730,9 @@
             <div class="audio-guide-list">
               <strong>Puntos clave a mencionar en tu audio:</strong>
               <ul style="padding-left: 18px; margin-top: 4px;">
-                <li>1. ¿Cuál era el problema o necesidad inicial del cliente?</li>
-                <li>2. ¿Qué materiales, herramientas y procedimiento aplicaste para solucionarlo?</li>
-                <li>3. ¿Qué pruebas realizaste para garantizar que quedó seguro y con garantía?</li>
+                <li>1. ¿Qué página o estructura HTML desarrollaste?</li>
+                <li>2. ¿Qué etiquetas semánticas, atributos y elementos utilizaste?</li>
+                <li>3. ¿Cómo verificaste que el código y la estructura funcionen correctamente?</li>
               </ul>
             </div>
           </div>
@@ -2148,6 +2169,14 @@
       materials: ['Harina de trigo de alta fuerza (W>300)', 'Masa madre 100% natural activa', 'Agua potable declorada', 'Sal marina sin yodo añadido'],
       tests: ['Prueba de la membrana translúcida elástica', 'Salto de horno con inyección de vapor y greña abierta'],
       keywords: ['masa madre', 'prueba de la membrana', 'autolisis', 'porcentaje panadero', 'retardo en frio 4c', 'greña', 'vapor', 'fuerza w', 'alveolos', 'bpm']
+    },
+    html: {
+      standard: 'Estándares W3C HTML5 y Pautas de Accesibilidad Web WCAG 2.1',
+      diagnosticSteps: ['Inspección del árbol DOM y jerarquía de encabezados', 'Validación sintáctica y semántica de etiquetas HTML5', 'Verificación de accesibilidad y atributos en formularios e imágenes'],
+      tools: ['Editor de código (VS Code)', 'Inspector de elementos / DevTools del navegador', 'Validador de marcado HTML5'],
+      materials: ['Documento HTML5 con <!DOCTYPE html>', 'Etiquetas semánticas (<header>, <main>, <section>, <article>, <footer>)', 'Formularios accesibles (<form>, <label>, <input>)', 'Atributos de accesibilidad (alt, lang, aria-label)'],
+      tests: ['Renderizado limpio en navegador sin etiquetas huérfanas', 'Asociación funcional de cada <label> con su <input> mediante for/id'],
+      keywords: ['html', 'html5', 'doctype', 'semantica', 'header', 'main', 'section', 'article', 'footer', 'form', 'label', 'input', 'alt', 'accesibilidad', 'dom', 'etiquetas', 'atributos']
     },
     universal: {
       standard: 'Estándares Técnicos Internacionales y Protocolos de Seguridad',
@@ -3435,195 +3464,164 @@
       aiScores: { c1: 25, c2: 24, c3: 25, c4: 25, overall: 99 },
       verdictParagraph: 'La IA otorga calificación de Maestría Artesanal en panadería: dominio de la microbiología de la masa madre, desarrollo viscoelástico de la proteína y control del horno a vapor.',
       samplePhotoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80'
+    },
+    html: {
+      tradeName: 'Programación en HTML',
+      icon: '',
+      norms: 'Estándares Web HTML5 y Buenas Prácticas de Estructura Semántica',
+      questions: [
+        {
+          title: '1. Estructura Semántica de un Documento HTML5',
+          scenario: 'Al construir la estructura principal de una página web moderna en HTML5, ¿qué combinación de etiquetas representa semánticamente la cabecera de navegación, el contenido único principal y el pie de página?',
+          options: [
+            'Usar <header> con <nav> adentro para la navegación, <main> para el contenido principal de la vista y <footer> para el pie de página.',
+            'Envolver toda la página únicamente en etiquetas <div> y <span> sin ningún atributo ni etiqueta semántica.',
+            'Colocar todo el contenido visible dentro de la etiqueta <head> junto a los metadatos.',
+            'Utilizar tablas <table> anidadas como único mecanismo para maquetar toda la página web.'
+          ],
+          correct: 0,
+          explanation: 'Las etiquetas semánticas <header>, <nav>, <main> y <footer> comunican claramente la estructura del documento al navegador, motores de búsqueda y lectores de pantalla.'
+        },
+        {
+          title: '2. Formularios Accesibles y Asociación de Controles',
+          scenario: 'En un formulario HTML de registro de usuario, ¿cuál es la forma correcta de vincular una etiqueta de texto con su campo de entrada y exigir que el correo sea válido antes de enviarse?',
+          options: [
+            'Escribir el texto suelto en un párrafo <p> sin usar <label> y poner un <input type="text"> sin atributos.',
+            'Vincular <label for="correo"> con <input id="correo" name="correo" type="email" required>.',
+            'Usar un botón <div> en vez de <form> y omitir los atributos name, id y type.',
+            'Colocar el atributo required dentro de la etiqueta <html> principal del documento.'
+          ],
+          correct: 1,
+          explanation: 'El atributo for de <label> debe coincidir con el id del <input>, y type="email" junto con required activan la validación nativa del navegador.'
+        },
+        {
+          title: '3. Imágenes, Accesibilidad Web y Jerarquía de Encabezados',
+          scenario: 'Para que una página HTML cumpla con estándares de accesibilidad y SEO al mostrar imágenes informativas y títulos de sección, ¿qué práctica es obligatoria?',
+          options: [
+            'Usar múltiples etiquetas <h6> al inicio del documento y omitir el atributo src en las imágenes.',
+            'Insertar las imágenes sin atributos y usar etiquetas <br> repetidas para simular títulos grandes.',
+            'Incluir el atributo descriptivo alt="..." en cada etiqueta <img> y mantener un orden jerárquico lógico de encabezados desde <h1> hasta <h2>/<h3>.',
+            'Colocar las etiquetas <img> dentro de <title> en el encabezado del documento.'
+          ],
+          correct: 2,
+          explanation: 'El atributo alt describe la imagen para tecnologías de asistencia o fallos de carga, y la jerarquía ordenada de encabezados (<h1> a <h6>) estructura el documento.'
+        },
+        {
+          title: '4. Hipervínculos Seguros y Tablas de Datos Estructuradas',
+          scenario: 'Cuando se incluye un enlace que abre un sitio externo en una nueva pestaña y una tabla de datos con encabezados de columna, ¿qué marcado HTML es el apropiado?',
+          options: [
+            'Usar <link href="..."> en el cuerpo del texto y crear tablas solo con etiquetas <li>.',
+            'Usar <a src="..."> sin cierre y poner todas las celdas con <td> sin distinguir encabezados.',
+            'Usar <button href="..."> para abrir pestañas y separar columnas con espacios en blanco.',
+            'Usar <a href="..." target="_blank" rel="noopener noreferrer"> para el enlace y estructurar la tabla con <thead>, <tbody> y celdas de encabezado <th>.'
+          ],
+          correct: 3,
+          explanation: 'El atributo rel="noopener noreferrer" protege contra vulnerabilidades al usar target="_blank", y <thead>, <tbody> y <th> estructuran semánticamente las tablas de datos.'
+        }
+      ],
+      sampleTranscript: 'Desarrollé una página web en HTML5 iniciando con la declaración <!DOCTYPE html> y el atributo lang="es". Estructuré el documento semánticamente usando <header>, <nav>, <main>, <section> y <footer>. Implementé un formulario de contacto vinculando cada <label> con su <input> mediante for e id, utilizando validaciones nativas type="email" y required, además de incluir atributos alt descriptivos en todas las imágenes.',
+      expectedConcepts: [
+        'Declaración <!DOCTYPE html> y estructura base',
+        'Etiquetas semánticas (<header>, <main>, <section>, <footer>)',
+        'Formularios HTML con <label for> e <input required>',
+        'Jerarquía de encabezados (<h1>, <h2>, <h3>)',
+        'Atributos de accesibilidad alt y lang',
+        'Validación y cierre correcto de etiquetas'
+      ],
+      aiScores: { c1: 24, c2: 24, c3: 25, c4: 24, overall: 97 },
+      verdictParagraph: 'El candidato demostró dominio en la estructuración semántica de documentos HTML5, creación de formularios accesibles y uso correcto de etiquetas y atributos.',
+      samplePhotoUrl: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80'
     }
   };
 
-  // Motor Generador Universal de Pruebas Periciales con IA (8 Preguntas Situacionales para CUALQUIER tema u oficio)
+  // Motor Generador de Pruebas (4 Preguntas Técnicas enfocadas en Programación en HTML)
   function getOrGenerateAiTradeExam(tradeQuery) {
     const raw = (tradeQuery || '').trim();
-    if (!raw) return TRADE_EXPERT_PROFILES['plomeria'];
+    if (!raw) return JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES['html']));
 
     const norm = raw.toLowerCase()
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '');
 
-    // Coincidencias temáticas curadas
+    if (norm.includes('html') || norm.includes('program') || norm.includes('web') || norm.includes('codigo')) {
+      const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.html));
+      p.tradeName = 'Programación en HTML';
+      p.questions = p.questions.slice(0, 4);
+      return p;
+    }
+
+    // Coincidencias temáticas curadas (limitadas a 4 preguntas)
     if (norm.includes('solar') || norm.includes('fotovolt') || norm.includes('panel')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.solar));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('plom') || norm.includes('agua') || norm.includes('fuga') || norm.includes('tub') || norm.includes('fontan')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.plomeria));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('electr') || norm.includes('retie') || norm.includes('luz') || norm.includes('cable') || norm.includes('breaker')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.electricidad));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('carpint') || norm.includes('mader') || norm.includes('muebl') || norm.includes('ebanist')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.carpinteria));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('mecanic') || norm.includes('auto') || norm.includes('carro') || norm.includes('motor') || norm.includes('vehic')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.mecanica));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('refrig') || norm.includes('aire') || norm.includes('clima') || norm.includes('hvac') || norm.includes('acondic')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.refrigeracion));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('soldad') || norm.includes('tig') || norm.includes('mig') || norm.includes('metalm')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.soldadura));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('cerraj') || norm.includes('chapa') || norm.includes('cerradur') || norm.includes('llav')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.cerrajeria));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('baris') || norm.includes('cafe') || norm.includes('espresso')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.barismo));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('dron') || norm.includes('uav') || norm.includes('vuelo') || norm.includes('robot')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.drones));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
     if (norm.includes('panad') || norm.includes('masa') || norm.includes('pan') || norm.includes('repost') || norm.includes('pasteler')) {
       const p = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.panaderia));
       p.tradeName = formatTradeTitle(raw);
+      p.questions = p.questions.slice(0, 4);
       return p;
     }
 
-    // GENERADOR UNIVERSAL SEMÁNTICO DE 8 PREGUNTAS TÉCNICAS SITUACIONALES
-    const cleanTitle = formatTradeTitle(raw);
-    const inferredIcon = pickIconForTrade(cleanTitle);
-    const inferredNorm = `Estándares Técnicos Internacionales y Protocolos de Seguridad en ${cleanTitle}`;
-
-    return {
-      tradeName: cleanTitle,
-      icon: inferredIcon,
-      norms: inferredNorm,
-      questions: [
-        {
-          title: `1. Diagnóstico Inicial y Detección de Causa Raíz en ${cleanTitle}`,
-          scenario: `Un cliente solicita una intervención técnica especializada en ${cleanTitle} por un fallo de funcionamiento o requerimiento crítico. ¿Cuál es el protocolo pericial que distingue a un profesional en ${cleanTitle}?`,
-          options: [
-            `Efectuar una inspección inicial exhaustiva con instrumental y mediciones técnicas, aislando la causa raíz del fallo antes de intervenir componentes.`,
-            `Iniciar el desensamble o aplicación de inmediato sin registrar mediciones previas ni verificar el estado base.`,
-            `Aplicar una solución temporal sin determinar el origen del problema esperando a ver si vuelve a fallar.`,
-            `Delegar la evaluación en el cliente sin comprobar las especificaciones técnicas ni tolerancias del fabricante.`
-          ],
-          correct: 0,
-          explanation: `En ${cleanTitle}, la norma exige diagnosticar la causa raíz de manera sistemática para evitar reparaciones fallidas y sobrecostos.`
-        },
-        {
-          title: `2. Instrumental Técnico y Mediciones Cuantitativas en ${cleanTitle}`,
-          scenario: `Durante el peritaje técnico en ${cleanTitle}, ¿cómo se valida fehacientemente que los parámetros operativos cumplen con los rangos de tolerancia?`,
-          options: [
-            `Utilizar instrumental calibrado con certificación vigente, registrando valores cuantitativos exactos frente a la tabla técnica del fabricante.`,
-            `Calcular al ojo y al tacto sin usar ningún instrumento de medición.`,
-            `Anotar valores ficticios en la orden de servicio para terminar más rápido.`,
-            `Preguntarle a una persona no especializada si le parece que está funcionando bien.`
-          ],
-          correct: 0,
-          explanation: `La medición instrumental objetiva es la única garantía de precisión en ${cleanTitle} que respalda un dictamen técnico profesional.`
-        },
-        {
-          title: `3. Normativa de Seguridad Industrial y Equipos de Protección (EPI)`,
-          scenario: `Para ejecutar labores en ${cleanTitle} con resguardo estricto de la integridad física y bioseguridad, ¿qué criterio debe regir la jornada de trabajo?`,
-          options: [
-            `Portar los Equipos de Protección Individual (EPI) normativos para ${cleanTitle}, delimitar el área de trabajo y verificar ausencia de riesgos secundarios antes de operar.`,
-            `Omitir las gafas de seguridad y guantes si la labor parece rápida o de poca monta.`,
-            `Trabajar en chanclas o ropa de calle sin protección dieléctrica o mecánica.`,
-            `Bloquear las salidas de evacuación con herramientas pesadas.`
-          ],
-          correct: 0,
-          explanation: `La seguridad ocupacional es innegociable; el uso adecuado de EPI certificados previene accidentes graves en ${cleanTitle}.`
-        },
-        {
-          title: `4. Selección de Materiales Homologados y Compatibilidad Físico-Química`,
-          scenario: `Al reemplazar partes o aplicar consumibles técnicos en una labor de ${cleanTitle}, ¿qué requisito de materiales debe cumplirse obligatoriamente?`,
-          options: [
-            `Emplear insumos y repuestos originales o con ficha técnica certificada, verificando total compatibilidad química, térmica y mecánica con el sistema base.`,
-            `Comprar el material más barato sin marca ni certificación que se consiga en ferreterías informales.`,
-            `Reutilizar piezas rotas o desgastadas recuperadas de otros trabajos viejos.`,
-            `Improvisar adhesivos o mezclas químicas no aprobadas por el manual técnico.`
-          ],
-          correct: 0,
-          explanation: `Los materiales no homologados sufren fatiga prematura y anulan de inmediato cualquier garantía técnica en ${cleanTitle}.`
-        },
-        {
-          title: `5. Herramientas Especializadas de Precisión y Calibración en ${cleanTitle}`,
-          scenario: `Para intervenir mecanismos o ensambles críticos en ${cleanTitle} sin ocasionar daño por sobretorque o desalineación:`,
-          options: [
-            `Utilizar la herramienta específica diseñada para la tarea, ajustando a los pares de torque y tolerancias milimétricas recomendadas.`,
-            `Usar alicates universales desgastados para apretar pernos de precisión.`,
-            `Hacer palanca con tubos improvisados para forzar el encaje de las piezas.`,
-            `Golpear componentes delicados con martillos pesados sin protección.`
-          ],
-          correct: 0,
-          explanation: `El uso de herramientas especializadas calibradas preserva la geometría y la vida útil de los mecanismos en ${cleanTitle}.`
-        },
-        {
-          title: `6. Procedimiento Secuencial de Ejecución según Manual Técnico`,
-          scenario: `Durante la fase de ejecución en obra en ${cleanTitle}, ¿cuál es la secuencia metodológica obligatoria que avala la pericia del especialista?`,
-          options: [
-            `Seguir una secuencia metódica: preparación adecuada de la superficie o base, ensamble limpio paso a paso y control continuo de holguras.`,
-            `Saltarse las fases preliminares de limpieza e iniciar directamente por el final.`,
-            `Alterar el orden lógico de los pasos para improvisar según el tiempo disponible.`,
-            `Forzar el encaje de componentes desalineados para acelerar la entrega.`
-          ],
-          correct: 0,
-          explanation: `La destreza técnica en ${cleanTitle} se fundamenta en el respeto estricto de las secuencias operativas normadas.`
-        },
-        {
-          title: `7. Control de Tolerancias y Resolución de Imprevistos en Terreno`,
-          scenario: `Si durante la labor técnica en ${cleanTitle} se presenta una interferencia o desviación imprevista en las condiciones existentes:`,
-          options: [
-            `Evaluar el impacto estructural o funcional de la desviación, aplicar la solución técnica avalada por el estándar y registrar el ajuste en la bitácora de obra.`,
-            `Tapar la imperfección con masilla o cinta para que el cliente no se dé cuenta.`,
-            `Abandonar el trabajo sin avisar al cliente sobre la anomalía detectada.`,
-            `Culpar al fabricante y forzar la instalación aún a riesgo de colapso.`
-          ],
-          correct: 0,
-          explanation: `La capacidad pericial de resolución metódica ante imprevistos garantiza que el resultado final en ${cleanTitle} sea seguro y duradero.`
-        },
-        {
-          title: `8. Pruebas Operativas de Carga, Control de Calidad y Garantía Escrita`,
-          scenario: `Al concluir la labor técnica en ${cleanTitle}, ¿cómo se certifica formalmente la calidad del servicio antes de entregar al cliente?`,
-          options: [
-            `Realizar pruebas operativas bajo condiciones reales de carga continua, verificar cero desviaciones funcionales y emitir constancia formal con garantía de satisfacción.`,
-            `Cobrar el servicio y retirarse del lugar sin probar el funcionamiento real de la obra.`,
-            `Indicar al cliente que pruebe por su cuenta en los próximos días sin dejar ningún documento de respaldo.`,
-            `Disimular ruidos anormales o vibraciones acelerando la entrega.`
-          ],
-          correct: 0,
-          explanation: `La prueba de carga y la entrega de garantía escrita son el sello innegociable de la acreditación oficial Tasksmith en ${cleanTitle}.`
-        }
-      ],
-      sampleTranscript: `Para esta labor especializada en ${cleanTitle}, inicié con una inspección técnica completa determinando con precisión la causa raíz del requerimiento. Utilicé herramientas especializadas y consumibles certificados según la norma aplicable. Ejecuté el procedimiento paso a paso cuidando las tolerancias y la seguridad, realicé pruebas de funcionamiento bajo condiciones reales de carga y entregué el trabajo con satisfacción total y garantía formal de 30 días.`,
-      expectedConcepts: [
-        'Diagnóstico de causa raíz metódico',
-        `Herramientas especializadas para ${cleanTitle}`,
-        `Normativa técnica y protocolos en ${cleanTitle}`,
-        'Procedimiento secuencial de precisión',
-        'Pruebas de funcionamiento y carga real',
-        'Garantía formal de entrega de 30 días'
-      ],
-      aiScores: { c1: 24, c2: 24, c3: 25, c4: 24, overall: 97 },
-      verdictParagraph: `La IA certifica idoneidad pericial en ${cleanTitle}: el especialista demostró solvencia técnica en diagnóstico, selección adecuada de herramientas y materiales, procedimiento de ejecución ordenado y validación de calidad antes de entrega.`,
-      samplePhotoUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'
-    };
+    // Por defecto devuelve el perfil de Programación en HTML con 4 preguntas
+    const defaultHtml = JSON.parse(JSON.stringify(TRADE_EXPERT_PROFILES.html));
+    defaultHtml.questions = defaultHtml.questions.slice(0, 4);
+    return defaultHtml;
   }
 
   function formatTradeTitle(str) {
@@ -4140,24 +4138,24 @@ Reglas estrictas:
     }
   }
 
-  /* --- GENERACIÓN DINÁMICA DE LAS 8 PREGUNTAS CON CONTEXTO REAL POR GEMINI / CHATGPT --- */
+  /* --- GENERACIÓN DINÁMICA DE LAS 4 PREGUNTAS TÉCNICAS --- */
   async function generateAiTradeExamFromApi(tradeQuery, experienceLevel, customScope) {
     const fallbackExam = getOrGenerateAiTradeExam(tradeQuery);
     if (!hasActiveAiKey()) return fallbackExam;
 
-    const systemPrompt = `Eres el Evaluador Pericial Jefe de Tasksmith. Tu tarea es diseñar un examen técnico riguroso de 8 casos prácticos de selección múltiple para certificar a un candidato en el oficio o habilidad: "${tradeQuery}".
+    const systemPrompt = `Eres un evaluador técnico de programación en Tasksmith. Tu tarea es diseñar un examen técnico riguroso de 4 preguntas prácticas de selección múltiple para certificar a un candidato en el lenguaje: "${tradeQuery}".
 Contexto del candidato:
 - Nivel de experiencia declarado: ${experienceLevel}
-- Enfoque / alcance específico que desea certificar: ${customScope || 'Diagnóstico de causa raíz, uso de herramientas calibradas, normas técnicas de seguridad y pruebas de entrega con garantía.'}
+- Enfoque / alcance específico que desea certificar: ${customScope || 'Estructura semántica HTML5, formularios accesibles, atributos y validación de código.'}
 
 Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta:
 {
-  "tradeName": "Nombre formal del oficio o especialidad",
-  "norms": "Normas técnicas reales nacionales o internacionales aplicables a este oficio",
+  "tradeName": "Programación en HTML",
+  "norms": "Estándares Web HTML5",
   "questions": [
     {
-      "title": "1. Título técnico del caso #1",
-      "scenario": "Descripción detallada de un caso o problema técnico real en terreno...",
+      "title": "1. Título técnico de la pregunta #1",
+      "scenario": "Descripción detallada de un caso o problema práctico de programación HTML...",
       "options": [
         "Opción A",
         "Opción B",
@@ -4168,40 +4166,38 @@ Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta:
       "explanation": "Explicación técnica de por qué esa opción es la correcta"
     }
   ],
-  "sampleTranscript": "Ejemplo de explicación técnica ideal en primera persona para una evidencia de este oficio (3 a 4 líneas)",
+  "sampleTranscript": "Ejemplo de explicación técnica en primera persona sobre el código HTML desarrollado (3 a 4 líneas)",
   "expectedConcepts": ["Concepto técnico 1", "Concepto 2", "Concepto 3", "Concepto 4", "Concepto 5", "Concepto 6"]
 }
 Importante:
-- Deben ser exactamente 8 preguntas en el arreglo "questions".
+- Deben ser exactamente 4 preguntas en el arreglo "questions".
 - Varía la posición de la respuesta correcta ("correct" debe ser el índice 0, 1, 2 o 3 correspondiente a la opción correcta) para evaluar genuinamente al candidato.`;
 
     try {
       const result = await runAiTask('json', () => ({
-        system: 'Eres un perito certificador técnico que responde siempre en JSON válido.',
+        system: 'Eres un certificador técnico en programación web que responde siempre en JSON válido.',
         parts: [{ type: 'text', text: systemPrompt }],
         json: true
       }), {
         validate: txt => {
           const j = JSON.parse(txt);
           const ok = (Array.isArray(j.questions) ? j.questions : []).filter(q => q && Array.isArray(q.options) && q.options.length === 4 && Number(q.correct) >= 0 && Number(q.correct) <= 3).length;
-          if (ok < 8) throw new AiError('bad', `El examen generado solo trae ${ok} preguntas válidas`);
+          if (ok < 4) throw new AiError('bad', `El examen generado solo trae ${ok} preguntas válidas`);
         }
       });
       const rawJsonText = result.text;
 
       const parsed = JSON.parse(rawJsonText);
-      // Solo se aceptan preguntas bien formadas: 4 opciones y un índice de respuesta válido.
-      // Antes una pregunta con "correct" fuera de rango no la podía acertar nadie.
       const validQuestions = (parsed && Array.isArray(parsed.questions) ? parsed.questions : []).filter(q =>
         q && typeof q.title === 'string' && Array.isArray(q.options) && q.options.length === 4 &&
         Number.isInteger(Number(q.correct)) && Number(q.correct) >= 0 && Number(q.correct) <= 3
       ).map(q => ({ ...q, correct: Number(q.correct) }));
-      if (validQuestions.length >= 8) {
+      if (validQuestions.length >= 4) {
         return {
           ...fallbackExam,
           tradeName: parsed.tradeName || fallbackExam.tradeName,
           norms: parsed.norms || fallbackExam.norms,
-          questions: validQuestions.slice(0, 8),
+          questions: validQuestions.slice(0, 4),
           sampleTranscript: parsed.sampleTranscript || fallbackExam.sampleTranscript,
           expectedConcepts: Array.isArray(parsed.expectedConcepts) ? parsed.expectedConcepts : fallbackExam.expectedConcepts
         };
@@ -4433,43 +4429,36 @@ Responde únicamente con el JSON pedido, en español.`;
     updateAiConfigUI();
     layoutCertStepperRail(currentCertStep);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => layoutCertStepperRail(currentCertStep));
-    const wizardEl = document.querySelector('.cert-wizard-wrapper');
-    if (!wizardEl) return;
+  }
 
-    // Foco en el campo de entrada abierta
+  window.selectProgrammingLanguage = function (langName) {
     const input = document.getElementById('customTradeInput');
     if (input) {
-      setTimeout(() => input.focus(), 300);
+      input.value = langName || 'Programación en HTML';
     }
-  }
+    document.querySelectorAll('.prog-lang-card').forEach(btn => {
+      btn.classList.add('selected');
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  };
 
   window.applyQuickTradeSuggestion = function (tradeName) {
     const input = document.getElementById('customTradeInput');
     if (input) {
-      input.value = tradeName;
-    }
-    const contextInput = document.getElementById('customTradeContextInput');
-    if (contextInput && !contextInput.value.trim()) {
-      contextInput.value = `Diagnóstico técnico de causa raíz, intervención normativa con herramientas calibradas y pruebas operativas de garantía en ${tradeName}.`;
+      input.value = tradeName || 'Programación en HTML';
     }
     window.startCustomTradeCertification();
   };
 
   window.startCustomTradeCertification = async function () {
     const input = document.getElementById('customTradeInput');
-    const tradeQuery = input ? input.value.trim() : '';
+    const tradeQuery = (input && input.value.trim()) ? input.value.trim() : 'Programación en HTML';
     const expSelect = document.getElementById('customTradeExperienceSelect');
     const contextInput = document.getElementById('customTradeContextInput');
 
-    if (!tradeQuery) {
-      showToast('Por favor escribe en qué oficio o especialidad deseas certificarte.', 'normal');
-      if (input) input.focus();
-      return;
-    }
-
     candidateCertificationContext = {
-      experience: expSelect ? expSelect.value : 'Maestro Senior (+5 años)',
-      customScope: contextInput ? contextInput.value.trim() : ''
+      experience: expSelect ? expSelect.value : 'Desarrollador Senior (+3 años)',
+      customScope: contextInput ? contextInput.value.trim() : 'Estructura semántica HTML5, formularios accesibles, atributos y validación de código.'
     };
 
     // Iniciar cronómetro de evaluación
@@ -4477,29 +4466,56 @@ Responde únicamente con el JSON pedido, en español.`;
 
     const loaderBox = document.getElementById('aiGeneratingExamState');
     const loaderTitle = document.getElementById('aiGeneratingTradeTitle');
+    const barFill = document.getElementById('aiGeneratingProgressBarFill');
+    const barPct = document.getElementById('aiGeneratingProgressPct');
     const submitBtn = document.getElementById('btnPrepareCustomExam');
 
     if (loaderTitle) {
-      loaderTitle.textContent = hasActiveAiKey()
-        ? `${getAiProviderLabel()} está formulando 8 casos técnicos reales para: "${tradeQuery}"...`
-        : `La IA está preparando 8 casos técnicos periciales para: "${tradeQuery}"...`;
+      loaderTitle.textContent = `Cargando prueba de certificación en ${tradeQuery} (4 preguntas)...`;
     }
+    if (barFill) barFill.style.width = '0%';
+    if (barPct) barPct.textContent = '0%';
     if (loaderBox) loaderBox.style.display = 'flex';
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.7';
     }
 
+    let progressVal = 0;
+    const setGenProgress = (pct, msg) => {
+      progressVal = pct;
+      if (barFill) barFill.style.width = `${pct}%`;
+      if (barPct) barPct.textContent = `${pct}%`;
+      if (msg && loaderTitle) loaderTitle.textContent = msg;
+    };
+
+    const genTimers = [
+      setTimeout(() => setGenProgress(25, `Preparando estructura de la prueba de ${tradeQuery}...`), 180),
+      setTimeout(() => setGenProgress(55, 'Formulando las 4 preguntas técnicas...'), 480),
+      setTimeout(() => setGenProgress(82, 'Verificando opciones de respuesta...'), 820)
+    ];
+
+    const minWait = new Promise(r => setTimeout(r, 1100));
+    let examPromise;
     if (hasActiveAiKey()) {
-      currentTradeExam = await generateAiTradeExamFromApi(
+      examPromise = generateAiTradeExamFromApi(
         tradeQuery,
         candidateCertificationContext.experience,
         candidateCertificationContext.customScope
       );
     } else {
-      await new Promise(r => setTimeout(r, 650));
-      currentTradeExam = getOrGenerateAiTradeExam(tradeQuery);
+      examPromise = Promise.resolve(getOrGenerateAiTradeExam(tradeQuery));
     }
+
+    const [generatedExam] = await Promise.all([examPromise, minWait]);
+    genTimers.forEach(clearTimeout);
+    currentTradeExam = generatedExam;
+    if (currentTradeExam && Array.isArray(currentTradeExam.questions)) {
+      currentTradeExam.questions = currentTradeExam.questions.slice(0, 4);
+    }
+
+    setGenProgress(100, '¡Prueba de 4 preguntas lista!');
+    await new Promise(r => setTimeout(r, 260));
 
     if (loaderBox) loaderBox.style.display = 'none';
     if (submitBtn) {
@@ -4507,21 +4523,21 @@ Responde únicamente con el JSON pedido, en español.`;
       submitBtn.style.opacity = '1';
     }
 
-    // Configurar y renderizar Paso 2 (Examen formulado con 8 preguntas)
+    // Configurar y renderizar Paso 2 (Examen de 4 preguntas, sin mostrar de dónde se sacó la prueba)
     const titleEl = document.getElementById('examTradeTitle');
     const subtitleEl = document.getElementById('examTradeSubtitle');
 
     if (titleEl) {
-      titleEl.textContent = `Prueba Pericial Formulada por IA: ${currentTradeExam.tradeName}`;
+      titleEl.textContent = `Prueba Técnica: ${currentTradeExam.tradeName}`;
     }
     if (subtitleEl) {
-      subtitleEl.textContent = `Contexto: ${candidateCertificationContext.experience} • Normativa: ${currentTradeExam.norms}. Cada caso equivale al 12.5% (mínimo 6 de 8 aciertos para superar el 75%).`;
+      subtitleEl.textContent = `Nivel: ${candidateCertificationContext.experience} • Responde las 4 preguntas técnicas (cada pregunta equivale al 25%, mínimo 3 de 4 para aprobar).`;
     }
 
     renderCertificationQuestions(currentTradeExam.questions);
     goToStep(2);
 
-    showToast(`Se han formulado 8 casos periciales en ${currentTradeExam.tradeName}.`, 'success');
+    showToast(`Prueba de 4 preguntas en ${currentTradeExam.tradeName} cargada.`, 'success');
   };
 
   /* El riel del paso a paso se mide desde el centro del círculo 1 hasta el centro del 4,
@@ -4604,7 +4620,7 @@ Responde únicamente con el JSON pedido, en español.`;
 
       card.innerHTML = `
         <div class="exam-question-header">
-          <span class="exam-q-num">Caso #${qIndex + 1} de ${questions.length}</span>
+          <span class="exam-q-num">Pregunta #${qIndex + 1} de ${questions.length}</span>
           <span class="exam-q-title">${q.title}</span>
         </div>
         <div class="exam-q-scenario">${q.scenario}</div>
@@ -4633,7 +4649,7 @@ Responde únicamente con el JSON pedido, en español.`;
       }
     });
 
-    const totalQuestions = currentTradeExam ? currentTradeExam.questions.length : 8;
+    const totalQuestions = currentTradeExam ? currentTradeExam.questions.length : 4;
     const answeredCount = Object.keys(certUserAnswers).length;
     updateAnsweredQuestionsCounter(answeredCount, totalQuestions);
   };
@@ -4641,7 +4657,7 @@ Responde únicamente con el JSON pedido, en español.`;
   function updateAnsweredQuestionsCounter(answered, total) {
     const counterEl = document.getElementById('answeredQuestionsCounter');
     if (counterEl) {
-      counterEl.textContent = `${answered} de ${total} casos respondidos`;
+      counterEl.textContent = `${answered} de ${total} preguntas respondidas`;
       if (answered === total) {
         counterEl.style.color = 'var(--green-verified)';
         counterEl.style.fontWeight = '700';
@@ -4652,10 +4668,10 @@ Responde únicamente con el JSON pedido, en español.`;
     }
   }
 
-  // EVALUACIÓN TEÓRICA: Se guardan las 8 respuestas y se sellan en reserva (NO se muestra la nota en este paso)
+  // EVALUACIÓN TEÓRICA: Se guardan las 4 respuestas y se sellan en reserva (NO se muestra la nota en este paso)
   window.evaluateTheoreticalExam = function () {
     if (!currentTradeExam) {
-      currentTradeExam = getOrGenerateAiTradeExam('Plomería & Redes Hidráulicas');
+      currentTradeExam = getOrGenerateAiTradeExam('Programación en HTML');
     }
     const questions = currentTradeExam.questions;
     const totalQ = questions.length;
@@ -4669,7 +4685,7 @@ Responde únicamente con el JSON pedido, en español.`;
     });
 
     certCorrectAnswersCount = correctCount;
-    // Cada pregunta de las 8 equivale exactamente a 12.5%
+    // Cada pregunta de las 4 equivale exactamente a 25%
     certTheoreticalScore = Math.round((correctCount / totalQ) * 100);
 
     // Ocultar botón de registro y preguntas para sellar
@@ -4687,7 +4703,7 @@ Responde únicamente con el JSON pedido, en español.`;
     const feedbackBlock = document.getElementById('certExamFeedbackBlock');
     if (feedbackBlock) feedbackBlock.style.display = 'none';
 
-    showToast('Tus 8 respuestas han quedado registradas en el expediente. Tu nota teórica se revelará en el dictamen final.', 'success');
+    showToast('Tus 4 respuestas han quedado registradas en el expediente.', 'success');
   };
 
   window.goToStep3_Evidencias = function () {
@@ -4698,7 +4714,7 @@ Responde únicamente con el JSON pedido, en español.`;
     if (currentTradeExam) {
       const jobInput = document.getElementById('certJobTitle');
       if (jobInput) {
-        jobInput.value = `Diagnóstico técnico, reparación y puesta a punto en ${currentTradeExam.tradeName}`;
+        jobInput.value = `Desarrollo y estructura semántica de página web en ${currentTradeExam.tradeName}`;
       }
     }
   };
@@ -4816,8 +4832,7 @@ Responde únicamente con el JSON pedido, en español.`;
     }
     const info = currentTradeExam;
 
-    // Antes, si faltaba la foto o el audio, se rellenaban con una foto de stock y un texto "ideal"
-    // y la IA calificaba eso. Ahora se exige evidencia real en cada paso.
+    // Exige evidencia real en cada paso
     const problems = [];
     verificationEvidences.forEach((ev, idx) => {
       const n = idx + 1;
@@ -4826,13 +4841,6 @@ Responde únicamente con el JSON pedido, en español.`;
     });
     if (problems.length) {
       showToast(`Falta evidencia: ${problems.join('; ')}.`, 'error');
-      return;
-    }
-    if (!hasActiveAiKey()) {
-      showToast('Para evaluar con IA necesitas configurar al menos una API Key gratuita (Gemini, Groq u OpenRouter).', 'error');
-      goToStep(1);
-      const drawer = document.getElementById('aiApiKeyDrawer');
-      if (drawer) drawer.style.display = 'block';
       return;
     }
     if (verificationEvidences.some(ev => ev.isRecording)) {
@@ -4847,26 +4855,85 @@ Responde únicamente con el JSON pedido, en español.`;
     const verdictContainer = document.getElementById('aiVerdictContainer');
     const errorBox = document.getElementById('aiEvalErrorBox');
     const step2Label = document.getElementById('aiStep2Label');
+    const evalBarFill = document.getElementById('aiEvalProgressBarFill');
+    const evalBarPct = document.getElementById('aiEvalProgressPct');
+    const evalStageText = document.getElementById('aiEvalProgressStageText');
+
+    const updateEvalProgress = (pct, stageMsg) => {
+      if (evalBarFill) evalBarFill.style.width = `${pct}%`;
+      if (evalBarPct) evalBarPct.textContent = `${pct}%`;
+      if (stageMsg && evalStageText) evalStageText.textContent = stageMsg;
+    };
 
     if (scannerBox) scannerBox.style.display = 'block';
     if (verdictContainer) verdictContainer.style.display = 'none';
     if (errorBox) errorBox.style.display = 'none';
     if (step2Label) {
-      step2Label.textContent = `${getAiProviderLabel()}: revisando cada foto con su explicación en ${info.tradeName}...`;
+      step2Label.textContent = `Analizando fotografías y transcripciones de audio en ${info.tradeName}...`;
     }
+    updateEvalProgress(8, 'Iniciando procesamiento de respuestas y evidencias...');
 
     const stepItems = [1, 2, 3, 4].map(n => document.getElementById(`aiStep_${n}`));
     stepItems.forEach(el => el && (el.className = 'ai-scan-step-item'));
     if (stepItems[0]) stepItems[0].className = 'ai-scan-step-item active';
 
     const jobTitleInput = document.getElementById('certJobTitle');
-    const jobTitle = (jobTitleInput && jobTitleInput.value.trim()) || `Trabajo de ${info.tradeName}`;
+    const jobTitle = (jobTitleInput && jobTitleInput.value.trim()) || `Desarrollo en ${info.tradeName}`;
 
-    // La animación avanza mientras la IA trabaja, pero el último paso solo se marca cuando hay respuesta
+    // Construir reporte base sin calificar desde el inicio para que siempre se pueda descargar
+    const hasStartInit = !!certEvaluationStartTime;
+    const elapsedMsInit = hasStartInit ? Math.max(1000, certEvaluationEndTime - certEvaluationStartTime) : 0;
+    const initMin = Math.floor(elapsedMsInit / 60000);
+    const initSec = Math.floor((elapsedMsInit % 60000) / 1000);
+    const initDurationText = hasStartInit ? `${initMin} min ${initSec < 10 ? '0' : ''}${initSec} seg` : 'No registrado';
+    const initDate = new Date();
+
+    lastCertificationReport = {
+      candidateName: currentUser ? currentUser.name : 'Luis Rodríguez',
+      candidateEmail: currentUser ? currentUser.email : 'luis@tasksmith.co',
+      tradeName: info.tradeName,
+      experience: candidateCertificationContext.experience,
+      scope: candidateCertificationContext.customScope,
+      jobTitle,
+      issueDate: initDate,
+      issueDateText: initDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }),
+      durationText: initDurationText,
+      theoretical: {
+        total: (info.questions || []).length,
+        questions: (info.questions || []).map((q, idx) => ({
+          title: q.title,
+          scenario: q.scenario || '',
+          options: Array.isArray(q.options) ? q.options : [],
+          chosenIndex: certUserAnswers[idx] !== undefined ? certUserAnswers[idx] : null,
+          chosen: certUserAnswers[idx] !== undefined && q.options[certUserAnswers[idx]] ? q.options[certUserAnswers[idx]] : 'No respondida'
+        }))
+      },
+      evidences: verificationEvidences.map((ev, idx) => ({
+        paso: idx + 1,
+        photo: ev.photo,
+        audioDuration: ev.audioDuration || null,
+        transcript: getEvidenceTranscript(ev) || 'Sin transcripción registrada.'
+      }))
+    };
+    document.querySelectorAll('[data-export-cert-pdf]').forEach(btn => { btn.disabled = false; });
+
+    // Avance de la barra de carga mientras la IA evalúa
     const timers = [
-      setTimeout(() => { stepItems[0] && (stepItems[0].className = 'ai-scan-step-item done'); stepItems[1] && (stepItems[1].className = 'ai-scan-step-item active'); }, 900),
-      setTimeout(() => { stepItems[1] && (stepItems[1].className = 'ai-scan-step-item done'); stepItems[2] && (stepItems[2].className = 'ai-scan-step-item active'); }, 2200),
-      setTimeout(() => { stepItems[2] && (stepItems[2].className = 'ai-scan-step-item done'); stepItems[3] && (stepItems[3].className = 'ai-scan-step-item active'); }, 3600)
+      setTimeout(() => {
+        stepItems[0] && (stepItems[0].className = 'ai-scan-step-item done');
+        stepItems[1] && (stepItems[1].className = 'ai-scan-step-item active');
+        updateEvalProgress(32, 'Verificando las 4 preguntas técnicas y transcripciones de voz...');
+      }, 800),
+      setTimeout(() => {
+        stepItems[1] && (stepItems[1].className = 'ai-scan-step-item done');
+        stepItems[2] && (stepItems[2].className = 'ai-scan-step-item active');
+        updateEvalProgress(64, 'Inspeccionando fotografías de código y coherencia técnica...');
+      }, 1900),
+      setTimeout(() => {
+        stepItems[2] && (stepItems[2].className = 'ai-scan-step-item done');
+        stepItems[3] && (stepItems[3].className = 'ai-scan-step-item active');
+        updateEvalProgress(88, 'Calculando tiempo, calidad de certificación y dictamen...');
+      }, 3100)
     ];
 
     const result = await evaluateFullCertificationWithRealAi(info, jobTitle, verificationEvidences);
@@ -4879,11 +4946,13 @@ Responde únicamente con el JSON pedido, en español.`;
         if (msg) msg.textContent = (result && result.error) || 'La IA no respondió.';
         errorBox.style.display = 'block';
       }
-      showToast('No se pudo completar la evaluación con IA. No se emitió ningún resultado.', 'error');
+      showToast('No se pudo completar la evaluación automática. Puedes reintentar o descargar tu copia sin calificar.', 'error');
       return;
     }
 
+    updateEvalProgress(100, '¡Evaluación completada!');
     stepItems.forEach(el => el && (el.className = 'ai-scan-step-item done'));
+    await new Promise(r => setTimeout(r, 250));
     completeAiVerdictDisplay(info, result, jobTitle);
   };
 
@@ -4907,7 +4976,6 @@ Responde únicamente con el JSON pedido, en español.`;
 
     // 1. CRITERIO OBLIGATORIO: CÁLCULO Y VISUALIZACIÓN DEL TIEMPO TOTAL DE EVALUACIÓN
     if (!certEvaluationEndTime) certEvaluationEndTime = Date.now();
-    // Antes, sin hora de inicio se inventaban 5 min 40 s; ahora se indica que no se registró
     const hasStart = !!certEvaluationStartTime;
     const elapsedMs = hasStart ? Math.max(1000, certEvaluationEndTime - certEvaluationStartTime) : 0;
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
@@ -4922,8 +4990,8 @@ Responde únicamente con el JSON pedido, en español.`;
       if (!hasStart) {
         speedAssessmentEl.textContent = 'No se registró la hora de inicio de esta evaluación.';
       } else {
-        const paceWord = elapsedMinutes < 5 ? 'Más rápido que el rango habitual' : (elapsedMinutes <= 25 ? 'Dentro del rango habitual' : 'Más lento que el rango habitual');
-        speedAssessmentEl.innerHTML = `Ritmo: <strong>${paceWord}</strong> (${formattedDuration} cronometrados; rango habitual de 5 a 25 min).`;
+        const paceWord = elapsedMinutes < 3 ? 'Ágil y fluido' : (elapsedMinutes <= 15 ? 'Dentro del rango esperado' : 'Extenso');
+        speedAssessmentEl.innerHTML = `Ritmo: <strong>${paceWord}</strong> (${formattedDuration} cronometrados).`;
       }
     }
 
@@ -4947,6 +5015,8 @@ Responde únicamente con el JSON pedido, en español.`;
     }
 
     const practicalScore = evaluationCoherence.totalPracticalScore;
+    const totalQ = (info.questions && info.questions.length) ? info.questions.length : 4;
+    const minRequiredCorrect = Math.ceil(totalQ * 0.75); // 3 de 4
 
     // Asignar puntajes de los 4 pilares a la interfaz
     const c1 = document.getElementById('aiScoreC1');
@@ -4959,7 +5029,6 @@ Responde únicamente con el JSON pedido, en español.`;
     if (c2) c2.textContent = `${evaluationCoherence.p2}/25`;
     if (c3) c3.textContent = `${evaluationCoherence.p3}/25`;
     if (c4) c4.textContent = `${evaluationCoherence.p4}/25`;
-    // Las leyendas bajo cada pilar eran fijas ("Preciso y certero") aunque la nota fuera 5/25
     [c1, c2, c3, c4].forEach((el, i) => {
       const caption = el && el.nextElementSibling;
       if (!caption) return;
@@ -4977,12 +5046,12 @@ Responde únicamente con el JSON pedido, en español.`;
     if (conceptsCloud) {
       conceptsCloud.innerHTML = evaluationCoherence.matchedConcepts.length
         ? evaluationCoherence.matchedConcepts.map(c => `<span class="ai-concept-chip">${escapeHtml(c)}</span>`).join('')
-        : '<span style="font-size: 0.85rem; color: var(--ink-muted);">La IA no identificó conceptos técnicos demostrados.</span>';
+        : '<span style="font-size: 0.85rem; color: var(--ink-muted);">No se identificaron conceptos técnicos adicionales.</span>';
     }
 
     const pillarNotesEl = document.getElementById('aiPillarNotes');
     if (pillarNotesEl) {
-      const labels = { p1: 'Diagnóstico', p2: 'Herramientas y materiales', p3: 'Procedimiento', p4: 'Pruebas y garantía' };
+      const labels = { p1: 'Diagnóstico', p2: 'Herramientas y código', p3: 'Procedimiento', p4: 'Pruebas y validación' };
       const notes = Object.keys(labels)
         .filter(k => evaluationCoherence.pillarNotes && evaluationCoherence.pillarNotes[k])
         .map(k => `<li><strong>${labels[k]} (${evaluationCoherence[k]}/25):</strong> ${escapeHtml(evaluationCoherence.pillarNotes[k])}</li>`);
@@ -5007,11 +5076,54 @@ Responde únicamente con el JSON pedido, en español.`;
       coherenceDesc.textContent = evaluationCoherence.coherenceDescription;
     }
 
-    // 4. REVELACIÓN DE CALIFICACIONES AL FINAL
+    // 4. REVELACIÓN DE CALIFICACIONES Y CALIDAD DE CERTIFICACIÓN
     const passedTheoretical = (certTheoreticalScore >= 75);
     const passedPractical = (practicalScore >= 75);
     const certApproved = passedTheoretical && passedPractical;
     const overallAverageScore = Math.round((certTheoreticalScore + practicalScore) / 2);
+
+    // Calcular Calidad de Certificación
+    let qualityLabel = 'Por Validar';
+    let qualityDesc = '';
+    let qualityColor = 'var(--ink-primary)';
+    let qualityBadgeText = '';
+
+    if (certApproved && overallAverageScore >= 90) {
+      qualityLabel = `Alta — Nivel Sobresaliente (${overallAverageScore}%)`;
+      qualityDesc = `Dominio técnico superior tanto en las ${totalQ} preguntas (${certTheoreticalScore}%) como en la evidencia de código y audio (${practicalScore}%).`;
+      qualityColor = 'var(--green-verified)';
+      qualityBadgeText = 'Calidad Superior Verificada';
+    } else if (certApproved) {
+      qualityLabel = `Satisfactoria — Estándar Aprobado (${overallAverageScore}%)`;
+      qualityDesc = `Cumple con los criterios técnicos exigidos en teoría (${certTheoreticalScore}%) y evidencia práctica (${practicalScore}%).`;
+      qualityColor = '#166534';
+      qualityBadgeText = 'Calidad Estándar Acreditada';
+    } else if (overallAverageScore >= 60) {
+      qualityLabel = `Media — En Desarrollo (${overallAverageScore}%)`;
+      qualityDesc = `Desempeño parcial (Teoría: ${certTheoreticalScore}% • Práctica: ${practicalScore}%). Requiere reforzar al menos el 75% en ambas áreas.`;
+      qualityColor = '#b45309';
+      qualityBadgeText = 'Calidad Parcial (Requiere refuerzo)';
+    } else {
+      qualityLabel = `Baja — Insuficiente (${overallAverageScore}%)`;
+      qualityDesc = `La precisión técnica en las respuestas (${certTheoreticalScore}%) o la evidencia enviada (${practicalScore}%) no alcanza el estándar mínimo.`;
+      qualityColor = '#dc2626';
+      qualityBadgeText = 'Calidad Insuficiente';
+    }
+
+    const qualityLevelEl = document.getElementById('evaluationQualityLevel');
+    const qualityDescEl = document.getElementById('evaluationQualityDesc');
+    const qualityBadgeEl = document.getElementById('evaluationQualityBadge');
+    const certQualityDisplayEl = document.getElementById('certQualityDisplay');
+
+    if (qualityLevelEl) {
+      qualityLevelEl.textContent = qualityLabel;
+      qualityLevelEl.style.color = qualityColor;
+    }
+    if (qualityDescEl) qualityDescEl.textContent = qualityDesc;
+    if (qualityBadgeEl) qualityBadgeEl.textContent = qualityBadgeText;
+    if (certQualityDisplayEl) {
+      certQualityDisplayEl.textContent = `Calidad de Certificación: ${qualityLabel}`;
+    }
 
     // Revelar Teórico
     const revTheoScore = document.getElementById('revealedTheoScore');
@@ -5023,15 +5135,15 @@ Responde únicamente con el JSON pedido, en español.`;
       revTheoScore.style.color = passedTheoretical ? 'var(--green-verified)' : '#B91C1C';
     }
     if (revTheoBadge) {
-      revTheoBadge.textContent = `${certCorrectAnswersCount} de 8 aciertos`;
+      revTheoBadge.textContent = `${certCorrectAnswersCount} de ${totalQ} aciertos`;
       revTheoBadge.dataset.status = passedTheoretical ? 'done' : 'error';
       revTheoBadge.style.background = '';
       revTheoBadge.style.color = '';
     }
     if (revTheoDesc) {
       revTheoDesc.textContent = passedTheoretical
-        ? `Prueba teórica aprobada (${certCorrectAnswersCount}/8 aciertos, mínimo 6 requeridos).`
-        : `Prueba teórica insuficiente (${certCorrectAnswersCount}/8 aciertos; se exige mínimo 6 de 8 = 75/100).`;
+        ? `Prueba teórica aprobada (${certCorrectAnswersCount}/${totalQ} aciertos, mínimo ${minRequiredCorrect} requeridos).`
+        : `Prueba teórica insuficiente (${certCorrectAnswersCount}/${totalQ} aciertos; se exige mínimo ${minRequiredCorrect} de ${totalQ} = 75/100).`;
     }
 
     // Revelar Práctico
@@ -5072,7 +5184,7 @@ Responde únicamente con el JSON pedido, en español.`;
     const readyPhotos = verificationEvidences.filter(e => !!e.photo).length;
     const readyAudios = verificationEvidences.filter(e => !!e.audioDuration).length;
     if (countSubmittedText) {
-      countSubmittedText.textContent = `${readyPhotos} fotos de cámara y ${readyAudios} notas de voz auditadas`;
+      countSubmittedText.textContent = `${readyPhotos} fotos y ${readyAudios} notas de voz registradas`;
     }
 
     const auditedGallery = document.getElementById('auditedEvidenceGallery');
@@ -5081,16 +5193,16 @@ Responde únicamente con el JSON pedido, en español.`;
         const photoSrc = ev.photo || '';
         const dur = ev.audioDuration || 'Sin audio';
         const analysis = evaluationCoherence.evidenceAnalysis[idx] || {};
-        const audioTranscript = analysis.transcript || 'Sin explicación.';
+        const audioTranscript = analysis.transcript || getEvidenceTranscript(ev) || 'Sin explicación.';
         const stampOk = analysis.fotoCorrespondeAlOficio;
-        const deviceSensorLabel = stampOk ? 'Corresponde al oficio' : 'No corresponde al oficio';
+        const deviceSensorLabel = stampOk ? 'Evidencia válida' : 'No corresponde';
 
         return `
           <div style="background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
             <div style="position: relative; height: 180px; background: #1a1a24; overflow: hidden;">
               <img src="${photoSrc}" alt="Evidencia ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
               <span class="ai-stamp-badge" style="${stampOk ? '' : 'background: #dc2626; color: #fff;'}">
-                ${stampOk ? 'IA: FOTO DEL OFICIO' : 'IA: NO CORRESPONDE'}
+                ${stampOk ? 'FOTO VERIFICADA' : 'NO CORRESPONDE'}
               </span>
               <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem;">
                 ${deviceSensorLabel} • Paso #${idx + 1}
@@ -5098,10 +5210,10 @@ Responde únicamente con el JSON pedido, en español.`;
             </div>
             <div style="padding: 14px;">
               <p style="font-size: 0.78rem; color: var(--ink-secondary); margin: 0 0 10px; line-height: 1.4;">
-                <strong>Lo que la IA ve en la foto:</strong> ${escapeHtml(analysis.descripcionFoto || '')}
+                <strong>Inspección visual:</strong> ${escapeHtml(analysis.descripcionFoto || '')}
               </p>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <strong style="font-size: 0.86rem; color: var(--ink-primary);">Explicación #${idx + 1}</strong>
+                <strong style="font-size: 0.86rem; color: var(--ink-primary);">Audio Transcrito #${idx + 1}</strong>
                 <span class="live-badge" style="background: ${analysis.explicacionCoincideConFoto ? 'var(--green-soft)' : '#fee2e2'}; color: ${analysis.explicacionCoincideConFoto ? 'var(--green-verified)' : '#dc2626'}; font-size: 0.76rem;">${analysis.explicacionCoincideConFoto ? 'Coincide con la foto' : 'No coincide con la foto'}</span>
               </div>
               ${ev.audioUrl ? `<div class="audio-playback-row" style="background: var(--bg-card-subtle); padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 8px;">
@@ -5113,7 +5225,7 @@ Responde únicamente con el JSON pedido, en español.`;
                 </div>
               </div>` : ''}
               <p style="font-size: 0.78rem; color: var(--ink-secondary); margin: 0; line-height: 1.35; font-style: italic;">
-                "${escapeHtml(audioTranscript.length > 160 ? audioTranscript.substring(0, 160) + '...' : audioTranscript)}"
+                "${escapeHtml(audioTranscript.length > 220 ? audioTranscript.substring(0, 220) + '...' : audioTranscript)}"
               </p>
               ${analysis.observaciones ? `<p style="font-size: 0.76rem; color: var(--ink-muted); margin: 8px 0 0; line-height: 1.35;"><strong>Observaciones:</strong> ${escapeHtml(analysis.observaciones)}</p>` : ''}
             </div>
@@ -5129,21 +5241,17 @@ Responde únicamente con el JSON pedido, en español.`;
     const statusBadge = document.getElementById('aiVerdictStatusBadge');
     const verdictP = document.getElementById('aiVerdictParagraph');
 
-    const engineTag = evaluationCoherence.evaluatedByRealAi
-      ? `(${evaluationCoherence.evaluatedByRealAi})`
-      : '(Auditor Pericial Tasksmith IA)';
-
     if (certApproved) {
       if (statusBadge) {
-        statusBadge.textContent = `Evaluación Aprobada por ${evaluationCoherence.evaluatedByRealAi || 'IA'}: Doble Idoneidad Demostrada`;
+        statusBadge.textContent = 'Evaluación Aprobada: Doble Idoneidad Demostrada';
         statusBadge.dataset.status = 'done';
         statusBadge.style.color = '';
         statusBadge.style.background = '';
       }
       if (verdictP) {
         verdictP.innerHTML = evaluationCoherence.verdictParagraph
-          ? `<strong>Conclusión del Peritaje ${engineTag}:</strong> ${escapeHtml(evaluationCoherence.verdictParagraph)} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration})</em>`
-          : `<strong>Conclusión del Peritaje ${engineTag}:</strong> El especialista demostró competencia técnica sobresaliente respondiendo ${certCorrectAnswersCount} de 8 casos teóricos (${certTheoreticalScore}/100) y acreditó idoneidad práctica rigurosa en sus fotos y audios auditados (${practicalScore}/100) en un tiempo total de ${formattedDuration}. Cumple plenamente con el estándar oficial de Tasksmith.`;
+          ? `<strong>Conclusión de la Evaluación:</strong> ${escapeHtml(evaluationCoherence.verdictParagraph)} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Calidad: ${qualityLabel} • Tiempo: ${formattedDuration})</em>`
+          : `<strong>Conclusión de la Evaluación:</strong> El candidato demostró competencia técnica respondiendo ${certCorrectAnswersCount} de ${totalQ} preguntas teóricas (${certTheoreticalScore}/100) y acreditó idoneidad práctica en sus fotos y audios (${practicalScore}/100) en un tiempo total de ${formattedDuration}.`;
       }
 
       if (failedCard) failedCard.style.display = 'none';
@@ -5187,7 +5295,7 @@ Responde únicamente con el JSON pedido, en español.`;
 
       localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
       updateNavUserSlot();
-      showToast(`¡Acreditación Oficial Aprobada! Teórico: ${certTheoreticalScore}/100 (${certCorrectAnswersCount}/8) • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration}.`, 'success');
+      showToast(`¡Certificación Aprobada! Teórico: ${certTheoreticalScore}/100 (${certCorrectAnswersCount}/${totalQ}) • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration}.`, 'success');
 
     } else {
       // REQUISITOS NO CUMPLIDOS
@@ -5199,12 +5307,12 @@ Responde únicamente con el JSON pedido, en español.`;
       }
 
       let reasons = [];
-      if (!passedTheoretical) reasons.push(`prueba teórica insuficiente (${certTheoreticalScore}/100 con ${certCorrectAnswersCount} de 8 aciertos, mínimo 6 requeridos)`);
+      if (!passedTheoretical) reasons.push(`prueba teórica insuficiente (${certTheoreticalScore}/100 con ${certCorrectAnswersCount} de ${totalQ} aciertos, mínimo ${minRequiredCorrect} requeridos)`);
       if (!passedPractical) reasons.push(`evidencia práctica audiovisual insuficiente (${practicalScore}/100, mínimo 75)`);
 
       if (verdictP) {
-        const aiExtraFeedback = evaluationCoherence.verdictParagraph ? `<br><br><em>Observación de ${evaluationCoherence.evaluatedByRealAi || 'la IA'}:</em> ${escapeHtml(evaluationCoherence.verdictParagraph)}` : '';
-        verdictP.innerHTML = `<strong>Dictamen Pericial ${engineTag}:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de evaluación. En Tasksmith se exige demostrar idoneidad técnica en ambas áreas (mínimo 75/100 en cada una) para garantizar la seguridad de los hogares.${aiExtraFeedback}`;
+        const aiExtraFeedback = evaluationCoherence.verdictParagraph ? `<br><br><em>Observación:</em> ${escapeHtml(evaluationCoherence.verdictParagraph)}` : '';
+        verdictP.innerHTML = `<strong>Resultado de la Evaluación:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de evaluación (Calidad: ${qualityLabel}). Se exige alcanzar mínimo 75/100 en ambas áreas.${aiExtraFeedback}`;
       }
 
       if (certWrapper) certWrapper.style.display = 'none';
@@ -5219,15 +5327,15 @@ Responde únicamente con el JSON pedido, en español.`;
 
         if (failedTheoScore) failedTheoScore.textContent = `${certTheoreticalScore}/100`;
         if (failedTheoBadge) {
-          failedTheoBadge.textContent = passedTheoretical ? `Aprobada (${certCorrectAnswersCount}/8)` : `Insuficiente (${certCorrectAnswersCount}/8)`;
+          failedTheoBadge.textContent = passedTheoretical ? `Aprobada (${certCorrectAnswersCount}/${totalQ})` : `Insuficiente (${certCorrectAnswersCount}/${totalQ})`;
           failedTheoBadge.dataset.status = passedTheoretical ? 'done' : 'error';
           failedTheoBadge.style.background = '';
           failedTheoBadge.style.color = '';
         }
         if (failedTheoMsg) {
           failedTheoMsg.textContent = passedTheoretical
-            ? 'Superaste satisfactoriamente este componente con 6 o más aciertos.'
-            : `Puntaje obtenido: ${certTheoreticalScore}/100 (${certCorrectAnswersCount} de 8 casos). Se exige acertar mínimo 6 de 8 casos para alcanzar el 75%.`;
+            ? `Superaste satisfactoriamente este componente con ${minRequiredCorrect} o más aciertos.`
+            : `Puntaje obtenido: ${certTheoreticalScore}/100 (${certCorrectAnswersCount} de ${totalQ} preguntas). Se exige acertar mínimo ${minRequiredCorrect} de ${totalQ} preguntas para alcanzar el 75%.`;
         }
 
         const failedPractScore = document.getElementById('failedPracticalScore');
@@ -5244,7 +5352,7 @@ Responde únicamente con el JSON pedido, en español.`;
         if (failedPractMsg) {
           failedPractMsg.textContent = passedPractical
             ? 'Superaste satisfactoriamente las evidencias prácticas.'
-            : 'Faltan fotografías nítidas de obra o una explicación de voz más detallada con herramientas, materiales y pruebas ejecutadas.';
+            : 'Faltan fotografías nítidas del código HTML o una explicación de voz más detallada sobre las etiquetas y estructura implementada.';
         }
       }
 
@@ -5257,7 +5365,7 @@ Responde únicamente con el JSON pedido, en español.`;
       showToast('Evaluación concluida sin certificación: No se superó el 75% en ambas pruebas obligatorias.', 'normal');
     }
 
-    // 7. Fecha real de emisión y expediente para exportar en PDF
+    // 7. Fecha real de emisión y expediente completo para exportar copia SIN CALIFICAR en PDF
     const issueDate = new Date();
     const issueDateText = issueDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
     const certIssueDateEl = document.getElementById('certIssueDate');
@@ -5265,59 +5373,38 @@ Responde únicamente con el JSON pedido, en español.`;
 
     const certHashEl = document.getElementById('certHashId');
     lastCertificationReport = {
-      candidateName: currentUser ? currentUser.name : 'Candidato',
-      candidateEmail: currentUser ? currentUser.email : '',
+      candidateName: currentUser ? currentUser.name : 'Luis Rodríguez',
+      candidateEmail: currentUser ? currentUser.email : 'luis@tasksmith.co',
       tradeName: info.tradeName,
-      norms: info.norms || '',
       experience: candidateCertificationContext.experience,
       scope: candidateCertificationContext.customScope,
       jobTitle,
       issueDate,
       issueDateText,
       certificateId: certApproved && certHashEl ? certHashEl.textContent : null,
-      approved: certApproved,
       durationText: formattedDuration,
+      qualityLabel,
       theoretical: {
-        score: certTheoreticalScore,
-        correct: certCorrectAnswersCount,
         total: (info.questions || []).length,
-        passed: passedTheoretical,
-        feedback: evaluationCoherence.theoreticalFeedback || '',
         questions: (info.questions || []).map((q, idx) => ({
           title: q.title,
           scenario: q.scenario || '',
-          chosen: certUserAnswers[idx] !== undefined ? q.options[certUserAnswers[idx]] : 'No respondida',
-          correctAnswer: q.options[q.correct],
-          isRight: certUserAnswers[idx] === q.correct,
-          explanation: q.explanation || ''
+          options: Array.isArray(q.options) ? q.options : [],
+          chosenIndex: certUserAnswers[idx] !== undefined ? certUserAnswers[idx] : null,
+          chosen: certUserAnswers[idx] !== undefined && q.options[certUserAnswers[idx]] ? q.options[certUserAnswers[idx]] : 'No respondida'
         }))
       },
-      practical: {
-        score: practicalScore,
-        passed: passedPractical,
-        pillars: [
-          { name: 'Diagnóstico', score: evaluationCoherence.p1, note: evaluationCoherence.pillarNotes?.p1 || '' },
-          { name: 'Herramientas y materiales', score: evaluationCoherence.p2, note: evaluationCoherence.pillarNotes?.p2 || '' },
-          { name: 'Procedimiento', score: evaluationCoherence.p3, note: evaluationCoherence.pillarNotes?.p3 || '' },
-          { name: 'Pruebas y garantía', score: evaluationCoherence.p4, note: evaluationCoherence.pillarNotes?.p4 || '' }
-        ],
-        coherencePercent: evaluationCoherence.coherencePercent,
-        coherenceDescription: evaluationCoherence.coherenceDescription,
-        matchedConcepts: evaluationCoherence.matchedConcepts || [],
-        missingConcepts: evaluationCoherence.missingConcepts || [],
-        guardNotes: evaluationCoherence.guardNotes || []
-      },
-      evidences: verificationEvidences.map((ev, idx) => ({
-        ...(evaluationCoherence.evidenceAnalysis[idx] || {}),
-        photo: ev.photo,
-        audioDuration: ev.audioDuration || null
-      })),
-      overallScore: overallAverageScore,
-      verdictParagraph: evaluationCoherence.verdictParagraph || '',
-      engine: evaluationCoherence.evaluatedByRealAi || 'IA'
+      evidences: verificationEvidences.map((ev, idx) => {
+        const analysis = (evaluationCoherence.evidenceAnalysis && evaluationCoherence.evidenceAnalysis[idx]) || {};
+        return {
+          paso: idx + 1,
+          photo: ev.photo,
+          audioDuration: ev.audioDuration || null,
+          transcript: analysis.transcript || getEvidenceTranscript(ev) || 'Sin transcripción registrada.'
+        };
+      })
     };
     document.querySelectorAll('[data-export-cert-pdf]').forEach(btn => { btn.disabled = false; });
-    resetCertFeedback();
   }
 
   window.restartCertificationWizard = function () {
@@ -5330,13 +5417,12 @@ Responde únicamente con el JSON pedido, en español.`;
     goToStep(1);
     const input = document.getElementById('customTradeInput');
     if (input) {
-      input.value = '';
-      input.focus();
+      input.value = 'Programación en HTML';
     }
-    showToast('Inicia una nueva certificación técnica con cualquier oficio.', 'normal');
+    showToast('Inicia una nueva prueba de certificación en Programación en HTML.', 'normal');
   };
 
-  /* --- EXPORTAR RESULTADOS DE CERTIFICACIÓN EN PDF (jsPDF) --- */
+  /* --- EXPORTAR COPIA DE LO QUE HIZO EL CANDIDATO SIN CALIFICAR EN PDF (PARA CALIFICAR POR UNA PERSONA) --- */
   function loadImageAsDataUrl(src) {
     return new Promise(resolve => {
       const img = new Image();
@@ -5367,7 +5453,7 @@ Responde únicamente con el JSON pedido, en español.`;
     return String(str == null ? '' : str)
       .replace(/[≤]/g, '<=').replace(/[≥]/g, '>=').replace(/[→]/g, '->')
       .replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
-      .replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•€]/g, '')
+      .replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•€]/g, '')
       .replace(/[ \t]+/g, ' ')
       .trim();
   }
@@ -5375,7 +5461,7 @@ Responde únicamente con el JSON pedido, en español.`;
   window.exportCertificationReportPdf = async function () {
     const r = lastCertificationReport;
     if (!r) {
-      showToast('Primero completa la evaluación para poder exportar los resultados.', 'error');
+      showToast('Primero completa la prueba para poder descargar la copia en PDF.', 'error');
       return;
     }
     const JsPDF = window.jspdf && window.jspdf.jsPDF;
@@ -5395,7 +5481,7 @@ Responde únicamente con el JSON pedido, en español.`;
       const CW = PW - M * 2;
       const COLORS = {
         ink: [44, 34, 26], soft: [90, 74, 61], muted: [138, 122, 109], blue: [37, 88, 134],
-        green: [37, 124, 62], red: [185, 28, 28], line: [228, 220, 208], panel: [246, 242, 235]
+        line: [228, 220, 208], panel: [246, 242, 235], highlight: [232, 242, 252]
       };
       let y = M;
 
@@ -5424,7 +5510,7 @@ Responde únicamente con el JSON pedido, en español.`;
         doc.setLineWidth(0.3);
         doc.line(M, y, PW - M, y);
         y += 5;
-        text(title, { size: 13, bold: true, color: COLORS.blue, after: 2 });
+        text(title, { size: 12.5, bold: true, color: COLORS.blue, after: 2 });
       };
       const labelValue = (label, value) => {
         if (!value) return;
@@ -5437,129 +5523,116 @@ Responde únicamente con el JSON pedido, en español.`;
       doc.setFont('helvetica', 'bold'); doc.setFontSize(16); setColor(COLORS.ink);
       doc.text('Tasksmith', M + (logo ? 15 : 0), y + 6);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); setColor(COLORS.muted);
-      doc.text('Informe de resultados de certificación', M + (logo ? 15 : 0), y + 11);
+      doc.text('Copia de prueba de certificación (Sin calificar — Para revisión por evaluador humano)', M + (logo ? 15 : 0), y + 11);
       doc.text(pdfSafe(r.issueDateText), PW - M, y + 6, { align: 'right' });
-      y += 20;
+      y += 18;
 
-      // Resultado general
-      const statusColor = r.approved ? COLORS.green : COLORS.red;
-      ensure(34);
+      // Recuadro informativo superior (Sin notas ni veredicto de IA)
+      ensure(24);
       doc.setFillColor(COLORS.panel[0], COLORS.panel[1], COLORS.panel[2]);
-      doc.roundedRect(M, y, CW, 30, 3, 3, 'F');
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); setColor(COLORS.muted);
-      doc.text('RESULTADO', M + 6, y + 7);
-      doc.setFontSize(15); setColor(statusColor);
-      doc.text(r.approved ? 'Certificación aprobada' : 'Certificación no otorgada', M + 6, y + 15);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); setColor(COLORS.soft);
-      doc.text(pdfSafe(`${r.tradeName}`), M + 6, y + 22);
-      if (r.certificateId) doc.text(pdfSafe(`Código: ${r.certificateId}`), M + 6, y + 27);
-      const cols = [
-        ['General', `${r.overallScore}/100`],
-        ['Teórica', `${r.theoretical.score}/100`],
-        ['Práctica', `${r.practical.score}/100`]
-      ];
-      cols.forEach((c, i) => {
-        const cx = PW - M - 6 - (2 - i) * 24;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); setColor(COLORS.muted);
-        doc.text(pdfSafe(c[0]), cx, y + 10, { align: 'right' });
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); setColor(COLORS.ink);
-        doc.text(c[1], cx, y + 18, { align: 'right' });
-      });
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); setColor(COLORS.muted);
-      doc.text('Mínimo para aprobar: 75/100 en teórica y en práctica', PW - M - 6, y + 26, { align: 'right' });
-      y += 36;
+      doc.roundedRect(M, y, CW, 21, 3, 3, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); setColor(COLORS.blue);
+      doc.text('EXPEDIENTE DE PRUEBA REALIZADA — PENDIENTE DE CALIFICACIÓN HUMANA', M + 6, y + 8);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); setColor(COLORS.soft);
+      doc.text(pdfSafe(`Especialidad: ${r.tradeName}   |   Tiempo empleado: ${r.durationText}`), M + 6, y + 15);
+      y += 26;
 
-      // Datos
-      section('Datos de la evaluación');
+      // 1. Datos del candidato
+      section('1. Datos del candidato y de la sesión');
       labelValue('Candidato', r.candidateName);
-      labelValue('Correo', r.candidateEmail);
-      labelValue('Oficio', r.tradeName);
-      labelValue('Normativa de referencia', r.norms);
-      labelValue('Experiencia declarada', r.experience);
-      labelValue('Alcance declarado', r.scope);
-      labelValue('Trabajo reportado', r.jobTitle);
-      labelValue('Tiempo total de la evaluación', r.durationText);
-      labelValue('Evaluado con', r.engine);
+      labelValue('Correo electrónico', r.candidateEmail);
+      labelValue('Lenguaje / Certificación', r.tradeName);
+      labelValue('Nivel de experiencia declarado', r.experience);
+      labelValue('Enfoque técnico', r.scope);
+      labelValue('Trabajo práctico presentado', r.jobTitle);
+      labelValue('Tiempo total empleado en la prueba', r.durationText);
 
-      // Teórica
-      section(`Prueba teórica: ${r.theoretical.score}/100 (${r.theoretical.correct} de ${r.theoretical.total} correctas)`);
-      if (r.theoretical.feedback) text(r.theoretical.feedback, { size: 10, color: COLORS.soft, after: 3 });
-      r.theoretical.questions.forEach((q, idx) => {
-        ensure(18);
-        text(`${idx + 1}. ${q.title.replace(/^\d+\.\s*/, '')}`, { size: 10.5, bold: true, after: 0.5 });
-        text(q.isRight ? 'Correcta' : 'Incorrecta', { size: 9, bold: true, color: q.isRight ? COLORS.green : COLORS.red, after: 0.5 });
-        text(`Respondió: ${q.chosen}`, { size: 9.5, color: COLORS.soft, after: 0.5 });
-        if (!q.isRight) text(`Respuesta correcta: ${q.correctAnswer}`, { size: 9.5, color: COLORS.soft, after: 0.5 });
-        if (q.explanation) text(q.explanation, { size: 9, italic: true, color: COLORS.muted, after: 3 });
-        else y += 2;
+      // 2. Preguntas realizadas y respuestas del candidato (SIN CALIFICAR)
+      const questionsList = (r.theoretical && Array.isArray(r.theoretical.questions)) ? r.theoretical.questions : [];
+      section(`2. Preguntas realizadas en la prueba (${questionsList.length} preguntas — Sin calificar)`);
+      text('A continuación se registran las preguntas formuladas al candidato, las opciones disponibles y la respuesta que seleccionó, sin calificación automática para que puedan ser evaluadas por una persona.', { size: 9, italic: true, color: COLORS.muted, after: 3 });
+
+      const optionLetters = ['A', 'B', 'C', 'D'];
+      questionsList.forEach((q, idx) => {
+        ensure(32);
+        text(`Pregunta ${idx + 1}: ${q.title.replace(/^\d+\.\s*/, '')}`, { size: 10.5, bold: true, color: COLORS.ink, after: 1 });
+        if (q.scenario) {
+          text(q.scenario, { size: 9.5, color: COLORS.soft, after: 1.5 });
+        }
+        if (Array.isArray(q.options) && q.options.length) {
+          q.options.forEach((optText, oIdx) => {
+            const isSelected = q.chosenIndex === oIdx;
+            const prefix = `${optionLetters[oIdx] || (oIdx + 1)}) `;
+            text(`${isSelected ? '[X] ' : '[  ] '}${prefix}${optText}`, {
+              size: 9.2,
+              bold: isSelected,
+              x: M + 4,
+              width: CW - 6,
+              color: isSelected ? COLORS.blue : COLORS.soft,
+              after: 0.6
+            });
+          });
+        }
+        const chosenLetter = (q.chosenIndex != null && optionLetters[q.chosenIndex]) ? `Opción ${optionLetters[q.chosenIndex]} — ` : '';
+        text(`Respuesta seleccionada por el candidato: ${chosenLetter}${q.chosen}`, { size: 9.5, bold: true, color: COLORS.ink, after: 1 });
+        text(`Calificación del evaluador (Pregunta ${idx + 1}):   [   ] Correcta     [   ] Incorrecta     Puntaje: ______ / 25`, { size: 8.8, italic: true, color: COLORS.muted, after: 3.5 });
       });
 
-      // Práctica
-      section(`Prueba práctica: ${r.practical.score}/100`);
-      r.practical.pillars.forEach(p => {
-        ensure(12);
-        text(`${p.name}: ${p.score}/25`, { size: 10.5, bold: true, after: 0.5 });
-        if (p.note) text(p.note, { size: 9.5, color: COLORS.soft, after: 2.5 });
-      });
-      labelValue('Coherencia entre lo dicho y las fotos', `${r.practical.coherencePercent}%`);
-      if (r.practical.coherenceDescription) text(r.practical.coherenceDescription, { size: 9.5, color: COLORS.soft, after: 2 });
-      if (r.practical.matchedConcepts.length) labelValue('Conceptos demostrados', r.practical.matchedConcepts.join(', '));
-      if (r.practical.missingConcepts.length) labelValue('Le faltó demostrar', r.practical.missingConcepts.join(', '));
-      r.practical.guardNotes.forEach(n => text(`Regla aplicada: ${n}`, { size: 9.5, bold: true, color: COLORS.red, after: 1 }));
+      // 3. Evidencias enviadas: Fotografías y Audios Transcritos (SIN CALIFICAR)
+      section('3. Evidencias prácticas enviadas: Fotografías y Audios Transcritos (Sin calificar)');
+      text('Se adjuntan las fotografías subidas por el candidato y la transcripción íntegra de los audios explicativos grabados en cada paso.', { size: 9, italic: true, color: COLORS.muted, after: 3 });
 
-      // Evidencias
-      section('Evidencias revisadas');
-      for (const ev of r.evidences) {
-        const imgW = 56;
+      for (const ev of (r.evidences || [])) {
+        const imgW = 68;
         let imgH = 0;
         let size = null;
         if (ev.photo && ev.photo.startsWith('data:image/')) size = await getImageSize(ev.photo);
-        if (size) imgH = Math.min(70, imgW * size.h / size.w);
-        ensure(Math.max(imgH, 30) + 6);
-        const top = y;
-        text(`Paso ${ev.paso}`, { size: 11, bold: true, after: 1 });
+        if (size) imgH = Math.min(82, imgW * size.h / size.w);
+        ensure(Math.max(imgH, 36) + 14);
+
+        text(`Evidencia / Paso #${ev.paso}`, { size: 11, bold: true, color: COLORS.ink, after: 1.5 });
+        const startY = y;
         const textX = size ? M + imgW + 6 : M;
         const textW = size ? CW - imgW - 6 : CW;
+
         if (size) {
-          try { doc.addImage(ev.photo, 'JPEG', M, y, imgW, imgH); } catch (e) { /* imagen no compatible */ }
+          try { doc.addImage(ev.photo, 'JPEG', M, startY, imgW, imgH); } catch (e) { /* formato no compatible */ }
         }
-        const startY = y;
-        text(`Lo que la IA ve: ${ev.descripcionFoto || '-'}`, { size: 9.5, x: textX, width: textW, after: 1 });
-        text(`¿La foto corresponde al oficio? ${ev.fotoCorrespondeAlOficio ? 'Sí' : 'No'}`, { size: 9.5, bold: true, x: textX, width: textW, color: ev.fotoCorrespondeAlOficio ? COLORS.green : COLORS.red, after: 1 });
-        text(`Explicación${ev.audioDuration ? ` (audio de ${ev.audioDuration})` : ''}: "${ev.transcript || 'Sin explicación'}"`, { size: 9.5, italic: true, x: textX, width: textW, color: COLORS.soft, after: 1 });
-        text(`¿Coincide con la foto? ${ev.explicacionCoincideConFoto ? 'Sí' : 'No'}`, { size: 9.5, bold: true, x: textX, width: textW, color: ev.explicacionCoincideConFoto ? COLORS.green : COLORS.red, after: 1 });
-        if (ev.observaciones) text(`Observaciones: ${ev.observaciones}`, { size: 9.5, x: textX, width: textW, color: COLORS.soft, after: 1 });
+
+        text(`Duración del audio grabado: ${ev.audioDuration || 'Texto ingresado / Sin duración'}`, { size: 9.2, bold: true, x: textX, width: textW, color: COLORS.soft, after: 1.2 });
+        text('Transcripción del audio explicativo:', { size: 9.5, bold: true, x: textX, width: textW, color: COLORS.blue, after: 0.8 });
+        text(`"${ev.transcript || 'Sin transcripción registrada.'}"`, { size: 9.5, italic: true, x: textX, width: textW, color: COLORS.ink, after: 2 });
+
         if (size && y < startY + imgH) y = startY + imgH;
-        y += 5;
-        if (y < top) y = top;
+        y += 2;
+        text(`Calificación del evaluador (Evidencia #${ev.paso}): Puntaje: ______ / 100   |   Observaciones: __________________________________________`, { size: 8.8, italic: true, color: COLORS.muted, after: 4 });
       }
 
-      // Dictamen
-      section('Dictamen');
-      text(r.verdictParagraph || 'Sin dictamen.', { size: 10.5, color: COLORS.ink, after: 3 });
-      text('Este informe fue generado automáticamente a partir de la evaluación con inteligencia artificial de Tasksmith. Las notas prácticas y las observaciones son el criterio de la IA sobre las fotos y explicaciones enviadas.', { size: 8.5, italic: true, color: COLORS.muted });
-
-      // Opinión del candidato (si la dejó)
-      if (r.feedback) {
-        section('Opinión del candidato sobre el resultado');
-        labelValue('Valoración', `${r.feedback.rating} de 5 estrellas (${r.feedback.ratingLabel})`);
-        labelValue('¿Está de acuerdo?', r.feedback.agreement);
-        if (r.feedback.comment) text(`"${r.feedback.comment}"`, { size: 10, italic: true, color: COLORS.soft, after: 2 });
-      }
+      // 4. Espacio para calificación final por una persona
+      section('4. Formato de calificación para el evaluador humano');
+      ensure(38);
+      doc.setDrawColor(COLORS.line[0], COLORS.line[1], COLORS.line[2]);
+      doc.setLineWidth(0.35);
+      doc.roundedRect(M, y, CW, 34, 2, 2, 'S');
+      y += 5;
+      text('Nombre del evaluador: ____________________________________________     Fecha de revisión: ____/____/______', { size: 9.5, x: M + 4, width: CW - 8, after: 2 });
+      text('Puntaje Preguntas Técnicas (4 preguntas): _______ / 100     |     Puntaje Evidencias (Fotos y Audios): _______ / 100', { size: 9.5, x: M + 4, width: CW - 8, after: 2 });
+      text('Calificación Final Promedio: _______ / 100     |     Dictamen:   [   ] APROBADO     [   ] NO APROBADO', { size: 9.5, bold: true, x: M + 4, width: CW - 8, after: 2 });
+      text('Observaciones y retroalimentación del evaluador: ___________________________________________________________', { size: 9, color: COLORS.muted, x: M + 4, width: CW - 8, after: 4 });
 
       // Pie de página
       const pages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pages; i++) {
         doc.setPage(i);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8); setColor(COLORS.muted);
-        doc.text(pdfSafe(`Tasksmith · Informe de certificación · ${r.tradeName}`), M, PH - 8);
+        doc.text(pdfSafe(`Tasksmith · Copia sin calificar para evaluador humano · ${r.tradeName}`), M, PH - 8);
         doc.text(`Página ${i} de ${pages}`, PW - M, PH - 8, { align: 'right' });
       }
 
       const slug = s => pdfSafe(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
       const dateSlug = `${r.issueDate.getFullYear()}-${String(r.issueDate.getMonth() + 1).padStart(2, '0')}-${String(r.issueDate.getDate()).padStart(2, '0')}`;
-      doc.save(`tasksmith-certificacion-${slug(r.tradeName)}-${slug(r.candidateName)}-${dateSlug}.pdf`);
-      showToast('Informe de resultados descargado en PDF.', 'success');
+      doc.save(`tasksmith-copia-sin-calificar-${slug(r.tradeName)}-${slug(r.candidateName)}-${dateSlug}.pdf`);
+      showToast('Copia sin calificar descargada en PDF.', 'success');
     } catch (err) {
       console.error('Error generando el PDF:', err);
       showToast('No se pudo generar el PDF. Inténtalo de nuevo.', 'error');
