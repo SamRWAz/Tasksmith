@@ -490,13 +490,18 @@
 
                 <!-- Barra de Carga del Proceso de Evaluación -->
                 <div style="max-width: 540px; margin: 0 auto 22px; text-align: left;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
                     <span id="aiEvalProgressStageText" style="font-size: 0.88rem; font-weight: 700; color: var(--blue-primary);">
                       Procesando respuestas y evidencias...
                     </span>
-                    <span id="aiEvalProgressPct" style="font-size: 1.05rem; font-weight: 800; color: var(--blue-primary);">
-                      0%
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span id="aiEvalLiveTimerText" style="font-size: 0.82rem; font-weight: 700; color: var(--ink-muted); background: var(--bg-card-subtle); padding: 2px 8px; border-radius: 999px;">
+                        Tiempo IA: 0.0 s
+                      </span>
+                      <span id="aiEvalProgressPct" style="font-size: 1.05rem; font-weight: 800; color: var(--blue-primary);">
+                        0%
+                      </span>
+                    </div>
                   </div>
                   <div class="cert-loading-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
                     <div class="cert-loading-bar-fill" id="aiEvalProgressBarFill" style="width: 0%;"></div>
@@ -541,8 +546,8 @@
             <!-- RESULTADO DEL DICTAMEN (SE MUESTRA TRAS LA EVALUACIÓN) -->
             <div id="aiVerdictContainer" style="display: none;">
               
-              <!-- Métrica Doble: Tiempo Total de Evaluación + Calidad de Certificación -->
-              <div class="eval-metrics-banner-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 22px;">
+              <!-- Métrica Triple: Tiempo Total de la Prueba + Tiempo de Calificación de la IA + Calidad de Certificación -->
+              <div class="eval-metrics-banner-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 22px;">
                 
                 <!-- 1. Tiempo Total del Proceso -->
                 <div class="evaluation-time-metric-box">
@@ -567,7 +572,30 @@
                   </div>
                 </div>
 
-                <!-- 2. Calidad de Certificación -->
+                <!-- 2. Tiempo de Calificación de la IA -->
+                <div class="evaluation-time-metric-box">
+                  <div style="display: flex; align-items: center; gap: 14px;">
+                    <div class="time-metric-icon-wrap" aria-hidden="true" style="color: var(--blue-primary);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+                    <div>
+                      <div style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); font-weight: 700;">
+                        Tiempo de Calificación de la IA
+                      </div>
+                      <div style="font-size: 1.75rem; font-weight: 800; color: var(--blue-primary); line-height: 1.2; margin: 4px 0;" id="aiGradingDuration">
+                        -- seg
+                      </div>
+                      <div style="font-size: 0.84rem; color: var(--ink-secondary);" id="aiGradingSpeedDesc">
+                        Tiempo que tardó la IA en evaluar respuestas, fotos y audios.
+                      </div>
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <span class="live-badge" style="background: var(--bg-accent-soft); color: var(--blue-primary); font-weight: 700; font-size: 0.82rem;" id="aiGradingSpeedBadge">
+                      Cómputo IA
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 3. Calidad de Certificación -->
                 <div class="evaluation-time-metric-box">
                   <div style="display: flex; align-items: center; gap: 14px;">
                     <div class="time-metric-icon-wrap" aria-hidden="true" style="color: var(--green-verified);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
@@ -864,7 +892,7 @@
                   </div>
 
                   <div style="margin-top: 18px; font-size: 0.78rem; color: var(--ink-muted);">
-                    Fecha de emisión: <span id="certIssueDate">6 de Noviembre de 2026</span> • Tiempo de evaluación: <strong id="certTimeDisplay" style="color: var(--blue-primary);">-- min -- seg</strong> • Calidad de certificación: <strong id="certQualityDisplay" style="color: var(--green-verified);">Alta Calidad</strong>
+                    Fecha de emisión: <span id="certIssueDate">6 de Noviembre de 2026</span> • Tiempo de la prueba: <strong id="certTimeDisplay" style="color: var(--blue-primary);">-- min -- seg</strong> • Tiempo de calificación IA: <strong id="certAiGradingTimeDisplay" style="color: var(--blue-primary);">-- seg</strong> • Calidad de certificación: <strong id="certQualityDisplay" style="color: var(--green-verified);">Alta Calidad</strong>
                   </div>
                 </div>
 

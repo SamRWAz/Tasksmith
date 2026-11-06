@@ -4858,6 +4858,7 @@ Responde únicamente con el JSON pedido, en español.`;
     const evalBarFill = document.getElementById('aiEvalProgressBarFill');
     const evalBarPct = document.getElementById('aiEvalProgressPct');
     const evalStageText = document.getElementById('aiEvalProgressStageText');
+    const evalLiveTimer = document.getElementById('aiEvalLiveTimerText');
 
     const updateEvalProgress = (pct, stageMsg) => {
       if (evalBarFill) evalBarFill.style.width = `${pct}%`;
@@ -4871,7 +4872,16 @@ Responde únicamente con el JSON pedido, en español.`;
     if (step2Label) {
       step2Label.textContent = `Analizando fotografías y transcripciones de audio en ${info.tradeName}...`;
     }
+    if (evalLiveTimer) evalLiveTimer.textContent = 'Tiempo IA: 0.0 s';
     updateEvalProgress(8, 'Iniciando procesamiento de respuestas y evidencias...');
+
+    const aiGradingStartTime = Date.now();
+    const liveTimerInterval = setInterval(() => {
+      if (evalLiveTimer) {
+        const sec = ((Date.now() - aiGradingStartTime) / 1000).toFixed(1);
+        evalLiveTimer.textContent = `Tiempo IA: ${sec} s`;
+      }
+    }, 100);
 
     const stepItems = [1, 2, 3, 4].map(n => document.getElementById(`aiStep_${n}`));
     stepItems.forEach(el => el && (el.className = 'ai-scan-step-item'));
@@ -4938,6 +4948,8 @@ Responde únicamente con el JSON pedido, en español.`;
 
     const result = await evaluateFullCertificationWithRealAi(info, jobTitle, verificationEvidences);
     timers.forEach(clearTimeout);
+    clearInterval(liveTimerInterval);
+    const aiGradingElapsedMs = Math.max(100, Date.now() - aiGradingStartTime);
 
     if (!result || result.error) {
       if (scannerBox) scannerBox.style.display = 'none';
@@ -4950,10 +4962,11 @@ Responde únicamente con el JSON pedido, en español.`;
       return;
     }
 
+    if (evalLiveTimer) evalLiveTimer.textContent = `Tiempo IA: ${(aiGradingElapsedMs / 1000).toFixed(1)} s`;
     updateEvalProgress(100, '¡Evaluación completada!');
     stepItems.forEach(el => el && (el.className = 'ai-scan-step-item done'));
     await new Promise(r => setTimeout(r, 250));
-    completeAiVerdictDisplay(info, result, jobTitle);
+    completeAiVerdictDisplay(info, result, jobTitle, aiGradingElapsedMs);
   };
 
   let lastCertificationReport = null;
@@ -4964,7 +4977,7 @@ Responde únicamente con el JSON pedido, en español.`;
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  function completeAiVerdictDisplay(info, evaluationCoherence, jobTitle) {
+  function completeAiVerdictDisplay(info, evaluationCoherence, jobTitle, aiGradingElapsedMs) {
     const scannerBox = document.getElementById('aiScannerBox');
     const verdictContainer = document.getElementById('aiVerdictContainer');
 
@@ -4974,13 +4987,22 @@ Responde únicamente con el JSON pedido, en español.`;
       verdictContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // 1. CRITERIO OBLIGATORIO: CÁLCULO Y VISUALIZACIÓN DEL TIEMPO TOTAL DE EVALUACIÓN
+    // 1. CRITERIO OBLIGATORIO: CÁLCULO Y VISUALIZACIÓN DEL TIEMPO TOTAL DE EVALUACIÓN Y TIEMPO DE LA IA
     if (!certEvaluationEndTime) certEvaluationEndTime = Date.now();
     const hasStart = !!certEvaluationStartTime;
     const elapsedMs = hasStart ? Math.max(1000, certEvaluationEndTime - certEvaluationStartTime) : 0;
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
     const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000);
     const formattedDuration = hasStart ? `${elapsedMinutes} min ${elapsedSeconds < 10 ? '0' : ''}${elapsedSeconds} seg` : 'No registrado';
+
+    // Formatear cuánto tiempo tardó la IA en calificar
+    const aiMs = Number(aiGradingElapsedMs) || 0;
+    const aiTotalSec = aiMs / 1000;
+    const formattedAiGradingTime = aiMs > 0
+      ? (aiTotalSec < 60
+        ? `${aiTotalSec.toFixed(1)} seg`
+        : `${Math.floor(aiTotalSec / 60)} min ${Math.round(aiTotalSec % 60)} seg`)
+      : 'No registrado';
 
     const finalDurationEl = document.getElementById('evaluationFinalDuration');
     if (finalDurationEl) finalDurationEl.textContent = formattedDuration;
@@ -5002,7 +5024,25 @@ Responde únicamente con el JSON pedido, en español.`;
 
     const certTimeDisplayEl = document.getElementById('certTimeDisplay');
     if (certTimeDisplayEl) {
-      certTimeDisplayEl.textContent = `Tiempo de Evaluación: ${formattedDuration}`;
+      certTimeDisplayEl.textContent = formattedDuration;
+    }
+
+    // Mostrar el factor final de Tiempo de Calificación de la IA
+    const aiGradingDurationEl = document.getElementById('aiGradingDuration');
+    const aiGradingSpeedDescEl = document.getElementById('aiGradingSpeedDesc');
+    const aiGradingSpeedBadgeEl = document.getElementById('aiGradingSpeedBadge');
+    const certAiGradingTimeDisplayEl = document.getElementById('certAiGradingTimeDisplay');
+
+    if (aiGradingDurationEl) aiGradingDurationEl.textContent = formattedAiGradingTime;
+    if (aiGradingSpeedDescEl) {
+      const aiPaceWord = aiTotalSec <= 8 ? 'Respuesta inmediata' : (aiTotalSec <= 20 ? 'Procesamiento estándar' : 'Análisis multimodal profundo');
+      aiGradingSpeedDescEl.innerHTML = `Velocidad de cómputo: <strong>${aiPaceWord}</strong> (${formattedAiGradingTime} en calificar preguntas, fotos y audios).`;
+    }
+    if (aiGradingSpeedBadgeEl) {
+      aiGradingSpeedBadgeEl.textContent = `Calificado en ${formattedAiGradingTime}`;
+    }
+    if (certAiGradingTimeDisplayEl) {
+      certAiGradingTimeDisplayEl.textContent = formattedAiGradingTime;
     }
 
     // 2. Transcripción real de cada paso (lo que la IA evaluó)
@@ -5250,8 +5290,8 @@ Responde únicamente con el JSON pedido, en español.`;
       }
       if (verdictP) {
         verdictP.innerHTML = evaluationCoherence.verdictParagraph
-          ? `<strong>Conclusión de la Evaluación:</strong> ${escapeHtml(evaluationCoherence.verdictParagraph)} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Calidad: ${qualityLabel} • Tiempo: ${formattedDuration})</em>`
-          : `<strong>Conclusión de la Evaluación:</strong> El candidato demostró competencia técnica respondiendo ${certCorrectAnswersCount} de ${totalQ} preguntas teóricas (${certTheoreticalScore}/100) y acreditó idoneidad práctica en sus fotos y audios (${practicalScore}/100) en un tiempo total de ${formattedDuration}.`;
+          ? `<strong>Conclusión de la Evaluación:</strong> ${escapeHtml(evaluationCoherence.verdictParagraph)} <em>(Teórico: ${certTheoreticalScore}/100 • Práctico: ${practicalScore}/100 • Calidad: ${qualityLabel} • Tiempo total: ${formattedDuration} • Tiempo de calificación IA: ${formattedAiGradingTime})</em>`
+          : `<strong>Conclusión de la Evaluación:</strong> El candidato demostró competencia técnica respondiendo ${certCorrectAnswersCount} de ${totalQ} preguntas teóricas (${certTheoreticalScore}/100) y acreditó idoneidad práctica en sus fotos y audios (${practicalScore}/100) en un tiempo total de ${formattedDuration} (Tiempo de calificación IA: ${formattedAiGradingTime}).`;
       }
 
       if (failedCard) failedCard.style.display = 'none';
@@ -5295,7 +5335,7 @@ Responde únicamente con el JSON pedido, en español.`;
 
       localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser));
       updateNavUserSlot();
-      showToast(`¡Certificación Aprobada! Teórico: ${certTheoreticalScore}/100 (${certCorrectAnswersCount}/${totalQ}) • Práctico: ${practicalScore}/100 • Tiempo: ${formattedDuration}.`, 'success');
+      showToast(`¡Certificación Aprobada! Teórico: ${certTheoreticalScore}/100 (${certCorrectAnswersCount}/${totalQ}) • Práctico: ${practicalScore}/100 • Tiempo IA: ${formattedAiGradingTime}.`, 'success');
 
     } else {
       // REQUISITOS NO CUMPLIDOS
@@ -5312,7 +5352,7 @@ Responde únicamente con el JSON pedido, en español.`;
 
       if (verdictP) {
         const aiExtraFeedback = evaluationCoherence.verdictParagraph ? `<br><br><em>Observación:</em> ${escapeHtml(evaluationCoherence.verdictParagraph)}` : '';
-        verdictP.innerHTML = `<strong>Resultado de la Evaluación:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de evaluación (Calidad: ${qualityLabel}). Se exige alcanzar mínimo 75/100 en ambas áreas.${aiExtraFeedback}`;
+        verdictP.innerHTML = `<strong>Resultado de la Evaluación:</strong> No se emite la certificación oficial debido a: <strong>${reasons.join(' y ')}</strong> tras ${formattedDuration} de prueba y ${formattedAiGradingTime} de calificación IA (Calidad: ${qualityLabel}). Se exige alcanzar mínimo 75/100 en ambas áreas.${aiExtraFeedback}`;
       }
 
       if (certWrapper) certWrapper.style.display = 'none';
@@ -5383,6 +5423,7 @@ Responde únicamente con el JSON pedido, en español.`;
       issueDateText,
       certificateId: certApproved && certHashEl ? certHashEl.textContent : null,
       durationText: formattedDuration,
+      aiGradingDurationText: formattedAiGradingTime,
       qualityLabel,
       theoretical: {
         total: (info.questions || []).length,
