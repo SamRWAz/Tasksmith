@@ -29,12 +29,15 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Por ahora redirigir cualquier otra pantalla directamente a certificacion.html
+    // Permitir únicamente certificacion.html y el nuevo apartado de resultados.html
     const path = (window.location.pathname || '').toLowerCase();
-    if (!path.includes('certificacion') && !document.getElementById('certPane_1')) {
-      window.location.replace('certificacion.html');
+    const isCertPage = path.includes('certificacion') || !!document.getElementById('certPane_1');
+    const isResultsPage = path.includes('resultados') || !!document.getElementById('resultsDatabaseRoot');
+    if (!isCertPage && !isResultsPage) {
+      window.location.replace('certificacion.html' + (window.location.search || ''));
       return;
     }
+    initCloudDbParamsFromUrl();
     initNavbar();
     initAuthUI();
     initAudioSimulator();
@@ -42,6 +45,9 @@
     initExamModule();
     setupModals();
     initCertificationWizard();
+    if (isResultsPage) {
+      initResultsDatabasePage();
+    }
   });
 
   /* ================= 1. NAVBAR & SCROLL ================= */
@@ -4429,6 +4435,10 @@ Responde únicamente con el JSON pedido, en español.`;
     updateAiConfigUI();
     layoutCertStepperRail(currentCertStep);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => layoutCertStepperRail(currentCertStep));
+    const nameInput = document.getElementById('candidateNameInput');
+    const emailInput = document.getElementById('candidateEmailInput');
+    if (nameInput && currentUser && currentUser.name) nameInput.value = currentUser.name;
+    if (emailInput && currentUser && currentUser.email) emailInput.value = currentUser.email;
   }
 
   window.selectProgrammingLanguage = function (langName) {
@@ -4455,6 +4465,23 @@ Responde únicamente con el JSON pedido, en español.`;
     const tradeQuery = (input && input.value.trim()) ? input.value.trim() : 'Programación en HTML';
     const expSelect = document.getElementById('customTradeExperienceSelect');
     const contextInput = document.getElementById('customTradeContextInput');
+    const nameInput = document.getElementById('candidateNameInput');
+    const emailInput = document.getElementById('candidateEmailInput');
+
+    const enteredName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : '';
+    const enteredEmail = (emailInput && emailInput.value.trim()) ? emailInput.value.trim() : '';
+    if (!enteredName) {
+      showToast('Por favor escribe tu nombre completo antes de iniciar la certificación.', 'error');
+      if (nameInput) nameInput.focus();
+      return;
+    }
+
+    if (currentUser) {
+      currentUser.name = enteredName;
+      if (enteredEmail) currentUser.email = enteredEmail;
+      try { localStorage.setItem(STATE_KEY_USER, JSON.stringify(currentUser)); } catch (e) {}
+      updateNavUserSlot();
+    }
 
     candidateCertificationContext = {
       experience: expSelect ? expSelect.value : 'Desarrollador Senior (+3 años)',
@@ -5446,6 +5473,29 @@ Responde únicamente con el JSON pedido, en español.`;
       })
     };
     document.querySelectorAll('[data-export-cert-pdf]').forEach(btn => { btn.disabled = false; });
+
+    // 8. Guardar automáticamente en la Base de Datos (Local IndexedDB + Nube Online)
+    saveCertificationRecordToDb({
+      info,
+      evaluationCoherence,
+      jobTitle,
+      issueDate,
+      issueDateText,
+      formattedDuration,
+      elapsedMs,
+      formattedAiGradingTime,
+      aiGradingElapsedMs: aiMs,
+      qualityLabel,
+      qualityDesc,
+      qualityBadgeText,
+      certApproved,
+      certTheoreticalScore,
+      practicalScore,
+      overallAverageScore,
+      certCorrectAnswersCount,
+      totalQ,
+      certificateId: certApproved && certHashEl ? certHashEl.textContent : null
+    });
   }
 
   window.restartCertificationWizard = function () {
@@ -5856,15 +5906,1081 @@ Responde únicamente con el JSON pedido, en español.`;
     window.print();
   };
 
-  window.restartCertificationWizard = function () {
-    window.resetEntireVerification();
-    goToStep(1);
-    const input = document.getElementById('customTradeInput');
-    if (input) {
-      input.value = '';
-      input.focus();
+  /* ============================================================================
+     9. BASE DE DATOS DE CERTIFICACIONES ONLINE + PANEL DE RESULTADOS (resultados.html)
+     Guarda automáticamente:
+     - Tiempo que tardó la IA en calificar (ms y texto formateado)
+     - Tiempo total de la prueba
+     - Calidad de certificación (Alta, Satisfactoria, Media, Baja) y puntajes
+     - Compilado de las 4 preguntas realizadas y las respuestas elegidas
+     - Compilado de fotografías (Base64 optimizado)
+     - Compilado de audios grabados (Base64 reproducible) y sus transcripciones
+     Sincroniza entre dispositivos mediante canal Cloud JSON (ntfy.sh / Firebase opcional)
+     y persiste permanentemente en IndexedDB local (TasksmithCertDB).
+     ============================================================================ */
+  const CERT_DB_NAME = 'TasksmithCertDB';
+  const CERT_DB_VERSION = 1;
+  const CERT_DB_STORE = 'certifications';
+  const STATE_KEY_DB_CHANNEL = 'tasksmith_cloud_db_channel';
+  const STATE_KEY_DB_FIREBASE = 'tasksmith_cloud_db_firebase_url';
+  const STATE_KEY_DB_DELETED_IDS = 'tasksmith_cloud_db_deleted_ids';
+  const DEFAULT_CLOUD_DB_CHANNEL = 'tasksmith_hci_2026_cert_db_v1';
+
+  let cachedDbRecords = [];
+  let activeSseConnection = null;
+
+  function getCloudDbChannel() {
+    const saved = (localStorage.getItem(STATE_KEY_DB_CHANNEL) || '').trim();
+    return saved || DEFAULT_CLOUD_DB_CHANNEL;
+  }
+
+  function getCustomFirebaseUrl() {
+    return (localStorage.getItem(STATE_KEY_DB_FIREBASE) || '').trim().replace(/\/+$/, '');
+  }
+
+  function getDeletedRecordIds() {
+    try {
+      return JSON.parse(localStorage.getItem(STATE_KEY_DB_DELETED_IDS) || '[]') || [];
+    } catch (e) {
+      return [];
     }
-    showToast('Inicia una nueva certificación técnica con cualquier oficio.', 'normal');
+  }
+
+  function markRecordIdDeleted(id) {
+    const list = getDeletedRecordIds();
+    if (!list.includes(id)) {
+      list.push(id);
+      try { localStorage.setItem(STATE_KEY_DB_DELETED_IDS, JSON.stringify(list)); } catch (e) {}
+    }
+  }
+
+  function initCloudDbParamsFromUrl() {
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      const dbParam = (params.get('db') || '').trim();
+      const fbParam = (params.get('firebase') || '').trim();
+      if (dbParam) localStorage.setItem(STATE_KEY_DB_CHANNEL, dbParam);
+      if (fbParam) localStorage.setItem(STATE_KEY_DB_FIREBASE, fbParam);
+    } catch (e) {}
+  }
+
+  function openCertIndexedDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
+        resolve(null);
+        return;
+      }
+      const req = window.indexedDB.open(CERT_DB_NAME, CERT_DB_VERSION);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(CERT_DB_STORE)) {
+          const store = db.createObjectStore(CERT_DB_STORE, { keyPath: 'id' });
+          store.createIndex('createdAt', 'createdAt', { unique: false });
+        }
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror = e => reject(e.target.error);
+    });
+  }
+
+  async function putRecordToIndexedDb(record) {
+    if (!record || !record.id) return;
+    try {
+      const db = await openCertIndexedDb();
+      if (!db) return;
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(CERT_DB_STORE, 'readwrite');
+        tx.objectStore(CERT_DB_STORE).put(record);
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn('Error guardando en IndexedDB:', err);
+    }
+  }
+
+  async function getAllRecordsFromIndexedDb() {
+    try {
+      const db = await openCertIndexedDb();
+      if (!db) return [];
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(CERT_DB_STORE, 'readonly');
+        const req = tx.objectStore(CERT_DB_STORE).getAll();
+        req.onsuccess = () => {
+          const items = Array.isArray(req.result) ? req.result : [];
+          items.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+          resolve(items);
+        };
+        req.onerror = e => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn('Error leyendo IndexedDB:', err);
+      return [];
+    }
+  }
+
+  async function deleteRecordFromIndexedDb(id) {
+    try {
+      const db = await openCertIndexedDb();
+      if (!db) return;
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(CERT_DB_STORE, 'readwrite');
+        tx.objectStore(CERT_DB_STORE).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn('Error eliminando de IndexedDB:', err);
+    }
+  }
+
+  function compressImageForDb(dataUrl, maxDim = 820, quality = 0.74) {
+    return new Promise(resolve => {
+      if (!dataUrl || typeof dataUrl !== 'string') {
+        resolve('');
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w >= h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch (e) {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise(resolve => {
+      if (!blob) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function extractShortQualityLevel(qualityLabel) {
+    const s = String(qualityLabel || '');
+    if (s.startsWith('Alta')) return 'Alta';
+    if (s.startsWith('Satisfactoria')) return 'Satisfactoria';
+    if (s.startsWith('Media')) return 'Media';
+    return 'Baja';
+  }
+
+  async function saveCertificationRecordToDb(params) {
+    const statusBadge = document.getElementById('dbSaveStatusBadge');
+    const statusText = document.getElementById('dbSaveStatusText');
+    if (statusBadge) {
+      statusBadge.textContent = 'Guardando en BD...';
+      statusBadge.dataset.status = 'pending';
+    }
+    if (statusText) {
+      statusText.textContent = 'Compilando tiempo de IA, calidad, preguntas, fotos y audios para la base de datos...';
+    }
+
+    try {
+      const {
+        info,
+        evaluationCoherence,
+        jobTitle,
+        issueDate,
+        formattedDuration,
+        elapsedMs,
+        formattedAiGradingTime,
+        aiGradingElapsedMs,
+        qualityLabel,
+        qualityDesc,
+        qualityBadgeText,
+        certApproved,
+        certTheoreticalScore: theoScore,
+        practicalScore,
+        overallAverageScore,
+        certCorrectAnswersCount: correctCount,
+        totalQ,
+        certificateId
+      } = params;
+
+      const rnd = Math.floor(1000 + Math.random() * 9000);
+      const recordId = `TS-DB-${Date.now()}-${rnd}`;
+      const nowDate = issueDate || new Date();
+      const dateTimeFormatted = nowDate.toLocaleString('es-CO', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      // Compilar evidencias con foto optimizada + audio en Base64 + transcripción
+      const compiledEvidences = [];
+      for (let i = 0; i < verificationEvidences.length; i++) {
+        const ev = verificationEvidences[i];
+        const analysis = (evaluationCoherence.evidenceAnalysis && evaluationCoherence.evidenceAnalysis[i]) || {};
+        const compressedPhoto = ev.photo ? await compressImageForDb(ev.photo, 820, 0.74) : '';
+        const audioDataUrl = ev.audioBlob ? await blobToDataUrl(ev.audioBlob) : null;
+        compiledEvidences.push({
+          paso: i + 1,
+          photo: compressedPhoto,
+          audioDataUrl,
+          audioDuration: ev.audioDuration || null,
+          transcript: analysis.transcript || getEvidenceTranscript(ev) || 'Sin transcripción registrada.',
+          descripcionFoto: analysis.descripcionFoto || '',
+          fotoCorrespondeAlOficio: !!analysis.fotoCorrespondeAlOficio,
+          explicacionCoincideConFoto: !!analysis.explicacionCoincideConFoto,
+          observaciones: analysis.observaciones || ''
+        });
+      }
+
+      // Compilar las 4 preguntas y las respuestas seleccionadas
+      const compiledQuestions = ((info && info.questions) || []).map((q, idx) => {
+        const chosenIdx = certUserAnswers[idx];
+        const chosenText = chosenIdx !== undefined && q.options[chosenIdx] ? q.options[chosenIdx] : 'No respondida';
+        return {
+          number: idx + 1,
+          title: q.title,
+          scenario: q.scenario || '',
+          options: Array.isArray(q.options) ? q.options : [],
+          chosenIndex: chosenIdx !== undefined ? chosenIdx : null,
+          chosen: chosenText,
+          correctIndex: q.correct,
+          correctAnswer: q.options[q.correct] || '',
+          isRight: chosenIdx === q.correct,
+          explanation: q.explanation || ''
+        };
+      });
+
+      const dbRecord = {
+        id: recordId,
+        createdAt: nowDate.toISOString(),
+        dateTimeFormatted,
+        candidateName: currentUser ? currentUser.name : 'Participante',
+        candidateEmail: currentUser ? currentUser.email : '',
+        tradeName: (info && info.tradeName) || 'Programación en HTML',
+        experience: candidateCertificationContext.experience || '',
+        scope: candidateCertificationContext.customScope || '',
+        jobTitle: jobTitle || 'Desarrollo en Programación en HTML',
+        aiGradingElapsedMs: Number(aiGradingElapsedMs) || 0,
+        aiGradingDurationText: formattedAiGradingTime || '-- seg',
+        totalElapsedMs: Number(elapsedMs) || 0,
+        durationText: formattedDuration || '-- min -- seg',
+        qualityLabel: qualityLabel || 'Por Validar',
+        qualityLevelShort: extractShortQualityLevel(qualityLabel),
+        qualityDesc: qualityDesc || '',
+        qualityBadgeText: qualityBadgeText || '',
+        approved: !!certApproved,
+        certificateId: certificateId || null,
+        theoreticalScore: Number(theoScore) || 0,
+        practicalScore: Number(practicalScore) || 0,
+        overallScore: Number(overallAverageScore) || 0,
+        correctAnswersCount: Number(correctCount) || 0,
+        totalQuestions: Number(totalQ) || compiledQuestions.length || 4,
+        pillarScores: {
+          p1: evaluationCoherence.p1 || 0,
+          p2: evaluationCoherence.p2 || 0,
+          p3: evaluationCoherence.p3 || 0,
+          p4: evaluationCoherence.p4 || 0
+        },
+        pillarNotes: evaluationCoherence.pillarNotes || {},
+        coherencePercent: evaluationCoherence.coherencePercent || 0,
+        coherenceDescription: evaluationCoherence.coherenceDescription || '',
+        matchedConcepts: evaluationCoherence.matchedConcepts || [],
+        missingConcepts: evaluationCoherence.missingConcepts || [],
+        verdictParagraph: evaluationCoherence.verdictParagraph || '',
+        questions: compiledQuestions,
+        evidences: compiledEvidences
+      };
+
+      // 1. Guardar siempre en IndexedDB local
+      await putRecordToIndexedDb(dbRecord);
+
+      // 2. Subir a la Base de Datos Online Compartida
+      const cloudOk = await uploadRecordToCloudDb(dbRecord);
+
+      if (statusBadge) {
+        statusBadge.textContent = cloudOk ? '✓ Guardado en Base de Datos Online' : '✓ Guardado en Base de Datos Local';
+        statusBadge.dataset.status = 'done';
+      }
+      if (statusText) {
+        statusText.textContent = cloudOk
+          ? `Registro ${recordId} sincronizado con tiempo IA (${dbRecord.aiGradingDurationText}), calidad (${dbRecord.qualityLevelShort}), 4 preguntas, fotos y audios.`
+          : `Registro ${recordId} guardado en este navegador con tiempo IA (${dbRecord.aiGradingDurationText}), calidad, preguntas, fotos y audios.`;
+      }
+    } catch (err) {
+      console.error('Error al guardar el registro en la base de datos:', err);
+      if (statusBadge) {
+        statusBadge.textContent = 'Error al guardar';
+        statusBadge.dataset.status = 'error';
+      }
+    }
+  }
+
+  async function uploadRecordToCloudDb(dbRecord) {
+    let anySuccess = false;
+    const channel = getCloudDbChannel();
+
+    // 1. Enviar al canal Cloud JSON (ntfy.sh file attachment)
+    try {
+      const bodyStr = JSON.stringify(dbRecord);
+      const resp = await fetch(`https://ntfy.sh/${encodeURIComponent(channel)}`, {
+        method: 'PUT',
+        headers: {
+          'Filename': `${dbRecord.id}.json`
+        },
+        body: bodyStr
+      });
+      if (resp.ok) {
+        anySuccess = true;
+      } else {
+        // Si el audio en Base64 era muy grande, intentar versión compacta con fotos + transcripciones
+        const compactRecord = {
+          ...dbRecord,
+          evidences: (dbRecord.evidences || []).map(ev => ({ ...ev, audioDataUrl: null }))
+        };
+        const resp2 = await fetch(`https://ntfy.sh/${encodeURIComponent(channel)}`, {
+          method: 'PUT',
+          headers: { 'Filename': `${dbRecord.id}.json` },
+          body: JSON.stringify(compactRecord)
+        });
+        if (resp2.ok) anySuccess = true;
+      }
+    } catch (err) {
+      console.warn('No se pudo subir al canal ntfy.sh:', err);
+    }
+
+    // 2. Si hay una URL de Firebase Realtime Database configurada, enviar también allí
+    const fbUrl = getCustomFirebaseUrl();
+    if (fbUrl) {
+      try {
+        const endpoint = fbUrl.endsWith('.json') ? fbUrl : `${fbUrl}/tasksmith_certifications.json`;
+        const fbResp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dbRecord)
+        });
+        if (fbResp.ok) anySuccess = true;
+      } catch (err) {
+        console.warn('No se pudo subir a Firebase:', err);
+      }
+    }
+
+    return anySuccess;
+  }
+
+  /* --- PÁGINA DE RESULTADOS Y BASE DE DATOS (resultados.html) --- */
+  async function initResultsDatabasePage() {
+    const channelInput = document.getElementById('dbChannelTopicInput');
+    const fbInput = document.getElementById('dbCustomFirebaseUrlInput');
+    if (channelInput) channelInput.value = getCloudDbChannel();
+    if (fbInput) fbInput.value = getCustomFirebaseUrl();
+
+    // 1. Cargar de inmediato los registros que ya están en IndexedDB local
+    cachedDbRecords = await getAllRecordsFromIndexedDb();
+    updateDatabaseKpis(cachedDbRecords);
+    renderDatabaseRecordsList();
+
+    // 2. Sincronizar con la nube para descargar los resultados hechos online en otros dispositivos
+    await window.syncCertificationDatabaseNow(true);
+
+    // 3. Suscribirse en tiempo real (SSE) para que aparezcan nuevas pruebas al instante
+    connectLiveCloudStream();
+  }
+
+  function connectLiveCloudStream() {
+    if (activeSseConnection) {
+      try { activeSseConnection.close(); } catch (e) {}
+      activeSseConnection = null;
+    }
+    const channel = getCloudDbChannel();
+    if (!window.EventSource || !channel) return;
+    try {
+      const es = new EventSource(`https://ntfy.sh/${encodeURIComponent(channel)}/sse`);
+      es.onmessage = async evt => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg && msg.event === 'message') {
+            await processCloudMessageItem(msg, getDeletedRecordIds());
+            cachedDbRecords = await getAllRecordsFromIndexedDb();
+            updateDatabaseKpis(cachedDbRecords);
+            renderDatabaseRecordsList();
+            showToast('¡Nuevo resultado de certificación recibido en tiempo real!', 'success');
+          }
+        } catch (e) {}
+      };
+      activeSseConnection = es;
+    } catch (e) {}
+  }
+
+  async function processCloudMessageItem(msg, deletedIds) {
+    if (!msg || msg.event !== 'message') return false;
+    let record = null;
+
+    if (msg.attachment && msg.attachment.url) {
+      // Extraer el ID desde el nombre del archivo si es posible para no descargar duplicados
+      const attName = (msg.attachment.name || '').replace(/\.json$/i, '');
+      if (attName && deletedIds.includes(attName)) return false;
+      if (attName && cachedDbRecords.some(r => r.id === attName)) return false;
+
+      try {
+        const fileResp = await fetch(msg.attachment.url);
+        if (fileResp.ok) {
+          record = await fileResp.json();
+        }
+      } catch (e) {
+        console.warn('No se pudo descargar adjunto de registro:', e);
+      }
+    } else if (msg.message && msg.message.startsWith('{')) {
+      try {
+        record = JSON.parse(msg.message);
+      } catch (e) {}
+    }
+
+    if (record && record.id && !deletedIds.includes(record.id)) {
+      await putRecordToIndexedDb(record);
+      return true;
+    }
+    return false;
+  }
+
+  window.syncCertificationDatabaseNow = async function (silent) {
+    const syncBtn = document.getElementById('btnSyncCloudDb');
+    const syncLabel = document.getElementById('dbStatCloudSyncLabel');
+    const cloudBadge = document.getElementById('dbCloudStatusBadge');
+
+    if (syncBtn) {
+      syncBtn.disabled = true;
+      syncBtn.textContent = '🔄 Sincronizando...';
+    }
+    if (syncLabel) syncLabel.textContent = 'Consultando resultados online...';
+
+    const channel = getCloudDbChannel();
+    const deletedIds = getDeletedRecordIds();
+    let newCount = 0;
+
+    try {
+      // 1. Descargar historial desde el canal Cloud JSON (ntfy.sh)
+      const resp = await fetch(`https://ntfy.sh/${encodeURIComponent(channel)}/json?poll=1&since=all`);
+      if (resp.ok) {
+        const text = await resp.text();
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          try {
+            const msg = JSON.parse(line);
+            const added = await processCloudMessageItem(msg, deletedIds);
+            if (added) newCount++;
+          } catch (e) {}
+        }
+      }
+
+      // 2. Si hay URL de Firebase configurada, descargar también desde allí
+      const fbUrl = getCustomFirebaseUrl();
+      if (fbUrl) {
+        const endpoint = fbUrl.endsWith('.json') ? fbUrl : `${fbUrl}/tasksmith_certifications.json`;
+        const fbResp = await fetch(endpoint);
+        if (fbResp.ok) {
+          const fbData = await fbResp.json();
+          if (fbData && typeof fbData === 'object') {
+            for (const key of Object.keys(fbData)) {
+              const rec = fbData[key];
+              if (rec && rec.id && !deletedIds.includes(rec.id)) {
+                await putRecordToIndexedDb(rec);
+              }
+            }
+          }
+        }
+      }
+
+      cachedDbRecords = await getAllRecordsFromIndexedDb();
+      updateDatabaseKpis(cachedDbRecords);
+      renderDatabaseRecordsList();
+
+      if (syncLabel) {
+        syncLabel.textContent = `Sincronizado (${cachedDbRecords.length} registro${cachedDbRecords.length === 1 ? '' : 's'} en BD)`;
+      }
+      if (cloudBadge) {
+        cloudBadge.textContent = `Canal: ${channel}`;
+        cloudBadge.dataset.status = 'done';
+      }
+      if (!silent) {
+        showToast(newCount > 0 ? `Se sincronizaron ${newCount} nuevo(s) resultado(s) online.` : 'Base de datos sincronizada al día.', 'success');
+      }
+    } catch (err) {
+      console.warn('Error sincronizando con la nube:', err);
+      if (syncLabel) syncLabel.textContent = `Mostrando ${cachedDbRecords.length} registro(s) guardados localmente`;
+      if (!silent) showToast('Mostrando registros guardados localmente.', 'normal');
+    } finally {
+      if (syncBtn) {
+        syncBtn.disabled = false;
+        syncBtn.textContent = '🔄 Sincronizar resultados online';
+      }
+    }
+  };
+
+  function updateDatabaseKpis(records) {
+    const list = Array.isArray(records) ? records : [];
+    const totalEl = document.getElementById('dbStatTotalCount');
+    const avgAiEl = document.getElementById('dbStatAvgAiTime');
+    const rangeAiEl = document.getElementById('dbStatAiTimeRange');
+    const avgTotalEl = document.getElementById('dbStatAvgTotalTime');
+    const approvalEl = document.getElementById('dbStatApprovalRate');
+    const qualitySumEl = document.getElementById('dbStatQualitySummary');
+
+    if (totalEl) totalEl.textContent = String(list.length);
+
+    if (!list.length) {
+      if (avgAiEl) avgAiEl.textContent = '-- seg';
+      if (rangeAiEl) rangeAiEl.textContent = 'Sin evaluaciones aún';
+      if (avgTotalEl) avgTotalEl.textContent = '-- min -- seg';
+      if (approvalEl) approvalEl.textContent = '0% Aprobados';
+      if (qualitySumEl) qualitySumEl.textContent = 'Nota global media: --/100';
+      return;
+    }
+
+    // Promedio de tiempo de calificación de la IA
+    const aiTimesSec = list
+      .map(r => (Number(r.aiGradingElapsedMs) || 0) / 1000)
+      .filter(s => s > 0);
+    if (aiTimesSec.length) {
+      const avgSec = aiTimesSec.reduce((a, b) => a + b, 0) / aiTimesSec.length;
+      const minSec = Math.min(...aiTimesSec);
+      const maxSec = Math.max(...aiTimesSec);
+      if (avgAiEl) avgAiEl.textContent = `${avgSec.toFixed(1)} seg`;
+      if (rangeAiEl) rangeAiEl.textContent = `Mín: ${minSec.toFixed(1)} s • Máx: ${maxSec.toFixed(1)} s`;
+    } else {
+      if (avgAiEl) avgAiEl.textContent = '-- seg';
+      if (rangeAiEl) rangeAiEl.textContent = 'Sin registro de tiempo IA';
+    }
+
+    // Promedio de tiempo total de la prueba
+    const totalTimesMs = list.map(r => Number(r.totalElapsedMs) || 0).filter(ms => ms > 0);
+    if (totalTimesMs.length) {
+      const avgMs = totalTimesMs.reduce((a, b) => a + b, 0) / totalTimesMs.length;
+      const m = Math.floor(avgMs / 60000);
+      const s = Math.round((avgMs % 60000) / 1000);
+      if (avgTotalEl) avgTotalEl.textContent = `${m} min ${s < 10 ? '0' : ''}${s} seg`;
+    } else {
+      if (avgTotalEl) avgTotalEl.textContent = '-- min -- seg';
+    }
+
+    // Aprobación y Calidad promedio
+    const approvedCount = list.filter(r => r.approved).length;
+    const approvalPct = Math.round((approvedCount / list.length) * 100);
+    const avgOverall = Math.round(list.reduce((sum, r) => sum + (Number(r.overallScore) || 0), 0) / list.length);
+    if (approvalEl) approvalEl.textContent = `${approvalPct}% Aprobados (${approvedCount}/${list.length})`;
+    if (qualitySumEl) qualitySumEl.textContent = `Nota global media: ${avgOverall}/100`;
+  }
+
+  function getQualityBadgeStyle(shortLevel) {
+    if (shortLevel === 'Alta') return 'background: var(--green-soft); color: var(--green-verified);';
+    if (shortLevel === 'Satisfactoria') return 'background: #dcfce7; color: #166534;';
+    if (shortLevel === 'Media') return 'background: #fef3c7; color: #b45309;';
+    return 'background: #fee2e2; color: #dc2626;';
+  }
+
+  window.renderDatabaseRecordsList = function () {
+    const container = document.getElementById('dbRecordsContainer');
+    if (!container) return;
+
+    const searchQ = ((document.getElementById('dbSearchInput') && document.getElementById('dbSearchInput').value) || '').trim().toLowerCase();
+    const qualityFilter = (document.getElementById('dbQualityFilter') && document.getElementById('dbQualityFilter').value) || 'all';
+    const statusFilter = (document.getElementById('dbStatusFilter') && document.getElementById('dbStatusFilter').value) || 'all';
+
+    const filtered = cachedDbRecords.filter(r => {
+      if (searchQ) {
+        const hay = `${r.candidateName || ''} ${r.candidateEmail || ''} ${r.id || ''} ${r.tradeName || ''}`.toLowerCase();
+        if (!hay.includes(searchQ)) return false;
+      }
+      if (qualityFilter !== 'all') {
+        const qShort = r.qualityLevelShort || extractShortQualityLevel(r.qualityLabel);
+        if (qShort !== qualityFilter) return false;
+      }
+      if (statusFilter === 'approved' && !r.approved) return false;
+      if (statusFilter === 'rejected' && r.approved) return false;
+      return true;
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `
+        <div class="card" style="padding: 48px 24px; text-align: center; box-shadow: var(--shadow-card);">
+          <h3 style="font-size: 1.3rem; color: var(--ink-primary); margin-bottom: 8px;">
+            ${cachedDbRecords.length === 0 ? 'Aún no hay certificaciones registradas en la Base de Datos' : 'Ningún registro coincide con los filtros seleccionados'}
+          </h3>
+          <p style="font-size: 0.92rem; color: var(--ink-muted); max-width: 540px; margin: 0 auto 20px;">
+            Cuando cualquier persona complete la prueba en <strong>Certificación en Programación</strong>, su resultado (tiempo que usó la IA para calificar, calidad de certificación, las 4 preguntas y respuestas, fotos y audios) aparecerá aquí automáticamente.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <a href="certificacion.html" class="btn btn-primary">Ir a realizar una prueba de certificación →</a>
+            <button type="button" class="btn btn-outline" onclick="copyParticipantOnlineLink()">🔗 Copiar link para enviar a participantes</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(r => {
+      const qShort = r.qualityLevelShort || extractShortQualityLevel(r.qualityLabel);
+      const qStyle = getQualityBadgeStyle(qShort);
+      const questions = Array.isArray(r.questions) ? r.questions : [];
+      const evidences = Array.isArray(r.evidences) ? r.evidences : [];
+
+      const questionsPillsHtml = questions.map((q, idx) => {
+        const optLetter = q.chosenIndex != null ? ['A', 'B', 'C', 'D'][q.chosenIndex] || '?' : '-';
+        const pillStyle = q.isRight
+          ? 'background: var(--green-soft); color: var(--green-verified); border: 1px solid rgba(16,185,129,0.3);'
+          : 'background: #fee2e2; color: #dc2626; border: 1px solid rgba(220,38,38,0.25);';
+        return `<span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; ${pillStyle}" title="${escapeHtml(q.title)}: Respondió ${escapeHtml(q.chosen)}">
+          P${idx + 1}: Opción ${optLetter} (${q.isRight ? '✓' : '✗'})
+        </span>`;
+      }).join(' ');
+
+      const evidencesPreviewHtml = evidences.map((ev, idx) => `
+        <div style="display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; background: var(--bg-card-subtle); border: 1px solid var(--border-soft); border-radius: var(--radius-sm);">
+          ${ev.photo ? `<img src="${ev.photo}" alt="Foto Paso ${ev.paso || (idx + 1)}" style="width: 78px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-soft); flex-shrink: 0; cursor: pointer;" onclick="openDbRecordDetailModal('${escapeHtml(r.id)}')" />` : ''}
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <strong style="font-size: 0.8rem; color: var(--ink-primary);">Evidencia #${ev.paso || (idx + 1)} ${ev.audioDuration ? `(${escapeHtml(ev.audioDuration)})` : ''}</strong>
+              <span style="font-size: 0.72rem; font-weight: 700; color: ${ev.fotoCorrespondeAlOficio ? 'var(--green-verified)' : '#dc2626'};">
+                ${ev.fotoCorrespondeAlOficio ? 'Foto válida' : 'Foto observada'}
+              </span>
+            </div>
+            ${ev.audioDataUrl ? `<audio controls preload="none" src="${ev.audioDataUrl}" style="width: 100%; height: 30px; margin-bottom: 4px;"></audio>` : ''}
+            <p style="font-size: 0.78rem; color: var(--ink-secondary); margin: 0; font-style: italic; line-height: 1.35;">
+              "${escapeHtml((ev.transcript || '').length > 140 ? ev.transcript.substring(0, 140) + '...' : (ev.transcript || 'Sin transcripción'))}"
+            </p>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div class="card" style="padding: 22px 24px; margin-bottom: 16px; box-shadow: var(--shadow-card); border-left: 4px solid ${r.approved ? 'var(--green-verified)' : '#dc2626'};">
+          <!-- Cabecera del Registro -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h3 style="font-size: 1.22rem; font-weight: 800; color: var(--ink-primary); margin: 0;">
+                  ${escapeHtml(r.candidateName || 'Participante')}
+                </h3>
+                <span class="live-badge" data-status="${r.approved ? 'done' : 'error'}" style="font-size: 0.76rem; font-weight: 700;">
+                  ${r.approved ? 'Certificado Aprobado' : 'No Otorgado'}
+                </span>
+                <span class="live-badge" style="font-size: 0.76rem; font-weight: 700; ${qStyle}">
+                  Calidad: ${escapeHtml(r.qualityLabel || qShort)}
+                </span>
+              </div>
+              <div style="font-size: 0.83rem; color: var(--ink-muted); margin-top: 4px;">
+                ${r.candidateEmail ? `<span>${escapeHtml(r.candidateEmail)}</span> • ` : ''}
+                <span>${escapeHtml(r.tradeName || 'Programación en HTML')}</span> •
+                <span>${escapeHtml(r.experience || '')}</span> •
+                <span>Fecha: <strong>${escapeHtml(r.dateTimeFormatted || '')}</strong></span>
+              </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="openDbRecordDetailModal('${escapeHtml(r.id)}')">
+                👁️ Ver Compilado Completo
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="exportDbRecordUngradedPdf('${escapeHtml(r.id)}')">
+                📄 PDF Sin Calificar
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" style="color: #dc2626;" onclick="deleteDbRecord('${escapeHtml(r.id)}')" title="Eliminar este registro">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <!-- Banda de Factores Clave: Tiempo IA + Tiempo Total + Calidad + Notas -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; padding: 14px 16px; background: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-soft); margin-bottom: 14px;">
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--blue-primary); font-weight: 700;">Tiempo IA al Calificar</div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--blue-primary);">${escapeHtml(r.aiGradingDurationText || '-- seg')}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Tiempo Total Prueba</div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--ink-primary);">${escapeHtml(r.durationText || '--')}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Calidad Certificación</div>
+              <div style="font-size: 1.05rem; font-weight: 800; color: var(--ink-primary);">${escapeHtml(r.qualityLabel || '--')}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Teórica (4 Preguntas)</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: ${r.theoreticalScore >= 75 ? 'var(--green-verified)' : '#dc2626'};">
+                ${r.theoreticalScore}/100 <span style="font-size: 0.8rem; font-weight: 600;">(${r.correctAnswersCount}/${r.totalQuestions})</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Práctica (Fotos + Audio)</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: ${r.practicalScore >= 75 ? 'var(--green-verified)' : '#dc2626'};">
+                ${r.practicalScore}/100 <span style="font-size: 0.8rem; font-weight: 600;">(${r.coherencePercent || 0}% coh.)</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Nota Global</div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: ${r.approved ? 'var(--green-verified)' : '#dc2626'};">${r.overallScore}/100</div>
+            </div>
+          </div>
+
+          <!-- Resumen rápido de las 4 preguntas y evidencias -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <strong style="font-size: 0.8rem; color: var(--ink-secondary); margin-right: 4px;">Respuestas a las 4 preguntas:</strong>
+              ${questionsPillsHtml}
+            </div>
+            <span style="font-size: 0.78rem; color: var(--ink-muted); font-weight: 600;">
+              ${evidences.length} foto(s) y ${evidences.length} audio(s) compilados
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+            ${evidencesPreviewHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  window.openDbRecordDetailModal = function (id) {
+    const rec = cachedDbRecords.find(r => r.id === id);
+    if (!rec) return;
+    const modal = document.getElementById('dbRecordDetailModal');
+    const body = document.getElementById('dbRecordDetailBody');
+    if (!modal || !body) return;
+
+    const optionLetters = ['A', 'B', 'C', 'D'];
+    const questionsHtml = (rec.questions || []).map((q, idx) => {
+      const optsList = (q.options || []).map((optText, oIdx) => {
+        const isChosen = q.chosenIndex === oIdx;
+        const isCorrect = q.correctIndex === oIdx;
+        let bg = 'background: var(--bg-card); border: 1px solid var(--border-soft);';
+        if (isChosen && isCorrect) bg = 'background: var(--green-soft); border: 2px solid var(--green-verified); font-weight: 700;';
+        else if (isChosen && !isCorrect) bg = 'background: #fee2e2; border: 2px solid #dc2626; font-weight: 700;';
+        else if (isCorrect) bg = 'background: rgba(16,185,129,0.08); border: 1px dashed var(--green-verified);';
+
+        return `
+          <div style="padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 6px; ${bg}">
+            <strong>${optionLetters[oIdx] || (oIdx + 1)})</strong> ${escapeHtml(optText)}
+            ${isChosen ? `<span style="margin-left: 8px; font-size: 0.75rem; font-weight: 800; color: ${isCorrect ? 'var(--green-verified)' : '#dc2626'};">[Elegida por el participante]</span>` : ''}
+            ${!isChosen && isCorrect ? `<span style="margin-left: 8px; font-size: 0.75rem; font-weight: 700; color: var(--green-verified);">[Respuesta correcta]</span>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div style="padding: 14px 16px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft); margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <strong style="font-size: 0.95rem; color: var(--ink-primary);">Pregunta #${idx + 1}: ${escapeHtml(q.title || '')}</strong>
+            <span class="live-badge" data-status="${q.isRight ? 'done' : 'error'}" style="font-size: 0.75rem;">
+              ${q.isRight ? 'Correcta (25/25)' : 'Incorrecta (0/25)'}
+            </span>
+          </div>
+          <p style="font-size: 0.86rem; color: var(--ink-secondary); margin: 0 0 10px;">${escapeHtml(q.scenario || '')}</p>
+          ${optsList}
+        </div>
+      `;
+    }).join('');
+
+    const evidencesHtml = (rec.evidences || []).map((ev, idx) => `
+      <div style="border: 1px solid var(--border-soft); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); margin-bottom: 14px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+          <div style="background: #14141d; display: flex; align-items: center; justify-content: center; min-height: 220px; padding: 8px;">
+            ${ev.photo ? `<img src="${ev.photo}" alt="Evidencia ${idx + 1}" style="max-width: 100%; max-height: 320px; object-fit: contain; border-radius: 6px;" />` : '<span style="color:#fff;">Sin fotografía</span>'}
+          </div>
+          <div style="padding: 16px 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong style="font-size: 1rem; color: var(--ink-primary);">Evidencia Práctica #${ev.paso || (idx + 1)}</strong>
+              <span class="live-badge" data-status="${ev.fotoCorrespondeAlOficio ? 'done' : 'error'}" style="font-size: 0.75rem;">
+                ${ev.fotoCorrespondeAlOficio ? 'Foto corresponde a HTML' : 'Foto no corresponde'}
+              </span>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--blue-primary); margin-bottom: 4px;">
+                Audio grabado por el participante ${ev.audioDuration ? `(${escapeHtml(ev.audioDuration)})` : ''}:
+              </div>
+              ${ev.audioDataUrl
+                ? `<audio controls src="${ev.audioDataUrl}" style="width: 100%; height: 36px;"></audio>`
+                : `<div style="font-size: 0.8rem; color: var(--ink-muted);">Audio no adjunto como binario (ver transcripción abajo).</div>`}
+            </div>
+
+            <div style="margin-bottom: 10px; padding: 10px 12px; background: var(--bg-card-subtle); border-radius: 8px; border-left: 3px solid var(--blue-primary);">
+              <div style="font-size: 0.76rem; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 3px;">
+                Transcripción del Audio:
+              </div>
+              <p style="font-size: 0.86rem; color: var(--ink-primary); margin: 0; font-style: italic; line-height: 1.45;">
+                "${escapeHtml(ev.transcript || 'Sin transcripción.')}"
+              </p>
+            </div>
+
+            ${ev.descripcionFoto ? `<p style="font-size: 0.82rem; color: var(--ink-secondary); margin: 0 0 6px;"><strong>Lo que la IA vio en la imagen:</strong> ${escapeHtml(ev.descripcionFoto)}</p>` : ''}
+            ${ev.observaciones ? `<p style="font-size: 0.82rem; color: var(--ink-muted); margin: 0;"><strong>Observaciones técnicas:</strong> ${escapeHtml(ev.observaciones)}</p>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    body.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-right: 28px;">
+        <div>
+          <span class="section-tag" style="margin-bottom: 4px;">Expediente Guardado • ${escapeHtml(rec.id)}</span>
+          <h2 style="font-size: 1.55rem; color: var(--ink-primary); margin: 0;">
+            ${escapeHtml(rec.candidateName || 'Participante')}
+          </h2>
+          <p style="font-size: 0.88rem; color: var(--ink-muted); margin: 4px 0 0;">
+            ${escapeHtml(rec.candidateEmail || '')} • ${escapeHtml(rec.tradeName || 'Programación en HTML')} • ${escapeHtml(rec.dateTimeFormatted || '')}
+          </p>
+        </div>
+        <button type="button" class="btn btn-download btn-sm" onclick="exportDbRecordUngradedPdf('${escapeHtml(rec.id)}')">
+          📄 Descargar copia sin calificar (PDF)
+        </button>
+      </div>
+
+      <!-- Resumen de Tiempos y Calidad -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <div style="padding: 14px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft);">
+          <div style="font-size: 0.74rem; text-transform: uppercase; color: var(--blue-primary); font-weight: 700;">Tiempo IA al Calificar</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--blue-primary); margin-top: 2px;">${escapeHtml(rec.aiGradingDurationText || '-- seg')}</div>
+        </div>
+        <div style="padding: 14px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft);">
+          <div style="font-size: 0.74rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Tiempo Total Prueba</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: var(--ink-primary); margin-top: 2px;">${escapeHtml(rec.durationText || '--')}</div>
+        </div>
+        <div style="padding: 14px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft);">
+          <div style="font-size: 0.74rem; text-transform: uppercase; color: var(--green-verified); font-weight: 700;">Calidad de Certificación</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--ink-primary); margin-top: 4px;">${escapeHtml(rec.qualityLabel || '--')}</div>
+        </div>
+        <div style="padding: 14px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border: 1px solid var(--border-soft);">
+          <div style="font-size: 0.74rem; text-transform: uppercase; color: var(--ink-muted); font-weight: 700;">Puntaje Global</div>
+          <div style="font-size: 1.45rem; font-weight: 800; color: ${rec.approved ? 'var(--green-verified)' : '#dc2626'}; margin-top: 2px;">
+            ${rec.overallScore}/100 <span style="font-size: 0.8rem;">(T:${rec.theoreticalScore} / P:${rec.practicalScore})</span>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.15rem; color: var(--ink-primary); margin: 18px 0 10px;">
+        1. Compilado de las 4 Preguntas y Respuestas (${rec.correctAnswersCount} de ${rec.totalQuestions} aciertos)
+      </h3>
+      ${questionsHtml}
+
+      <h3 style="font-size: 1.15rem; color: var(--ink-primary); margin: 22px 0 10px;">
+        2. Compilado de Fotografías, Audios Grabados y Transcripciones
+      </h3>
+      ${evidencesHtml}
+
+      ${rec.verdictParagraph ? `
+        <div style="padding: 14px 16px; border-radius: var(--radius-md); background: var(--bg-card-subtle); border-left: 4px solid var(--blue-primary); margin-top: 14px;">
+          <strong style="font-size: 0.88rem; color: var(--ink-primary);">Dictamen de la IA:</strong>
+          <p style="font-size: 0.88rem; color: var(--ink-secondary); margin: 4px 0 0;">${escapeHtml(rec.verdictParagraph)}</p>
+        </div>
+      ` : ''}
+    `;
+
+    modal.classList.add('open');
+  };
+
+  window.closeDbRecordDetailModal = function () {
+    const modal = document.getElementById('dbRecordDetailModal');
+    if (modal) modal.classList.remove('open');
+  };
+
+  window.exportDbRecordUngradedPdf = async function (id) {
+    const rec = cachedDbRecords.find(r => r.id === id);
+    if (!rec) return;
+    const prevReport = lastCertificationReport;
+    lastCertificationReport = {
+      candidateName: rec.candidateName || 'Participante',
+      candidateEmail: rec.candidateEmail || '',
+      tradeName: rec.tradeName || 'Programación en HTML',
+      experience: rec.experience || '',
+      scope: rec.scope || '',
+      jobTitle: rec.jobTitle || 'Desarrollo en Programación en HTML',
+      issueDate: rec.createdAt ? new Date(rec.createdAt) : new Date(),
+      issueDateText: rec.dateTimeFormatted || new Date().toLocaleDateString('es-CO'),
+      durationText: rec.durationText || '--',
+      aiGradingDurationText: rec.aiGradingDurationText || '--',
+      qualityLabel: rec.qualityLabel || '',
+      theoretical: {
+        total: (rec.questions || []).length,
+        questions: (rec.questions || []).map(q => ({
+          title: q.title,
+          scenario: q.scenario || '',
+          options: Array.isArray(q.options) ? q.options : [],
+          chosenIndex: q.chosenIndex,
+          chosen: q.chosen || 'No respondida'
+        }))
+      },
+      evidences: (rec.evidences || []).map((ev, idx) => ({
+        paso: ev.paso || (idx + 1),
+        photo: ev.photo || '',
+        audioDuration: ev.audioDuration || null,
+        transcript: ev.transcript || 'Sin transcripción registrada.'
+      }))
+    };
+    await window.exportCertificationReportPdf();
+    lastCertificationReport = prevReport;
+  };
+
+  window.deleteDbRecord = async function (id) {
+    if (!id) return;
+    markRecordIdDeleted(id);
+    await deleteRecordFromIndexedDb(id);
+    cachedDbRecords = await getAllRecordsFromIndexedDb();
+    updateDatabaseKpis(cachedDbRecords);
+    renderDatabaseRecordsList();
+    showToast('Registro eliminado de la base de datos local.', 'normal');
+  };
+
+  window.exportDatabaseJson = function () {
+    if (!cachedDbRecords.length) {
+      showToast('No hay registros para exportar.', 'error');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(cachedDbRecords, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasksmith-base-de-datos-certificaciones-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Base de datos completa descargada en JSON.', 'success');
+  };
+
+  window.exportDatabaseCsv = function () {
+    if (!cachedDbRecords.length) {
+      showToast('No hay registros para exportar.', 'error');
+      return;
+    }
+    const headers = [
+      'ID', 'Fecha', 'Participante', 'Correo', 'Lenguaje', 'Experiencia',
+      'Tiempo_IA_Segundos', 'Tiempo_IA_Texto', 'Tiempo_Total_Prueba',
+      'Calidad_Certificacion', 'Estado', 'Nota_Teorica', 'Aciertos_4_Preguntas',
+      'Nota_Practica', 'Nota_Global', 'Respuesta_P1', 'Respuesta_P2', 'Respuesta_P3', 'Respuesta_P4',
+      'Transcripcion_Audios'
+    ];
+    const csvEscape = val => `"${String(val == null ? '' : val).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+    const rows = cachedDbRecords.map(r => {
+      const qs = Array.isArray(r.questions) ? r.questions : [];
+      const transcripts = (r.evidences || []).map(e => `Paso ${e.paso}: ${e.transcript || ''}`).join(' | ');
+      const aiSec = ((Number(r.aiGradingElapsedMs) || 0) / 1000).toFixed(2);
+      return [
+        r.id,
+        r.dateTimeFormatted || r.createdAt,
+        r.candidateName,
+        r.candidateEmail,
+        r.tradeName,
+        r.experience,
+        aiSec,
+        r.aiGradingDurationText,
+        r.durationText,
+        r.qualityLabel,
+        r.approved ? 'APROBADO' : 'NO OTORGADO',
+        r.theoreticalScore,
+        `${r.correctAnswersCount}/${r.totalQuestions}`,
+        r.practicalScore,
+        r.overallScore,
+        qs[0] ? `${qs[0].chosen} (${qs[0].isRight ? 'Correcta' : 'Incorrecta'})` : '',
+        qs[1] ? `${qs[1].chosen} (${qs[1].isRight ? 'Correcta' : 'Incorrecta'})` : '',
+        qs[2] ? `${qs[2].chosen} (${qs[2].isRight ? 'Correcta' : 'Incorrecta'})` : '',
+        qs[3] ? `${qs[3].chosen} (${qs[3].isRight ? 'Correcta' : 'Incorrecta'})` : '',
+        transcripts
+      ].map(csvEscape).join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(csvEscape).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasksmith-resultados-certificacion-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Tabla de resultados exportada en CSV (Excel).', 'success');
+  };
+
+  window.handleImportDatabaseJson = async function (inputEl) {
+    const file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.records) ? parsed.records : [parsed]);
+      let imported = 0;
+      for (const item of list) {
+        if (item && item.id) {
+          await putRecordToIndexedDb(item);
+          imported++;
+        }
+      }
+      cachedDbRecords = await getAllRecordsFromIndexedDb();
+      updateDatabaseKpis(cachedDbRecords);
+      renderDatabaseRecordsList();
+      showToast(`Se importaron ${imported} registro(s) a la base de datos.`, 'success');
+    } catch (err) {
+      showToast('El archivo JSON no tiene un formato válido.', 'error');
+    } finally {
+      inputEl.value = '';
+    }
+  };
+
+  window.toggleDbCloudConfigDrawer = function () {
+    const drawer = document.getElementById('dbConfigDrawer');
+    if (!drawer) return;
+    drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+  };
+
+  window.saveDbCloudConfig = async function () {
+    const channelInput = document.getElementById('dbChannelTopicInput');
+    const fbInput = document.getElementById('dbCustomFirebaseUrlInput');
+    const ch = (channelInput && channelInput.value.trim()) ? channelInput.value.trim() : DEFAULT_CLOUD_DB_CHANNEL;
+    const fb = (fbInput && fbInput.value.trim()) ? fbInput.value.trim() : '';
+    try {
+      localStorage.setItem(STATE_KEY_DB_CHANNEL, ch);
+      localStorage.setItem(STATE_KEY_DB_FIREBASE, fb);
+    } catch (e) {}
+    connectLiveCloudStream();
+    await window.syncCertificationDatabaseNow(false);
+  };
+
+  window.copyParticipantOnlineLink = function () {
+    const channel = getCloudDbChannel();
+    const fb = getCustomFirebaseUrl();
+    const baseUrl = window.location.href.split('?')[0].replace(/resultados\.html.*$/i, 'certificacion.html');
+    const params = new URLSearchParams();
+    if (channel && channel !== DEFAULT_CLOUD_DB_CHANNEL) params.set('db', channel);
+    if (fb) params.set('firebase', fb);
+    const fullLink = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(fullLink).then(() => {
+        showToast('Link de certificación online copiado al portapapeles.', 'success');
+      }).catch(() => {
+        showToast(`Link: ${fullLink}`, 'normal');
+      });
+    } else {
+      showToast(`Link: ${fullLink}`, 'normal');
+    }
   };
 
 })();

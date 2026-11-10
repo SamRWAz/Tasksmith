@@ -24,6 +24,7 @@
 
         <ul class="nav-menu">
           <li><a href="certificacion.html" class="nav-link active">Certificación en Programación</a></li>
+          <li><a href="resultados.html" class="nav-link">Base de Datos / Resultados</a></li>
         </ul>
 
         <div class="nav-actions" id="navActionsContainer">
@@ -42,6 +43,7 @@
   <!-- Mobile Drawer -->
   <div class="mobile-nav">
     <a href="certificacion.html" class="nav-link active">Certificación en Programación</a>
+    <a href="resultados.html" class="nav-link">Base de Datos / Resultados</a>
     <div style="display: flex; gap: 10px; margin-top: 14px;" id="mobileAuthSlot">
       <button class="btn btn-primary full" onclick="openUserProfileModal()">Mi Perfil</button>
     </div>
@@ -125,10 +127,26 @@
                 <input type="hidden" id="customTradeInput" value="Programación en HTML" />
                 <input type="hidden" id="customTradeContextInput" value="Semántica HTML5, formularios accesibles, estructura DOM y buenas prácticas de maquetación web." />
 
+                <!-- Datos del participante para guardar en la Base de Datos Online -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                  <div>
+                    <label class="form-label" for="candidateNameInput" style="font-size: 0.92rem; font-weight: 700; color: var(--ink-primary);">
+                      2. Tu nombre completo:
+                    </label>
+                    <input type="text" id="candidateNameInput" class="form-input" placeholder="Ej: Juan Sebastián Pérez" value="Luis Rodríguez" style="font-weight: 600;" />
+                  </div>
+                  <div>
+                    <label class="form-label" for="candidateEmailInput" style="font-size: 0.92rem; font-weight: 700; color: var(--ink-primary);">
+                      Correo electrónico (opcional):
+                    </label>
+                    <input type="email" id="candidateEmailInput" class="form-input" placeholder="Ej: correo@ejemplo.com" value="luis@tasksmith.co" />
+                  </div>
+                </div>
+
                 <!-- Nivel de experiencia -->
                 <div style="margin-bottom: 22px;">
                   <label class="form-label" for="customTradeExperienceSelect" style="font-size: 0.92rem; font-weight: 700; color: var(--ink-primary);">
-                    2. Nivel de experiencia en programación HTML:
+                    3. Nivel de experiencia en programación HTML:
                   </label>
                   <select id="customTradeExperienceSelect" class="form-select" style="font-weight: 600;">
                     <option value="Desarrollador Senior (Más de 3 años de experiencia)">Desarrollador Senior (+3 años de experiencia)</option>
@@ -545,6 +563,19 @@
 
             <!-- RESULTADO DEL DICTAMEN (SE MUESTRA TRAS LA EVALUACIÓN) -->
             <div id="aiVerdictContainer" style="display: none;">
+
+              <!-- Estado de guardado en Base de Datos Online -->
+              <div id="dbSaveStatusBanner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 18px; margin-bottom: 18px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-soft); box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="live-badge" data-status="done" id="dbSaveStatusBadge">Guardando en Base de Datos...</span>
+                  <span style="font-size: 0.86rem; color: var(--ink-secondary); font-weight: 600;" id="dbSaveStatusText">
+                    Registrando tiempo de IA, calidad de certificación, respuestas, fotos y audios...
+                  </span>
+                </div>
+                <a href="resultados.html" class="btn btn-outline btn-sm" style="font-size: 0.82rem;">
+                  Ver apartado de Resultados (Base de Datos) →
+                </a>
+              </div>
               
               <!-- Métrica Triple: Tiempo Total de la Prueba + Tiempo de Calificación de la IA + Calidad de Certificación -->
               <div class="eval-metrics-banner-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 22px;">

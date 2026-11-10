@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <title>Base de Datos de Resultados de Certificación — Tasksmith</title>
+  <meta name="description" content="Panel de base de datos de certificaciones online: tiempo de calificación de la IA, calidad de certificación, y compilado de preguntas, respuestas, audios e imágenes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ================= HEADER & NAVBAR ================= -->
+  <header class="header">
+    <div class="container">
+      <nav class="navbar">
+        <a href="certificacion.html" class="logo">
+          <div class="logo-icon"><img src="assets/logo.png" alt="" width="36" height="37" decoding="async"></div>
+          <span class="logo-text">Task<span>smith</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="certificacion.html" class="nav-link">Certificación en Programación</a></li>
+          <li><a href="resultados.html" class="nav-link active">Base de Datos / Resultados</a></li>
+        </ul>
+
+        <div class="nav-actions" id="navActionsContainer">
+          <button class="user-profile-badge" onclick="openUserProfileModal()">
+            <span class="user-avatar-dot"></span>
+            <span>Luis (En sesión)</span>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openUserProfileModal()">
+            Mi Perfil
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-nav">
+    <a href="certificacion.html" class="nav-link">Certificación en Programación</a>
+    <a href="resultados.html" class="nav-link active">Base de Datos / Resultados</a>
+    <div style="display: flex; gap: 10px; margin-top: 14px;" id="mobileAuthSlot">
+      <button class="btn btn-primary full" onclick="openUserProfileModal()">Mi Perfil</button>
+    </div>
+  </div>
+
+  <main id="resultsDatabaseRoot">
+    <section class="section" style="padding-top: 36px; padding-bottom: 60px;">
+      <div class="container">
+
+        <!-- Encabezado principal -->
+        <div class="section-header" style="margin-bottom: 24px; text-align: left; max-width: 100%; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <span class="section-tag">Repositorio Central de Evaluaciones Online</span>
+            <h1 class="section-title" style="margin-bottom: 6px;">Base de Datos de Resultados de Certificación</h1>
+            <p class="section-sub" style="margin: 0; max-width: 720px;">
+              Consulta el <strong>tiempo que tardó la IA en calificar</strong>, la <strong>calidad de certificación</strong>, el tiempo total de prueba y el <strong>compilado completo de preguntas, respuestas, fotografías y audios</strong> de cada persona que realiza la certificación online.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="copyParticipantOnlineLink()">
+              🔗 Copiar link para participantes
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnSyncCloudDb" onclick="syncCertificationDatabaseNow()">
+              🔄 Sincronizar resultados online
+            </button>
+            <a href="certificacion.html" class="btn btn-ghost btn-sm">
+              + Nueva prueba
+            </a>
+          </div>
+        </div>
+
+        <!-- ================= 4 TARJETAS DE MÉTRICAS AGREGADAS (KPIs) ================= -->
+        <div class="eval-metrics-banner-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 22px;">
+          
+          <!-- KPI 1: Total de Certificaciones -->
+          <div class="evaluation-time-metric-box" style="padding: 18px 20px;">
+            <div>
+              <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); font-weight: 700;">
+                Total Evaluaciones Guardadas
+              </div>
+              <div style="font-size: 2rem; font-weight: 800; color: var(--ink-primary); line-height: 1.2; margin: 4px 0;" id="dbStatTotalCount">
+                0
+              </div>
+              <div style="font-size: 0.82rem; color: var(--ink-secondary);" id="dbStatCloudSyncLabel">
+                Sincronizando con la nube...
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 2: Tiempo Promedio de Calificación IA -->
+          <div class="evaluation-time-metric-box" style="padding: 18px 20px;">
+            <div>
+              <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--blue-primary); font-weight: 700;">
+                Tiempo Promedio IA al Calificar
+              </div>
+              <div style="font-size: 2rem; font-weight: 800; color: var(--blue-primary); line-height: 1.2; margin: 4px 0;" id="dbStatAvgAiTime">
+                -- seg
+              </div>
+              <div style="font-size: 0.82rem; color: var(--ink-secondary);" id="dbStatAiTimeRange">
+                Rango IA: --
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 3: Tiempo Total Promedio de Prueba -->
+          <div class="evaluation-time-metric-box" style="padding: 18px 20px;">
+            <div>
+              <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); font-weight: 700;">
+                Tiempo Promedio de Prueba
+              </div>
+              <div style="font-size: 2rem; font-weight: 800; color: var(--ink-primary); line-height: 1.2; margin: 4px 0;" id="dbStatAvgTotalTime">
+                -- min -- seg
+              </div>
+              <div style="font-size: 0.82rem; color: var(--ink-secondary);">
+                Duración media de principio a fin
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 4: Calidad de Certificación y Tasa de Aprobación -->
+          <div class="evaluation-time-metric-box" style="padding: 18px 20px;">
+            <div>
+              <div style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green-verified); font-weight: 700;">
+                Calidad & Aprobación
+              </div>
+              <div style="font-size: 1.65rem; font-weight: 800; color: var(--green-verified); line-height: 1.2; margin: 4px 0;" id="dbStatApprovalRate">
+                0% Aprobados
+              </div>
+              <div style="font-size: 0.82rem; color: var(--ink-secondary);" id="dbStatQualitySummary">
+                Nota global media: --/100
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= BARRA DE FILTROS Y EXPORTACIÓN DE LA BASE DE DATOS ================= -->
+        <div class="card" style="padding: 18px 22px; margin-bottom: 22px; box-shadow: var(--shadow-card);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            
+            <!-- Buscador y Filtros -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 280px;">
+              <input type="search" id="dbSearchInput" class="form-input" placeholder="Buscar por nombre, correo o ID..." style="max-width: 280px; padding: 8px 12px; font-size: 0.88rem;" oninput="renderDatabaseRecordsList()" />
+              
+              <select id="dbQualityFilter" class="form-select" style="max-width: 220px; padding: 8px 12px; font-size: 0.88rem;" onchange="renderDatabaseRecordsList()">
+                <option value="all">Todas las calidades</option>
+                <option value="Alta">Calidad Alta (90-100%)</option>
+                <option value="Satisfactoria">Calidad Satisfactoria (75-89%)</option>
+                <option value="Media">Calidad Media (60-74%)</option>
+                <option value="Baja">Calidad Baja (&lt;60%)</option>
+              </select>
+
+              <select id="dbStatusFilter" class="form-select" style="max-width: 190px; padding: 8px 12px; font-size: 0.88rem;" onchange="renderDatabaseRecordsList()">
+                <option value="all">Todos los estados</option>
+                <option value="approved">Certificado Aprobado</option>
+                <option value="rejected">No Otorgado</option>
+              </select>
+            </div>
+
+            <!-- Botones de Exportación e Importación -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <span class="live-badge" data-status="done" id="dbCloudStatusBadge" style="font-size: 0.78rem;">
+                Nube Online Activa
+              </span>
+              <button type="button" class="btn btn-outline btn-sm" onclick="exportDatabaseCsv()" style="font-size: 0.8rem;">
+                📊 Exportar Tabla (CSV)
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="exportDatabaseJson()" style="font-size: 0.8rem;">
+                💾 Descargar BD Completa (JSON)
+              </button>
+              <input type="file" id="dbImportJsonInput" accept=".json,application/json" style="display: none;" onchange="handleImportDatabaseJson(this)" />
+              <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('dbImportJsonInput').click()" style="font-size: 0.8rem;">
+                📂 Importar JSON
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="toggleDbCloudConfigDrawer()" style="font-size: 0.8rem;">
+                ⚙️ Canal Online
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Configuración opcional del Canal de Base de Datos en la Nube -->
+          <div id="dbConfigDrawer" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-soft);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: end;">
+              <div>
+                <label class="form-label" for="dbChannelTopicInput" style="font-size: 0.82rem; font-weight: 700;">
+                  Canal de Base de Datos Online Compartida (Sincronización automática entre dispositivos):
+                </label>
+                <input type="text" id="dbChannelTopicInput" class="form-input" placeholder="tasksmith_hci_2026_cert_db_v1" style="font-size: 0.86rem;" />
+              </div>
+              <div>
+                <label class="form-label" for="dbCustomFirebaseUrlInput" style="font-size: 0.82rem; font-weight: 700;">
+                  URL de Firebase Realtime DB / REST opcional (ej: https://proyecto.firebaseio.com):
+                </label>
+                <input type="url" id="dbCustomFirebaseUrlInput" class="form-input" placeholder="Opcional — ya funciona sin configurar nada" style="font-size: 0.86rem;" />
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveDbCloudConfig()">
+                  Guardar y Sincronizar
+                </button>
+              </div>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--ink-muted); margin: 8px 0 0;">
+              Todas las certificaciones hechas online se envían automáticamente al canal compartido en la nube y se guardan de forma permanente en la base de datos `IndexedDB` de tu navegador al abrir este apartado.
+            </p>
+          </div>
+        </div>
+
+        <!-- ================= CONTENEDOR DE REGISTROS DE LA BASE DE DATOS ================= -->
+        <div id="dbRecordsContainer">
+          <!-- Se renderiza dinámicamente desde app.js -->
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= MODAL: VER COMPILADO COMPLETO DE UN PARTICIPANTE ================= -->
+  <div class="modal-backdrop" id="dbRecordDetailModal">
+    <div class="modal-box" role="dialog" aria-modal="true" style="max-width: 920px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 28px;">
+      <button class="modal-close-btn" onclick="closeDbRecordDetailModal()" aria-label="Cerrar expediente">&times;</button>
+      <div id="dbRecordDetailBody">
+        <!-- Se inyecta el compilado completo: Tiempo IA, Calidad, 4 Preguntas y Respuestas, Fotos y Audios -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PERFIL DE USUARIO ================= -->
+  <div class="modal-backdrop" id="userProfileModal">
+    <div class="modal-box" role="dialog" aria-modal="true" style="max-width: 520px;">
+      <button class="modal-close-btn" onclick="closeUserProfileModal()" aria-label="Cerrar">&times;</button>
+      <div id="userProfileModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-dot"></span>
+    <span id="toastMsg">Listo</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
