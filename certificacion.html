@@ -566,15 +566,20 @@
 
               <!-- Estado de guardado en Base de Datos Online -->
               <div id="dbSaveStatusBanner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 18px; margin-bottom: 18px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-soft); box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                   <span class="live-badge" data-status="done" id="dbSaveStatusBadge">Guardando en Base de Datos...</span>
                   <span style="font-size: 0.86rem; color: var(--ink-secondary); font-weight: 600;" id="dbSaveStatusText">
                     Registrando tiempo de IA, calidad de certificación, respuestas, fotos y audios...
                   </span>
                 </div>
-                <a href="resultados.html" class="btn btn-outline btn-sm" style="font-size: 0.82rem;">
-                  Ver apartado de Resultados (Base de Datos) →
-                </a>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnManualSaveDbRecord" onclick="manualSaveCurrentCertificationToDb()" style="font-size: 0.82rem;">
+                    💾 Guardar / Sincronizar resultado
+                  </button>
+                  <a href="resultados.html" class="btn btn-outline btn-sm" style="font-size: 0.82rem;">
+                    Ver apartado de Resultados (Base de Datos) →
+                  </a>
+                </div>
               </div>
               
               <!-- Métrica Triple: Tiempo Total de la Prueba + Tiempo de Calificación de la IA + Calidad de Certificación -->
